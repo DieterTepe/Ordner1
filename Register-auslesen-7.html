@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Modbus Register lesen</title>
+    <!-- Einbinden der externen Bibliothek (Chart.js als Beispiel) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Einfügen direkt nach dem öffnenden <head>-Tag -->
+
+  <style>
+      /* Ihr ursprüngliches CSS */
+        html {
+            height: 100%;
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #00008B, #ADD8E6) fixed;
+            overflow-y: scroll;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Hauptcontainer */
+        .main-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-height: 100vh; /* Mindesthöhe statt fester Höhe */
+            overflow-x: hidden;
+            padding-bottom: 80px; /* Platz für Bottom-Buttons */
+        }
+
+        /* Content Container */
+/* Container für Buttons und Controls */
+.controls-container {
+    position: absolute;
+    top: 420px;  /* Startposition unterhalb des Headers logbox auch verschieben */
+    left: 5%;
+    right: 5%;
+    height: 220px;  /* Höhe angepasst an den Inhalt */
+min-height: 100vh; 
+}
+
+             /* Status */
+       #status {
+            position: absolute;
+            top: 0;
+            left: 0;
+            color: white;
+            width: 300px;
+            margin: 0;
+        }
+
+/* Connect/Disconnect Buttons */
+#connectButton {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 165px;
+    height: 35px;
+    color: white;
+    padding: 10px 20px;
+}
+
+#disconnectButton {
+    position: absolute;
+    top: 0px;
+    left: 185px;
+    width: 165px;
+    height: 35px;
+    color: #666666;
+    font-weight: bold;
+    padding: 10px 20px;
+}
+
+/* Filter Label und Select */
+#filterLabel {
+    position: absolute;
+    top: 280px;
+    left: 0;
+    color: white;
+    height: 35px;
+    line-height: 35px;
+}
+
+#filterSelect {
+    position: absolute;
+    top: 280px;
+    left: 50px;
+    background-color: #f0f0f0;
+    width: 80px;
+    height: 35px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+    color: #333;
+    cursor: pointer;
+}
+
+/* read_all_ChannelData Button */
+#read_all_ChannelDataButton {
+    position: absolute;
+    color: white;
+    top: 280px;
+    left: 160px;
+    width: 190px;
+    height: 35px;
+    padding: 10px 20px;
+}
+
+
+    /* Styles für den neuen Button */
+    #writeRegisterButton {
+        position: absolute;
+        color: white;
+        width: 320px;
+        height: 35px;
+    top: 60px;
+    left: 160px;
+            width: 190px;
+    height: 35px;
+    padding: 10px 20px;
+    }
+
+
+/* Bottom Buttons */
+#changeFontSizeIncreaseButton {
+    position: absolute;
+top: 610px;
+    color: white;
+    bottom: 0;
+    left: 93px;
+    width: 124px;
+    height: 40px;
+    padding: 10px 20px;
+}
+
+#changeFontSizeDecreaseButton {
+    position: absolute;
+ top: 610px;
+    color: white;
+    bottom: 0;
+    left: 229px;
+    width: 124px;
+    height: 40px;
+    padding: 10px 20px;
+}
+
+#clearButton {
+    position: absolute;
+top: 610px;
+    color: white;
+    bottom: 0;
+    left: 0;
+    width: 83px;
+    height: 40px;
+    padding: 10px 20px;
+}
+
+        button {
+            background-color: darkgreen;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            outline: none;
+        }
+
+          /* Anfang Neue CSS für hover-Klasse */
+        .button.hover {
+            background-color: lightgreen !important;
+            transform: scale(1.05);
+            box-shadow: 0 8px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        #progressBar {
+            position: absolute;
+            top: 230px;
+            left: -10px;
+            width: 350px;
+            height: 20px;
+            border-radius: 5px;
+            background-color: #888888;
+            border: 1px solid #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            margin: 10px;
+            overflow: hidden;
+        }
+
+        #progressBar::-webkit-progress-bar {
+            background-color: #888888;
+            border-radius: 5px;
+            border: 1px solid #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #progressBar::-webkit-progress-value {
+            background: linear-gradient(to right, #6a11cb, #2575fc) !important;
+            border-radius: 5px;
+            border: 1px solid #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #progressBar::-moz-progress-bar {
+            background: linear-gradient(to right, #6a11cb, #2575fc) !important;
+            border-radius: 5px;
+            border: 1px solid #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #status {
+            position: absolute;
+            top: 190px;
+            left: -10px;
+            color: white;
+            width: 300px;
+            margin: 10px;
+        }
+
+        #logBox {
+            position: absolute;
+            top: 745px;
+            left: 20px;
+            width: 90%;
+            height: 280px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 14px;
+            background-color: black;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        .info { color: #0099ff; }
+        .error { color: #ff3333; font-weight: bold; }
+        .debug { color: #00cc66; }
+
+        .header {
+            position: absolute;
+            border-radius: 10px;
+            background-color: darkgreen;
+            top: 10px;
+            left: 6%;
+            right: 6%;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .filter-menu {
+            position: absolute;
+            top: 280px;
+            left: 30px;
+            color: white;
+        }
+
+        /* Media Query für Landscape-Modus */
+        @media screen and (orientation: landscape) {
+            html, body {
+                overflow-y: auto;
+            }
+            
+            .main-container {
+                min-height: 850px; /* Mindesthöhe für Landscape */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                min-width: 320px;
+            }
+
+            #logBox {
+                font-size: 12px;
+            }
+
+            button {
+                font-size: 14px;
+            }
+
+            .header {
+                font-size: 20px;
+                padding: 15px;
+            }
+        }
+
+        /* Ab hier Neue CSS-Erweiterungen */
+        #readAllChannelsButton {
+            position: absolute;
+            top: 120px;
+            left: 160px;
+            width: 190px;
+            height: 35px;
+            background-color: darkgreen;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+        }
+
+        #toggleDriverButton {
+            position: absolute;
+            top: 180px;
+            left: 160px;
+            width: 190px;
+            height: 35px;
+            background-color: darkgreen;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+        }
+
+    /* Neue Styles für Channel und Mode Select */
+    #channelSelect {
+      position: absolute;
+      top: 50px;
+height: 20px;
+width: 110px;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        color: #333;
+        cursor: pointer;
+    }
+
+    /* Neue Styles für Channel und Mode Select */
+    #modeSelect {
+      position: absolute;
+      top: 80px;
+height: 20px;
+width: 110px;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        color: #333;
+        cursor: pointer;
+    }
+
+    #channelSelect:hover, #modeSelect:hover {
+        background-color: black;
+        color: white;
+        font-weight: bold;
+        transform: scale(1.05);
+        box-shadow: 0 8px 10px rgba(0, 0, 0, 0.15);
+    }
+
+        #readIntervalLabel {
+            position: absolute;
+      top: 120px;
+            left: 0px;
+            color: white;
+        }
+
+        #readIntervalInput {
+            position: absolute;
+      top: 150px;
+            left: 0px;
+height: 15px;
+width: 100px;
+            border-radius: 5px;
+            padding: 5px;
+        }
+
+
+#readIntervalInput:hover {
+        background-color: black;
+        color: white;
+        font-weight: bold;
+        transform: scale(1.05);
+        box-shadow: 0 8px 10px rgba(0, 0, 0, 0.15);
+    }
+
+/* Definiert die Styles für den tableContainer */
+#tableContainer {
+    position: absolute; /* Positioniert den Container absolut relativ zu seinem nächsten relativ positionierten Vorfahren */
+    top: 100px; /* Positioniert den Container 100 Pixel von oben */
+    background-color: black; /* Setzt die Hintergrundfarbe des Containers auf Schwarz */
+    color: white; /* Setzt die Textfarbe auf Weiß */
+    border-radius: 5px; /* Rundet die Ecken des Containers mit einem Radius von 5 Pixel */
+    border: 1px solid #ccc; /* Fügt eine graue, ein Pixel breite, durchgezogene Umrandung hinzu */
+    max-height: 300px; /* Begrenzt die maximale Höhe des Containers auf 300 Pixel */
+    left: 5%; /* Positioniert den Container 5% von der linken Seite des übergeordneten Elements */
+    right: 5%; /* Positioniert den Container 5% von der rechten Seite des übergeordneten Elements */
+    width: 90%; /* Setzt die Breite des Containers auf 90% des übergeordneten Elements */
+    overflow-x: auto; /* Ermöglicht horizontales Scrollen, falls der Inhalt breiter als der Container ist */
+    padding: 5px; /* Fügt einen Abstand von 5 Pixeln um den Inhalt des Containers hinzu */
+    box-sizing: border-box; /* Beinhaltet Padding und Border in der Breite und Höhe des Containers */
+}
+
+/* Definiert die Styles für die Tabelle im Container */
+#tableContainer table {
+    width: 100%; /* Setzt die Breite der Tabelle auf 100% des Containers */
+    border-collapse: collapse; /* Sorgt dafür, dass benachbarte Zellen sich eine gemeinsame Umrandung teilen */
+    margin-top: -20px; /* Positioniert die Tabelle höher, indem eine negative obere Margin angewendet wird */
+}
+
+/* Definiert die Styles für die Tabellenköpfe und Datenzellen */
+#tableContainer th, #channelDataBox td {
+    border: 1px solid #ccc; /* Fügt eine graue, ein Pixel breite, durchgezogene Umrandung hinzu */
+    padding: 4px; /* Fügt einen Abstand von 4 Pixeln um den Inhalt der Zellen hinzu */
+    font-size: 0.86em; /* Setzt die Schriftgröße auf 0.86em */
+    text-align: left; /* Richtet den Text innerhalb der Zellen linksbündig aus */
+}
+
+/* Definiert die Styles für die Tabellenköpfe */
+#tableContainer th {
+    background-color: #007BFF; /* Setzt die Hintergrundfarbe der Tabellenköpfe auf Blau */
+    color: white; /* Setzt die Textfarbe der Tabellenköpfe auf Weiß */
+}
+
+        .LED_Ladezustand {
+            position: absolute;
+            top: 25px;
+            left: 40px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: red;
+        }
+    </style>
+
+    
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="content-container">
+            <div class="header">Modbus Register lesen</div>
+          <div class="controls-container">
+                <p id="status">Bereit zum Testen...</p>
+                <progress id="progressBar" value="0" max="100"></progress>
+                <button id="connectButton" class="button">USB verbinden</button>
+                <button id="disconnectButton" class="button" disabled>USB trennen</button>
+                 <button id="writeRegisterButton" class="button">Register Modus schreiben</button>
+                <label id="filterLabel">Filter:</label>
+                <select id="filterSelect">
+                    <option value="all">Alle</option>
+                    <option value="info">Info</option>
+                    <option value="error">Fehler</option>
+                    <option value="debug">Debug</option>
+                </select>
+
+<div>
+    <!-- Kanal-Auswahl -->
+    <select id="channelSelect">
+        <option value="1">Kanal 1</option>
+        <option value="2">Kanal 2</option>
+        <option value="3">Kanal 3</option>
+        <option value="4">Kanal 4</option>
+        <option value="5">Kanal 5</option>
+        <option value="6">Kanal 6</option>
+        <option value="7">Kanal 7</option>
+        <option value="8">Kanal 8</option>
+    </select>
+
+    <!-- Modus-Auswahl -->
+    <select id="modeSelect">
+        <option value="0">0 bis 5V</option>
+        <option value="1">1 bis 5V</option>
+        <option value="2">0 bis 20mA</option>
+        <option value="3">4 bis 20mA</option>
+        <option value="4">4096-Skala</option>
+    </select>
+
+      </div>
+                <button id="read_all_ChannelDataButton" class="button" disabled>Register lesen</button>
+                <button id="readAllChannelsButton" class="button">Alle Eingänge auslesen</button>
+                <button id="toggleDriverButton" class="button">Auto-Modus Eingänge aktiv/deaktiv</button>
+              <label id="readIntervalLabel">Zeittakt (1-300 Sek):</label>
+              <input type="number" id="readIntervalInput" min="1" max="300" value="10">
+                <button id="changeFontSizeIncreaseButton" class="button">Schriftgröße +++</button>
+                <button id="changeFontSizeDecreaseButton" class="button">Schriftgröße. ---</button>
+                <button id="clearButton" class="button">Clear</button>
+        </div>
+        </div>
+
+      <div class="logbox-container">
+            <div id="logBox"></div>
+        </div>
+
+        <div id="tableContainer">
+            <h2>Aktuelle Kanaldaten:</h2>
+            <pre id="channelDataBox">
+         
+           <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>K</th>
+                        <th>Modus</th>
+                        <th>Roh</th>
+                        <th>Eing. Spann.</th>
+                        <th>Eing. Strom</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>n.v</td>
+                        <td>0</td>
+                        <td>0.00000 Volt</td>
+                        <td>0.0000 mA</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>n.v</td>
+                        <td>0</td>
+                        <td>0.00000 Volt</td>
+                        <td>0.0000 mA</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>n.v</td>
+                        <td>0</td>
+                        <td>0.00000 Volt</td>
+                        <td>0.0000 mA</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>n.v</td>
+                        <td>0</td>
+                        <td>0.00000 Volt</td>
+                        <td>0.0000 mA</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>n.v</td>
+                        <td>0</td>
+                        <td>0.00000 Volt</td>
+                        <td>0.0000 mA</td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td>n.v</td>
+                        <td>0</td>
+                        <td>0.00000 Volt</td>
+                        <td>0.0000 mA</td>
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        <td>n.v</td>
+                        <td>0</td>
+                        <td>0.00000 Volt</td>
+                        <td>0.0000 mA</td>
+                    </tr>
+                    <tr>
+                        <td>8</td>
+                        <td>n.v</td>
+                        <td>0</td>
+                        <td>0.00000 Volt</td>
+                        <td>0.0000 mA</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            </pre>
+        </div>
+        <div class="LED_Ladezustand"></div>
+    </div>
+
+    
+    
+<script>
+
+// Globale Variablen
+let usbDevice; // USB-Gerät, das mit WebUSB verbunden ist;
+let modbusDevice; // Modbus-Gerät, das die Kommunikation verwaltet
+// Statusvariablen
+let debugEnabled = false; // Status des Debug-Modus: Aktiviert oder deaktiviert
+let driverEnabled = false; // Status des Auto-Modus: Aktiviert oder deaktiviert
+let usbConnected = false; // Status der USB-Verbindung: Verbunden oder nicht
+// Kanaldaten
+let globalModeData = Array(8).fill("Unbekannt");
+let globalRawData = Array(8).fill(0);
+let channelDataa = Array(8).fill({ mode: "Unbekannt", raw: 0, voltage: 0, current: 0 });
+let readInterval = 10000; // Standardzeit für den Auto-Modus-Takt (in Millisekunden, 10 Sekunden)
+let periodicReadId = null;
+let ledBlinkInterval;
+let progressBarInterval; // Speichert das setInterval-Referenz
+
+
+     // Konstanten für Selektoren und Konfigurationsdaten
+        const SELECTORS = { 
+            toggleDriverButton: '#toggleDriverButton',
+            logBox: '#logBox',
+            readAllChannelsButton: '#readAllChannelsButton',
+
+           channelSelect: '#channelSelect',
+            modeSelect: '#modeSelect',
+            
+
+            readRegisterButton: '#readRegisterButton',
+            writeRegisterButton: '#writeRegisterButton',
+            
+
+            readIntervalInput: '#readIntervalInput', // Neue Zeittakt-Eingabe
+            channelDataBox: '#channelDataBox'
+        };
+
+
+// Funktion zur Aktualisierung der Kanaldatenanzeige
+function updateChannelDataBox() {
+    const tableBody = document.querySelector('#dataTable tbody');
+    tableBody.innerHTML = '';
+
+    channelDataa.forEach((data, index) => {
+        const row = document.createElement('tr');
+
+        const cellChannel = document.createElement('td');
+        cellChannel.textContent = (index + 1).toString();
+        row.appendChild(cellChannel);
+
+        const cellMode = document.createElement('td');
+        cellMode.textContent = data.mode;
+        row.appendChild(cellMode);
+
+        const cellRaw = document.createElement('td');
+        cellRaw.textContent = data.raw.toString();
+        row.appendChild(cellRaw);
+
+        const cellVoltage = document.createElement('td');
+        cellVoltage.textContent = data.voltage.toFixed(5) + ' Volt';
+        row.appendChild(cellVoltage);
+
+        const cellCurrent = document.createElement('td');
+        cellCurrent.textContent = data.current ? data.current.toFixed(5) + ' mA' : '0.00000 mA';
+        row.appendChild(cellCurrent);
+
+        tableBody.appendChild(row);
+    });
+}
+
+function saveTableDataToLocalStorage() {
+    try {
+        // Tabellendaten vorbereiten
+        const tableData = channelDataa.map(data => ({
+            mode: data.mode,
+            raw: data.raw,
+            voltage: data.voltage.toFixed(5),
+            current: data.current.toFixed(5)
+        }));
+        const timestamp = Date.now(); // Aktuellen Zeitstempel hinzufügen
+
+        // Daten in einen JSON-String umwandeln
+        const dataString = JSON.stringify(tableData);
+        
+        // Prüfsumme berechnen
+        const checksum = calculateChecksum(dataString);
+
+        // Daten mit Zeitstempel und Prüfsumme im LocalStorage speichern
+        const dataWithTimestampAndChecksum = {
+            tableData,
+            timestamp,
+            checksum
+        };
+
+        // Speichern in LocalStorage
+        localStorage.setItem('tableData', JSON.stringify(dataWithTimestampAndChecksum));
+        localStorage.setItem('firstPageLoaded', 'true'); // Status der Seite speichern
+
+        // Optional: Log-Meldung hinzufügen (falls Logbox vorhanden)
+        const logBox = document.getElementById('logBox');
+        if (logBox) {
+//            logBox.innerText += `[INFO] Daten erfolgreich gespeichert.\n`;
+        }
+    } catch (error) {
+        // Fehlerbehandlung bei Problemen mit LocalStorage
+        console.error("Fehler beim Speichern der Daten:", error.message);
+    }
+}
+
+// Diese Funktion aktualisiert den LED-Status basierend auf den Daten und dem Seitenstatus.
+function updateLedStatus() {
+    const led = document.querySelector('.LED_Ladezustand');
+    if (!led) {
+        console.error("LED-Element (.LED_Ladezustand) nicht gefunden.");
+        return;
+    }
+
+    const secondPageLoaded = localStorage.getItem('secondPageLoaded');
+    const dataWithTimestamp = JSON.parse(localStorage.getItem('tableData'));
+    const currentTime = Date.now();
+
+    if (!secondPageLoaded || secondPageLoaded !== 'true') {
+        // Empfänger-Seite ist nicht aktiv
+        led.style.backgroundColor = 'red';
+        led.classList.remove('blink');
+        clearInterval(ledBlinkInterval);
+        logMessage("[INFO] Empfänger-Seite nicht aktiv.", "info");
+    } else if (dataWithTimestamp && (currentTime - dataWithTimestamp.timestamp) <= 5 * 60 * 60 * 1000) {
+        // Daten sind aktuell und Empfänger ist aktiv
+        clearInterval(ledBlinkInterval);
+        let isGreen = true;
+        ledBlinkInterval = setInterval(() => {
+            led.style.backgroundColor = isGreen ? 'green' : 'yellow';
+            isGreen = !isGreen;
+        }, 2000);
+        led.classList.add('blink');
+        logMessage("[INFO] Daten aktuell und Empfänger-Seite aktiv.", "info");
+    } else {
+        // Daten sind veraltet
+        led.style.backgroundColor = 'yellow';
+        led.classList.remove('blink');
+        clearInterval(ledBlinkInterval);
+        logMessage("[WARNUNG] Daten sind älter als 5 Stunden.", "warning");
+    }
+}
+
+// NEUE FUNKTION HINZUFÜGEN:
+// Diese Funktion speichert die Tabellendaten und den Zeitstempel in den `localStorage`.
+// Berechnung einer einfachen Prüfsumme (hier CRC32, aber dies könnte angepasst werden)
+function calculateChecksum(data) {
+    let checksum = 0;
+    for (let i = 0; i < data.length; i++) {
+        checksum = (checksum + data.charCodeAt(i)) % 65535;
+    }
+    return checksum;
+}
+
+// NEUES INTERVALL HINZUFÜGEN:
+// Diese Zeile startet die Funktion `saveTableDataToLocalStorage()` jede Sekunde.
+setInterval(saveTableDataToLocalStorage, 1000);
+saveTableDataToLocalStorage();
+updateLedStatus();
+
+    // Funktion zur Aktualisierung des LED-Status
+    function updateLed(ledElement, isActive) {
+        clearInterval(ledElement.blinkInterval);  // Vorherige Blinkintervalle löschen
+        if (isActive) {
+            let ledOn = false;
+            ledElement.blinkInterval = setInterval(() => {
+                ledElement.className = ledOn ? 'led green' : 'led yellow';  // Zwischen grün und gelb wechseln
+                ledOn = !ledOn;
+            }, 2000);  // Intervallzeit auf 2 Sekunden setzen
+        } else {
+            ledElement.className = 'led red';  // LED auf rot setzen, wenn inaktiv
+        }
+    }
+
+
+
+function startProgressBar() {
+    const progressBar = document.getElementById('progressBar');
+    const intervalDuration = readInterval; // in Millisekunden
+    let startTime = Date.now();
+    progressBar.value = 0;
+
+    progressBarInterval = setInterval(() => {
+        const elapsedTime = Date.now() - startTime;
+        const progress = (elapsedTime / intervalDuration) * 100;
+        if (progress >= 100) {
+            // Progressbar zurücksetzen und neu starten
+            progressBar.value = 0;
+            startTime = Date.now(); // Neuer Startzeitpunkt
+        } else {
+            progressBar.value = progress;
+        }
+    }, 16); // ca. 60 FPS
+}
+
+
+function stopProgressBar() {
+    clearInterval(progressBarInterval);
+    document.getElementById('progressBar').value = 0;
+}
+
+
+// Funktion zum Starten des periodischen Auslesens
+function startPeriodicRead() {
+    if (driverEnabled) {
+        if (periodicReadId) {
+            clearInterval(periodicReadId);
+        }
+        periodicReadId = setInterval(async () => {
+            logMessage("Auto-Modus: Lese Register für alle Kanäle...");
+            logMessage("Auto-Modus: Berechne und lese alle Eingänge...");
+            await modbusDevice.readInputs();
+            updateChannelDataBox();
+            saveTableDataToLocalStorage();
+
+  const logBox = document.getElementById('logBox');
+  logBox.innerHTML = '';
+
+        }, readInterval);
+        logMessage(`Periodisches Auslesen gestartet. Intervall: ${readInterval / 1000} Sekunden.`);
+    }
+}
+
+// Funktion zum Stoppen des periodischen Auslesens
+function stopPeriodicRead() {
+    if (periodicReadId) {
+        clearInterval(periodicReadId);
+        periodicReadId = null;
+        logMessage("Periodisches Auslesen gestoppt.");
+    }
+}
+
+    const modbusOperations = (function() {
+        class ModbusDevice {
+            constructor(device) {
+                this.device = device;
+                this.endpointOut = 2;
+                this.endpointIn = 1;
+                this.timeout = 5000;
+                this.register_all_ReadBuffer = [];
+                this.registerWriteBuffer = [];
+            }
+
+            async sendCommand(command) {
+                const crc = calculateCRC(command);
+                const request = new Uint8Array([...command, crc & 0xFF, (crc >> 8) & 0xFF]);
+                await withTimeout(this.device.transferOut(this.endpointOut, request), this.timeout);
+                logMessage(`DEBUG: Gesendetes Paket: ${Array.from(request).map(b => b.toString(16).padStart(2, '0')).join(' ')}`, 'debug');
+            }
+
+            async receiveResponse(bufferName) {
+                this[bufferName] = [];
+                try {
+                    const result = await withTimeout(this.device.transferIn(this.endpointIn, 64), this.timeout);
+                    const receivedData = new Uint8Array(result.data.buffer);
+                    this[bufferName].push(...receivedData);
+                    logMessage(`DEBUG: Empfangenes Paket (Rohdaten): ${Array.from(receivedData).map(b => b.toString(16).padStart(2, '0')).join(' ')}`, 'debug');
+                    return receivedData;
+                } catch (error) {
+                    logMessage(`Fehler beim Empfangen: ${error.message}`, 'error');
+                    return null;
+                }
+            }
+    
+            async readChannelData() {
+                logMessage("Sende Befehl 'Kanaldatentyp lesen'...");
+                const command = [0x01, 0x03, 0x10, 0x00, 0x00, 0x08];
+                await this.sendCommand(command);
+                await new Promise(resolve => setTimeout(resolve, 100));
+                const response = await this.receiveResponse('register_all_ReadBuffer');
+                if (response && response.length >= 19) {
+                       const filteredLOG = response.slice(2); // Bereinigung ohne 01 60
+                       const filteredResponse = response.slice(5, -2);
+                       logMessage(`DEBUG: Bereinigte Antwort: ${Array.from(filteredLOG).map(b => b.toString(16).padStart(2, '0')).join(' ')}`, 'debug');
+                    for (let i = 0; i < 8; i++) {
+                        const mode = filteredResponse[i * 2 + 1];
+                        const modeDescription = modeDescriptions[mode] || "Unbekannter Modus";
+                        globalModeData[i] = modeDescription;
+                        logMessage(`Kanal ${i + 1}, Modus: ${modeDescription}`);
+                    }
+                } else {
+                    logMessage("Fehlerhafte Antwortlänge oder ungültige Daten erhalten.", "error");
+                }
+            }
+        
+
+         async readRegister(address) {
+            logMessage(`Lese Register ${address.toString(16)}...`);
+            this.registerReadBuffer = [];
+            const command = [0x01, 0x03, address >> 8, address & 0xFF, 0x00, 0x01];
+            await this.sendCommand(command);
+
+            await new Promise(resolve => setTimeout(resolve, 40));
+
+            const response = await this.receiveResponse('registerReadBuffer');
+            if (response && response.length >= 7) {
+                const filteredResponse = response.slice(-7);
+                logMessage(`DEBUG: Bereinigte Antwort: ${Array.from(filteredResponse).map(b => b.toString(16).padStart(2, '0')).join(' ')}`, 'debug');
+
+                const mode = filteredResponse[4];
+                const modeDescription = ["0 bis 5V", "1 bis 5V", "0 bis 20mA", "4 bis 20mA", "4096-Skala"][mode] || "Unbekannter Modus";
+                const channel = (address - 0x1000) + 1;
+                logMessage(`Register gelesen: Kanal ${channel}, Modus ${modeDescription}`);
+
+                channelDataa[channel - 1] = { mode: modeDescription, raw: 0, voltage: 0, current: 0 };
+                globalModeData[channel - 1] = modeDescription;
+            } else {
+                logMessage("Fehlerhafte Antwortlänge oder ungültige Daten erhalten.", "error");
+            }
+        }
+
+
+
+
+// Methode zum Schreiben in ein Register
+async writeRegister(address, mode) {
+    logMessage(`Schreibe Modus ${mode} in Register ${address.toString(16)}...`);  // Log-Nachricht über den Schreibvorgang
+    this.registerWriteBuffer = [];  // Buffer leeren
+    const command = [0x01, 0x06, address >> 8, address & 0xFF, 0x00, mode];  // Kommando für das Schreiben des Registers
+    await this.sendCommand(command);  // Kommando senden
+
+    await new Promise(resolve => setTimeout(resolve, 100));  // Kurze Verzögerung
+
+    const response = await this.receiveResponse('registerReadBuffer');  // Antwort empfangen
+    if (response && response.length >= 8) {
+        const filteredResponse = response.slice(-8);  // Antwort bereinigen
+        logMessage(`DEBUG: Bereinigte Antwort: ${Array.from(filteredResponse).map(b => b.toString(16).padStart(2, '0')).join(' ')}`, 'debug');  // Log-Nachricht ausgeben
+
+        const mode = filteredResponse[5];  // Modus aus der Antwort extrahieren
+        const modeDescription = ["0 bis 5V", "1 bis 5V", "0 bis 20mA", "4 bis 20mA", "4096-Skala"][mode] || "Unbekannter Modus";  // Modusbeschreibung bestimmen
+        const channel = (address - 0x1000) + 1;  // Kanalnummer berechnen
+        logMessage(`Register gelesen: Kanal ${channel}, Modus ${modeDescription}`);  // Log-Nachricht über das gelesene Register
+
+        channelDataa[channel - 1] = { mode: modeDescription, raw: 0, voltage: 0, current: 0 };  // Kanaldaten aktualisieren
+        globalModeData[channel - 1] = modeDescription;  // Globale Modusdaten aktualisieren
+    } else {
+        logMessage("Fehlerhafte Antwortlänge oder ungültige Daten erhalten.", "error");  // Fehler loggen
+    }
+}
+
+        async readInputs() {
+            logMessage("Lese alle Eingänge...");
+            const command = [0x01, 0x04, 0x00, 0x00, 0x00, 0x08];
+            await this.sendCommand(command);
+            await new Promise(resolve => setTimeout(resolve, 40));
+
+            const response = await this.receiveResponse('analogInputBuffer');
+            if (response && response.length >= 19) {
+                const filteredResponse = response.slice(2);
+                logMessage(`DEBUG: Bereinigte Antwort: ${Array.from(filteredResponse).map(b => b.toString(16).padStart(2, '0')).join(' ')}`, 'debug');
+
+                for (let i = 0; i < 8; i++) {
+                    const rawValue = (filteredResponse[3 + i * 2] << 8) | filteredResponse[4 + i * 2];
+                    const mode = globalModeData[i];
+                    let voltage = 0, current = 0;
+
+                    if (mode === "0 bis 5V") {
+                        voltage = rawValue / 1000;
+                    } else if (mode === "1 bis 5V") {
+                        voltage = rawValue / 1000;
+                    } else if (mode === "0 bis 20mA") {
+                        voltage = rawValue / 4095;
+                        current = voltage / 249;
+                    } else if (mode === "4 bis 20mA") {
+                        voltage = rawValue / 4095;
+                        current = voltage / 249;
+                    } else if (mode === "4096-Skala") {
+                        voltage = rawValue / 4095;
+                        current = voltage / 249;
+                    }
+
+            channelDataa[i] = { mode, raw: rawValue, voltage, current };
+            globalRawData[i] = rawValue;
+            logMessage(`Kanal ${i + 1}: ${voltage.toFixed(5)} V ${current > 0 ? `| ${current.toFixed(5)} mA` : ""}`);
+
+                    logMessage(`Kanal ${i + 1}: ${voltage.toFixed(5)} V ${current > 0 ? `| ${current.toFixed(5)} mA` : ""}`);
+                }
+            } else {
+                logMessage("Fehler beim Lesen der Eingänge oder ungültige Daten erhalten.", "error");
+            }
+        }
+    }
+
+    function calculateCRC(buffer) {
+        let crc = 0xFFFF;
+        for (let pos = 0; pos < buffer.length; pos++) {
+            crc ^= buffer[pos];
+            for (let i = 8; i !== 0; i--) {
+                if ((crc & 0x0001) !== 0) {
+                    crc >>= 1;
+                    crc ^= 0xA001;
+                } else {
+                    crc >>= 1;
+                }
+            }
+        }
+        return crc;
+    }
+
+    return { ModbusDevice, calculateCRC };
+})();
+
+    const usbConnection = (() => {
+        async function connectUSB() {
+            logMessage("Versuche, ein WebUSB-Gerät zu verbinden...");
+            try {
+                usbDevice = await navigator.usb.requestDevice({ filters: [{ vendorId: 0x0403, productId: 0x6001 }] });
+                await usbDevice.open();
+                await usbDevice.selectConfiguration(1);
+                await usbDevice.claimInterface(0);
+                modbusDevice = new modbusOperations.ModbusDevice(usbDevice);
+                logMessage("WebUSB-Gerät verbunden und RS485-Bus initialisiert.");
+                usbConnected = true;
+                document.getElementById('disconnectButton').disabled = false;
+                document.getElementById('disconnectButton').style.color = "white";
+                document.getElementById('disconnectButton').style.fontWeight = "normal";
+                document.getElementById('read_all_ChannelDataButton').disabled = false;
+            } catch (error) {
+                logMessage(`Verbindungsfehler: ${error.message}`, 'error');
+                usbConnected = false;
+                document.getElementById('disconnectButton').disabled = true;
+                document.getElementById('disconnectButton').style.color = "#666666";
+                document.getElementById('disconnectButton').style.fontWeight = "bold";
+                document.getElementById('read_all_ChannelDataButton').disabled = true;
+            }
+        }
+
+        async function disconnectUSB() {
+            if (usbDevice && usbDevice.opened) {
+                await usbDevice.releaseInterface(0);
+                await usbDevice.close();
+                logMessage("WebUSB-Gerät getrennt.");
+                usbConnected = false;
+                document.getElementById('disconnectButton').disabled = true;
+                document.getElementById('disconnectButton').style.color = "#666666";
+                document.getElementById('disconnectButton').style.fontWeight = "bold";
+                document.getElementById('read_all_ChannelDataButton').disabled = true;
+            }
+        }
+
+        return { connectUSB, disconnectUSB };
+    })();
+
+    function logMessage(message, type = 'info') {
+        const logBox = document.getElementById('logBox');
+        const logEntry = document.createElement('p');
+        logEntry.className = type;
+        logEntry.textContent = `[${type.toUpperCase()}] ${message}`;
+        logBox.appendChild(logEntry);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function withTimeout(promise, timeout) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                reject(new Error('Timeout'));
+            }, timeout);
+            promise.then(resolve, reject);
+        });
+    }
+
+    const channelAddresses = [0x1000, 0x1001, 0x1002, 0x1003, 0x1004, 0x1005, 0x1006, 0x1007];
+    const modeDescriptions = {
+        0x00: "0 bis 5V",
+        0x01: "1 bis 5V",
+        0x02: "0 bis 20mA",
+        0x03: "4 bis 20mA",
+        0x04: "4096-Skala"
+    };
+
+    async function read_all_Channels() {
+        const totalSteps = 8;
+        try {
+            for (let i = 0; i < totalSteps; i++) {
+                const progress = ((i + 1) / totalSteps) * 100;
+                document.getElementById('progressBar').value = progress;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        } finally {
+            document.getElementById('progressBar').value = 0;
+        }
+    }
+
+    function changeFontSize(action) {
+        const logBox = document.getElementById('logBox');
+        let currentSize = parseFloat(window.getComputedStyle(logBox).fontSize);
+        if (action === 'increase') {
+            logBox.style.fontSize = (currentSize + 2) + 'px';
+        } else if (action === 'decrease') {
+            logBox.style.fontSize = Math.max(8, currentSize - 2) + 'px';
+        }
+    }
+
+    window.addEventListener('load', function() {
+    console.log("DOM geladen, initialisiere Event-Listener...");
+
+    const connectButton = document.getElementById('connectButton');
+    const disconnectButton = document.getElementById('disconnectButton');
+    const read_all_ChannelDataButton = document.getElementById('read_all_ChannelDataButton');
+
+    if (connectButton) {
+        connectButton.addEventListener('click', async () => {
+            await usbConnection.connectUSB();
+            console.log("USB Verbindung hergestellt");
+        });
+        console.log("Connect Button Listener hinzugefügt");
+    }
+
+    if (disconnectButton) {
+        disconnectButton.addEventListener('click', async () => {
+            await usbConnection.disconnectUSB();
+            console.log("USB Verbindung getrennt");
+        });
+        console.log("Disconnect Button Listener hinzugefügt");
+    }
+
+    if (read_all_ChannelDataButton) {
+        read_all_ChannelDataButton.addEventListener('click', async () => {
+            console.log("Register lesen gestartet...");
+            if (modbusDevice) {
+                try {
+                    await modbusDevice.readChannelData(); 
+                    console.log("Register erfolgreich gelesen");
+                } catch (error) {
+                    logMessage(`Fehler beim Lesen der Register: ${error.message}`, 'error');
+                    console.error("Fehler beim Lesen der Register:", error);
+                }
+            } else {
+                logMessage("Kein Modbus-Gerät verbunden.", 'error');
+                console.error("Kein Modbus-Gerät verbunden");
+            }
+            read_all_Channels(); 
+        });
+        console.log("Read Register Button Listener hinzugefügt");
+    }
+
+    const clearButton = document.getElementById('clearButton');
+    const increaseFontButton = document.getElementById('changeFontSizeIncreaseButton');
+    const decreaseFontButton = document.getElementById('changeFontSizeDecreaseButton');
+
+    if (clearButton) {
+        clearButton.addEventListener('click', function() {
+            const logBox = document.getElementById('logBox');
+            if (logBox) {
+                logBox.innerHTML = '';
+                console.log("Log geleert");
+            }
+        });
+        console.log("Clear Button Listener hinzugefügt");
+    }
+
+    if (increaseFontButton) {
+        increaseFontButton.addEventListener('click', function() {
+            const logBox = document.getElementById('logBox');
+            if (logBox) {
+                let currentSize = parseInt(window.getComputedStyle(logBox).fontSize);
+                logBox.style.fontSize = (currentSize + 2) + 'px';
+                console.log("Schriftgröße erhöht auf: " + (currentSize + 2) + "px");
+            }
+        });
+        console.log("Increase Font Button Listener hinzugefügt");
+    }
+
+    if (decreaseFontButton) {
+        decreaseFontButton.addEventListener('click', function() {
+            const logBox = document.getElementById('logBox');
+            if (logBox) {
+                let currentSize = parseInt(window.getComputedStyle(logBox).fontSize);
+                let newSize = Math.max(8, currentSize - 2);
+                logBox.style.fontSize = newSize + 'px';
+                console.log("Schriftgröße verringert auf: " + newSize + "px");
+            }
+        });
+        console.log("Decrease Font Button Listener hinzugefügt");
+    }
+
+
+// Anpassungen im readIntervalInput-Change-EventListener
+document.getElementById('readIntervalInput').addEventListener('change', (event) => {
+    const newInterval = parseInt(event.target.value, 10);
+    if (newInterval >= 1 && newInterval <= 300) {
+        readInterval = newInterval * 1000;
+        logMessage(`Zeittakt auf ${newInterval} Sekunden gesetzt.`);
+        if (driverEnabled) {
+            stopProgressBar(); // Alte Progressbar stoppen
+            startProgressBar(); // Neue Progressbar mit aktualisiertem Intervall starten
+        }
+    } else {
+        readInterval = 60000;
+        event.target.value = 60;
+        logMessage("Ungültiger Wert! Der Zeittakt muss zwischen 1 und 300 Sekunden liegen. Standardwert auf 60 Sekunden gesetzt.", "error");
+    }
+});
+
+
+document.getElementById('toggleDriverButton').addEventListener('click', async () => {
+    driverEnabled = !driverEnabled;
+    logMessage(`Auto-Modus ${driverEnabled ? 'aktiviert' : 'deaktiviert'}`);
+    if (driverEnabled) {
+        await modbusDevice.readChannelData();
+        startPeriodicRead();
+        startProgressBar(); // Progressbar starten
+    } else {
+        stopPeriodicRead();
+        stopProgressBar(); // Progressbar stoppen
+    }
+});
+
+
+document.getElementById('readAllChannelsButton').addEventListener('click', async () => {
+    logMessage("Lese Register für alle Kanäle...");
+    await modbusDevice.readChannelData();
+    logMessage("Berechne und lese alle Eingänge...");
+    await new Promise(resolve => setTimeout(resolve, 50));
+    await modbusDevice.readInputs();
+    await new Promise(resolve => setTimeout(resolve, 50));
+   await modbusDevice.readInputs();
+    updateChannelDataBox();
+    saveTableDataToLocalStorage();
+});
+
+
+document.getElementById('writeRegisterButton').addEventListener('click', async () => {
+    logMessage("Schreibe im Register ...");
+    const channel = parseInt(document.getElementById('channelSelect').value)-1;
+    const mode = parseInt(document.getElementById('modeSelect').value);
+    await modbusDevice.writeRegister(0x1000 + channel, mode);  // Register schreiben
+    updateChannelDataBox();
+    logMessage(`Schreibe Modus ${mode} in Register ${address.toString(16)}...`);
+});
+
+
+    const filterSelect = document.getElementById('filterSelect');
+    if (filterSelect) {
+        filterSelect.addEventListener('change', function() {
+            const filter = this.value;
+            const logBox = document.getElementById('logBox');
+            if (logBox) {
+                const logEntries = logBox.querySelectorAll('p');
+                logEntries.forEach(entry => {
+                    entry.style.display = (filter === 'all' || entry.classList.contains(filter)) ? 'block' : 'none';
+                });
+                console.log("Filter geändert zu: " + filter);
+            }
+        });
+        console.log("Filter Select Listener hinzugefügt");
+    }
+
+    console.log("Alle Event-Listener wurden initialisiert");
+});
+
+
+  // Anfang Neue Funktion: Interaktivität bei Klick
+        function initializeClickHoverEffect(selector) {
+            // Holt alle Buttons basierend auf dem Selector
+            const buttons = document.querySelectorAll(selector);
+
+            // Fügt jedem Button die Logik hinzu
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    button.classList.add('hover'); // Temporär die hover-Klasse hinzufügen
+                    setTimeout(() => button.classList.remove('hover'), 1000); // Nach 1 Sekunde entfernen
+                });
+            });
+        }
+       // Funktion nach dem Laden der Seite initialisieren
+        window.addEventListener('load', function () {
+            initializeClickHoverEffect('.button'); // Alle Buttons mit der Klasse "button"
+        });
+        // Ende Neue Funktion
+
+
+
+// Neue Erweiterungen beginnen hier
+// Web Worker Code als String
+const workerCode = `
+    let backgroundInterval = 4000; // Intervall, wenn die Seite im Hintergrund ist
+    let intervalId;
+
+    // Funktion zum Starten des Intervalls
+    function startInterval() {
+        clearInterval(intervalId);
+        intervalId = setInterval(() => {
+            self.postMessage('executeAutoMode');
+        }, backgroundInterval);
+    }
+
+    // Funktion zum Stoppen des Intervalls
+    function stopInterval() {
+        clearInterval(intervalId);
+    }
+
+    // Event-Listener für Nachrichten vom Hauptthread
+    self.onmessage = function(e) {
+        if (e.data.action === 'start') {
+            startInterval();
+        } else if (e.data.action === 'stop') {
+            stopInterval();
+        }
+    };
+`;
+
+// Blob und Worker erstellen
+const blob = new Blob([workerCode], { type: 'application/javascript' });
+const workerUrl = URL.createObjectURL(blob);
+const worker = new Worker(workerUrl);
+
+// Message-Listener im Hauptthread für Nachrichten vom Worker
+worker.onmessage = function(e) {
+    if (e.data === 'executeAutoMode') {
+        executeAutoMode();
+    }
+};
+
+// Flag, um den Zustand des Auto-Modus zu verfolgen
+let autoModeActiveBeforeBackground = false;
+
+// Event-Listener für Fokusverlust (blur)
+window.addEventListener('blur', handleBlur);
+
+// Event-Listener für Fokusgewinn (focus)
+window.addEventListener('focus', handleFocus);
+
+// Funktion zur Behandlung von Fokusverlust
+function handleBlur() {
+    autoModeActiveBeforeBackground = driverEnabled;
+    if (autoModeActiveBeforeBackground) {
+        
+    stoppPeriodicRead();
+    stopPeriodicRead(); // Periodisches Auslesen stoppen
+            readAllChannelsButton.disabled = false; // Wieder aktivieren für manuellen Zugriff
+        setTimeout(() => {
+            worker.postMessage({ action: 'start' });
+        }, 1000);
+    }
+}
+
+// Funktion zur Behandlung von Fokusgewinn
+function handleFocus() {
+    if (autoModeActiveBeforeBackground) {
+        worker.postMessage({ action: 'stop' });
+        autoModeActiveBeforeBackground = false; // Zustand zurücksetzen
+          starttPeriodicRead(); 
+           autoModeActiveBeforeBackground = false; // Zustand zurücksetzen
+        clearCache();
+    }
+}
+
+// Funktion zum Ausführen des Auto-Modus
+async function executeAutoMode() {
+    try {
+        logMessage("[INFO] Führe Auto-Modus aus...");
+        await modbusDevice.readInputs();
+        updateChannelDataBox();
+        saveTableDataToLocalStorage();
+        logMessage("[INFO] Auto-Modus erfolgreich abgeschlossen.");
+
+  const logBox = document.getElementById('logBox');
+  logBox.innerHTML = '';
+
+    } catch (error) {
+        logMessage(`[FEHLER] Fehler im Auto-Modus: ${error.message}`, "error");
+    }
+}
+
+// Funktion zum Starten des periodischen Lesens
+function starttPeriodicRead() {
+    if (driverEnabled) {
+        if (!document.hasFocus()) {
+            worker.postMessage({ action: 'start' });
+     } else {
+            periodicReadId = setInterval(executeAutoMode, readInterval);
+        }
+    }
+}
+
+// Funktion zum Stoppen des periodischen Lesens
+function stoppPeriodicRead() {
+    if (!document.hasFocus()) {
+        worker.postMessage({ action: 'stop' });
+            stopPeriodicRead(); // Periodisches Auslesen stoppen
+            readAllChannelsButton.disabled = false; // Wieder aktivieren für manuellen Zugriff
+autoModeActiveBeforeBackground = true;
+    } else {
+        clearInterval(periodicReadId);
+    }
+}
+
+// Cache-Bereinigung beim Wiedererlangen des Fokus
+function clearCache() {
+    // Beispiel für Cache-Bereinigung
+    caches.keys().then((names) => {
+        for (let name of names) {
+            caches.delete(name);
+        }
+    });
+}
+
+// Neue Funktionen und Verbesserungen hier
+
+</script>
+
+
+</body>
+</html>
+
+
