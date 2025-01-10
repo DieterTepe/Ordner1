@@ -1,0 +1,182 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreiecksberechnung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f8ff;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .input-field {
+            margin: 10px 0;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .results {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .drawing-container {
+            width: 100%;
+            height: 300px;
+            background-color: black;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        .scale-info {
+            color: white;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dreiecksberechnung</h1>
+        
+        <div class="input-group">
+            <h3>Eingabe 1:</h3>
+            <div class="radio-group">
+                <label><input type="radio" name="input1" value="a"> Seite a</label>
+                <label><input type="radio" name="input1" value="b"> Seite b</label>
+                <label><input type="radio" name="input1" value="c"> Seite c</label>
+                <label><input type="radio" name="input1" value="alpha"> Winkel α</label>
+                <label><input type="radio" name="input1" value="beta"> Winkel β</label>
+                <label><input type="radio" name="input1" value="gamma"> Winkel γ</label>
+            </div>
+            <div class="input-field">
+                <input type="number" id="value1" step="0.01" placeholder="Wert 1">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <h3>Eingabe 2:</h3>
+            <div class="radio-group">
+                <label><input type="radio" name="input2" value="a"> Seite a</label>
+                <label><input type="radio" name="input2" value="b"> Seite b</label>
+                <label><input type="radio" name="input2" value="c"> Seite c</label>
+                <label><input type="radio" name="input2" value="alpha"> Winkel α</label>
+                <label><input type="radio" name="input2" value="beta"> Winkel β</label>
+                <label><input type="radio" name="input2" value="gamma"> Winkel γ</label>
+            </div>
+            <div class="input-field">
+                <input type="number" id="value2" step="0.01" placeholder="Wert 2">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <h3>Eingabe 3:</h3>
+            <div class="radio-group">
+                <label><input type="radio" name="input3" value="a"> Seite a</label>
+                <label><input type="radio" name="input3" value="b"> Seite b</label>
+                <label><input type="radio" name="input3" value="c"> Seite c</label>
+                <label><input type="radio" name="input3" value="alpha"> Winkel α</label>
+                <label><input type="radio" name="input3" value="beta"> Winkel β</label>
+                <label><input type="radio" name="input3" value="gamma"> Winkel γ</label>
+            </div>
+            <div class="input-field">
+                <input type="number" id="value3" step="0.01" placeholder="Wert 3">
+            </div>
+        </div>
+
+        <button onclick="calculateTriangle()">Dreieck berechnen</button>
+
+        <div id="error" class="error"></div>
+
+        <div class="results" id="results">
+            <div class="result-grid">
+                <div class="result-item">Seite a: <span id="side-a">-</span></div>
+                <div class="result-item">Winkel α: <span id="angle-alpha">-</span>°</div>
+                <div class="result-item">Seite b: <span id="side-b">-</span></div>
+                <div class="result-item">Winkel β: <span id="angle-beta">-</span>°</div>
+                <div class="result-item">Seite c: <span id="side-c">-</span></div>
+                <div class="result-item">Winkel γ: <span id="angle-gamma">-</span>°</div>
+                <div class="result-item">Inkreis Ø: <span id="inradius">-</span></div>
+                <div class="result-item">Umkreis Ø: <span id="circumradius">-</span></div>
+                <div class="result-item">Höhe ha: <span id="height-a">-</span></div>
+                <div class="result-item">Höhe hb: <span id="height-b">-</span></div>
+                <div class="result-item">Höhe hc: <span id="height-c">-</span></div>
+            </div>
+        </div>
+
+        <div class="drawing-container" id="triangle-canvas">
+            <div class="scale-info" id="scale-info"></div>
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+ <script>
+ 
+</script>
+
+
+</body>
+</html>
