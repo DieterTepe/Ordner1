@@ -1,0 +1,582 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreiecksberechnung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f8ff;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .input-field {
+            margin: 10px 0;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .results {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .drawing-container {
+            width: 100%;
+            height: 600px;
+            background-color: black;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        .scale-info {
+            color: white;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dreiecksberechnung</h1>
+        
+        <div class="input-group">
+            <h3>Eingabe 1:</h3>
+            <div class="radio-group">
+                <label><input type="radio" name="input1" value="a"> Seite a</label>
+                <label><input type="radio" name="input1" value="b"> Seite b</label>
+                <label><input type="radio" name="input1" value="c"> Seite c</label>
+                <label><input type="radio" name="input1" value="alpha"> Winkel α</label>
+                <label><input type="radio" name="input1" value="beta"> Winkel β</label>
+                <label><input type="radio" name="input1" value="gamma"> Winkel γ</label>
+            </div>
+            <div class="input-field">
+                <input type="number" id="value1" step="0.01" placeholder="Wert 1">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <h3>Eingabe 2:</h3>
+            <div class="radio-group">
+                <label><input type="radio" name="input2" value="a"> Seite a</label>
+                <label><input type="radio" name="input2" value="b"> Seite b</label>
+                <label><input type="radio" name="input2" value="c"> Seite c</label>
+                <label><input type="radio" name="input2" value="alpha"> Winkel α</label>
+                <label><input type="radio" name="input2" value="beta"> Winkel β</label>
+                <label><input type="radio" name="input2" value="gamma"> Winkel γ</label>
+            </div>
+            <div class="input-field">
+                <input type="number" id="value2" step="0.01" placeholder="Wert 2">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <h3>Eingabe 3:</h3>
+            <div class="radio-group">
+                <label><input type="radio" name="input3" value="a"> Seite a</label>
+                <label><input type="radio" name="input3" value="b"> Seite b</label>
+                <label><input type="radio" name="input3" value="c"> Seite c</label>
+                <label><input type="radio" name="input3" value="alpha"> Winkel α</label>
+                <label><input type="radio" name="input3" value="beta"> Winkel β</label>
+                <label><input type="radio" name="input3" value="gamma"> Winkel γ</label>
+            </div>
+            <div class="input-field">
+                <input type="number" id="value3" step="0.01" placeholder="Wert 3">
+            </div>
+        </div>
+
+        <button onclick="calculateTriangle()">Dreieck berechnen</button>
+
+        <div id="error" class="error"></div>
+
+        <div class="results" id="results">
+            <div class="result-grid">
+                <div class="result-item">Seite a: <span id="side-a">-</span></div>
+                <div class="result-item">Winkel α: <span id="angle-alpha">-</span>°</div>
+                <div class="result-item">Seite b: <span id="side-b">-</span></div>
+                <div class="result-item">Winkel β: <span id="angle-beta">-</span>°</div>
+                <div class="result-item">Seite c: <span id="side-c">-</span></div>
+                <div class="result-item">Winkel γ: <span id="angle-gamma">-</span>°</div>
+                <div class="result-item">Inkreis Ø: <span id="inradius">-</span></div>
+                <div class="result-item">Umkreis Ø: <span id="circumradius">-</span></div>
+                <div class="result-item">Höhe ha: <span id="height-a">-</span></div>
+                <div class="result-item">Höhe hb: <span id="height-b">-</span></div>
+                <div class="result-item">Höhe hc: <span id="height-c">-</span></div>
+            </div>
+        </div>
+
+        <div class="drawing-container" id="triangle-canvas">
+            <div class="scale-info" id="scale-info"></div>
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+ <script>
+
+
+ function calculateTriangle() {
+    const errorElement = document.getElementById('error');
+    errorElement.textContent = '';
+
+    // 1. Eingaben sammeln und initialisieren
+    let values = {
+        a: null,
+        b: null,
+        c: null,
+        alpha: null,
+        beta: null,
+        gamma: null
+    };
+
+    // Radio-Button-Werte und zugehörige Werte auslesen
+    ['input1', 'input2', 'input3'].forEach((inputName, index) => {
+        const selected = document.querySelector(`input[name="${inputName}"]:checked`)?.value;
+        const value = parseFloat(document.getElementById(`value${index + 1}`).value);
+        
+        if (selected && !isNaN(value)) {
+            switch(selected) {
+                case 'a': values.a = value; break;
+                case 'b': values.b = value; break;
+                case 'c': values.c = value; break;
+                case 'alpha': values.alpha = value * Math.PI / 180; break;
+                case 'beta': values.beta = value * Math.PI / 180; break;
+                case 'gamma': values.gamma = value * Math.PI / 180; break;
+            }
+        }
+    });
+
+    // 2. Grundlegende Validierung
+    let validCount = Object.values(values).filter(v => v !== null).length;
+    if (validCount < 3) {
+        errorElement.textContent = 'Bitte geben Sie mindestens drei gültige Werte ein.';
+        return;
+    }
+
+    // 3. Direkte Berechnung des dritten Winkels, falls zwei Winkel bekannt sind
+    if (values.alpha && values.beta && !values.gamma) {
+        values.gamma = Math.PI - values.alpha - values.beta;
+    }
+    if (values.alpha && values.gamma && !values.beta) {
+        values.beta = Math.PI - values.alpha - values.gamma;
+    }
+    if (values.beta && values.gamma && !values.alpha) {
+        values.alpha = Math.PI - values.beta - values.gamma;
+    }
+
+    // 4. Iterative Berechnung aller Werte
+    let iterations = 0;
+    const MAX_ITERATIONS = 10;
+
+    while (!isTriangleComplete(values) && iterations < MAX_ITERATIONS) {
+        const prevValues = {...values};
+        
+        // 4.1 Winkelberechnungen (falls noch nicht durch die direkte Berechnung erledigt)
+        if (values.alpha && values.beta && !values.gamma) {
+            values.gamma = Math.PI - values.alpha - values.beta;
+        }
+        if (values.alpha && values.gamma && !values.beta) {
+            values.beta = Math.PI - values.alpha - values.gamma;
+        }
+        if (values.beta && values.gamma && !values.alpha) {
+            values.alpha = Math.PI - values.beta - values.gamma;
+        }
+
+        // 4.2 Sinussatz Anwendungen
+        if (values.a && values.alpha) {
+            if (values.beta && !values.b) {
+                values.b = values.a * Math.sin(values.beta) / Math.sin(values.alpha);
+            }
+            if (values.gamma && !values.c) {
+                values.c = values.a * Math.sin(values.gamma) / Math.sin(values.alpha);
+            }
+        }
+        if (values.b && values.beta) {
+            if (values.alpha && !values.a) {
+                values.a = values.b * Math.sin(values.alpha) / Math.sin(values.beta);
+            }
+            if (values.gamma && !values.c) {
+                values.c = values.b * Math.sin(values.gamma) / Math.sin(values.beta);
+            }
+        }
+        if (values.c && values.gamma) {
+            if (values.alpha && !values.a) {
+                values.a = values.c * Math.sin(values.alpha) / Math.sin(values.gamma);
+            }
+            if (values.beta && !values.b) {
+                values.b = values.c * Math.sin(values.beta) / Math.sin(values.gamma);
+            }
+        }
+
+        // 4.3 Kosinussatz Anwendungen
+        if (values.b && values.c && !values.a && values.alpha) {
+            values.a = Math.sqrt(values.b**2 + values.c**2 - 2*values.b*values.c*Math.cos(values.alpha));
+        }
+        if (values.a && values.c && !values.b && values.beta) {
+            values.b = Math.sqrt(values.a**2 + values.c**2 - 2*values.a*values.c*Math.cos(values.beta));
+        }
+        if (values.a && values.b && !values.c && values.gamma) {
+            values.c = Math.sqrt(values.a**2 + values.b**2 - 2*values.a*values.b*Math.cos(values.gamma));
+        }
+
+        // 4.4 Winkelberechnung mit Kosinussatz
+        if (values.a && values.b && values.c) {
+            if (!values.alpha) {
+                values.alpha = Math.acos((values.b**2 + values.c**2 - values.a**2)/(2*values.b*values.c));
+            }
+            if (!values.beta) {
+                values.beta = Math.acos((values.a**2 + values.c**2 - values.b**2)/(2*values.a*values.c));
+            }
+            if (!values.gamma) {
+                values.gamma = Math.acos((values.a**2 + values.b**2 - values.c**2)/(2*values.a*values.b));
+            }
+        }
+
+        // Prüfe auf Fortschritt
+        if (JSON.stringify(prevValues) === JSON.stringify(values)) {
+            break;
+        }
+
+        iterations++;
+    }
+
+    // 5. Validierung des berechneten Dreiecks
+    if (!validateTriangle(values)) {
+        errorElement.textContent = 'Die eingegebenen Werte ergeben kein gültiges Dreieck.';
+        return;
+    }
+
+    // 6. Zusätzliche Berechnungen
+    const s = (values.a + values.b + values.c) / 2; // Halbumfang
+    const area = Math.sqrt(s * (s - values.a) * (s - values.b) * (s - values.c));
+
+    // Höhen
+    const heights = {
+        ha: 2 * area / values.a,
+        hb: 2 * area / values.b,
+        hc: 2 * area / values.c
+    };
+
+    // Inkreis- und Umkreisradius
+    const inradius = area / s;
+    const circumradius = values.a * values.b * values.c / (4 * area);
+
+    // 7. Ergebnisse anzeigen
+    document.getElementById('side-a').textContent = values.a.toFixed(2);
+    document.getElementById('side-b').textContent = values.b.toFixed(2);
+    document.getElementById('side-c').textContent = values.c.toFixed(2);
+    document.getElementById('angle-alpha').textContent = (values.alpha * 180 / Math.PI).toFixed(2);
+    document.getElementById('angle-beta').textContent = (values.beta * 180 / Math.PI).toFixed(2);
+    document.getElementById('angle-gamma').textContent = (values.gamma * 180 / Math.PI).toFixed(2);
+    document.getElementById('height-a').textContent = heights.ha.toFixed(2);
+    document.getElementById('height-b').textContent = heights.hb.toFixed(2);
+    document.getElementById('height-c').textContent = heights.hc.toFixed(2);
+    document.getElementById('inradius').textContent = inradius.toFixed(2);
+    document.getElementById('circumradius').textContent = circumradius.toFixed(2);
+
+    // 8. Dreieck zeichnen
+    drawTriangle(values.a, values.b, values.c, values.alpha, values.beta, values.gamma, circumradius, inradius);
+}
+
+// Event-Listener für Bildschirmdrehung hinzufügen
+window.addEventListener('resize', () => {
+    // Boxhöhe neu berechnen und Dreieck neu zeichnen
+    calculateTriangle();
+});
+
+
+
+function isTriangleComplete(values) {
+    return values.a && values.b && values.c && 
+           values.alpha && values.beta && values.gamma;
+}
+
+function validateTriangle(values) {
+    // Winkelsumme prüfen
+    const angleSum = values.alpha + values.beta + values.gamma;
+    if (Math.abs(angleSum - Math.PI) > 0.001) return false;
+
+    // Dreiecksungleichung prüfen
+    if (values.a + values.b <= values.c) return false;
+    if (values.b + values.c <= values.a) return false;
+    if (values.a + values.c <= values.b) return false;
+
+    return true;
+}
+
+
+function calculateTriangleCoordinates(a, b, c, alpha, beta, gamma, scale, width, height) {
+    let Ax, Ay, Bx, By, Cx, Cy;
+    
+    // 1. Zuerst die Basis (immer horizontal)
+    Ax = -c * scale / 2;
+    Ay = 0;
+    Bx = c * scale / 2;
+    By = 0;
+
+    // 2. Punkt C berechnen
+    const h = b * Math.sin(alpha); // Höhe von C über AB
+    const dx = b * Math.cos(alpha); // x-Abstand von A zu C's Projektion auf AB
+    
+    Cx = Ax + dx * scale;
+    Cy = -h * scale;
+
+    // 3. Verbesserte Zentrierung
+    // Horizontale Zentrierung wie bisher
+    const minX = Math.min(Ax, Bx, Cx);
+    const maxX = Math.max(Ax, Bx, Cx);
+    const centerX = (minX + maxX) / 2;
+
+    // Neue vertikale Zentrierung
+    const minY = Math.min(Ay, By, Cy);
+    const maxY = Math.max(Ay, By, Cy);
+    const centerY = (minY + maxY) / 2;
+
+    // 4. Finale Positionen berechnen
+    const A_final = {
+        x: width/2 + (Ax - centerX),
+        y: height/2 + (Ay - centerY)
+    };
+    
+    const B_final = {
+        x: width/2 + (Bx - centerX),
+        y: height/2 + (By - centerY)
+    };
+    
+    const C_final = {
+        x: width/2 + (Cx - centerX),
+        y: height/2 + (Cy - centerY)
+    };
+
+     // Debug-Info
+//    document.body.insertAdjacentHTML('beforeend', `
+//        <div style="border: 1px solid blue; margin: 10px; padding: 10px;">
+//            <strong>Berechnete Koordinaten:</strong><br>
+//            A(${A_final.x.toFixed(1)}, ${A_final.y.toFixed(1)})<br>
+//            B(${B_final.x.toFixed(1)}, ${B_final.y.toFixed(1)})<br>
+//            C(${C_final.x.toFixed(1)}, ${C_final.y.toFixed(1)})<br>
+//            <br>
+//            <strong>Eingabewerte:</strong><br>
+//            Seiten: a=${a}, b=${b}, c=${c}<br>
+//            Winkel (rad): α=${alpha.toFixed(3)}, β=${beta.toFixed(3)}, γ=${gamma.toFixed(3)}<br>
+//            Winkel (grad): α=${(alpha*180/Math.PI).toFixed(1)}°, 
+ //                         β=${(beta*180/Math.PI).toFixed(1)}°, 
+//                          γ=${(gamma*180/Math.PI).toFixed(1)}°<br>
+//            Scale: ${scale}, Box: ${width}x${height}<br>
+//            Berechnete Höhe: ${h.toFixed(2)}, dx: ${dx.toFixed(2)}<br>
+//            Vertikaler Bereich: ${minY.toFixed(2)} bis ${maxY.toFixed(2)}
+//        </div>
+//    `);
+    
+    return { A: A_final, B: B_final, C: C_final };
+}
+
+
+function drawTriangle(a, b, c, alpha, beta, gamma, circumradius, inradius) {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('triangle-canvas');
+    const margin = 40;
+
+    // 1. Container-Größe und Skalierung (unverändert)
+    const width = container.clientWidth;
+    let height = container.clientHeight;
+    const maxSide = Math.max(a, b, c);
+    const triangleHeight = 2 * circumradius;
+    const scaleX = (width - 2 * margin) / maxSide;
+    const scaleY = (height - 2 * margin) / triangleHeight;
+    const scale = Math.min(scaleX, scaleY);
+    const requiredHeight = 2 * circumradius * scale + 2 * margin;
+    height = Math.max(height, requiredHeight);
+    container.style.height = `${height}px`;
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, width, height);
+
+    // 2. Koordinaten berechnen (Original-Logik)
+    const { A, B, C } = calculateTriangleCoordinates(
+        a, b, c, alpha, beta, gamma, 
+        scale, 
+        width, 
+        height
+    );
+
+    // 3. Realen Umkreismittelpunkt berechnen
+    const umkreisMittelpunkt = berechneUmkreismittelpunkt(A, B, C);
+
+// Nach berechneUmkreismittelpunkt()
+if (isNaN(umkreisMittelpunkt.x) || isNaN(umkreisMittelpunkt.y)) {
+    console.error("Umkreis-Berechnung fehlgeschlagen – degeneriertes Dreieck?");
+    return;
+}
+
+    // 4. Hilfsumkreis (zentriert, halbtransparent)
+    ctx.beginPath();
+    ctx.arc(width/2, height/2, circumradius * scale, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.2)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 5. Realen Umkreis (präzise, kräftiges Rot)
+    ctx.beginPath();
+    ctx.arc(umkreisMittelpunkt.x, umkreisMittelpunkt.y, circumradius * scale, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 6. Dreieck zeichnen (Original-Logik)
+    ctx.beginPath();
+    ctx.moveTo(A.x, A.y);
+    ctx.lineTo(B.x, B.y);
+    ctx.lineTo(C.x, C.y);
+    ctx.closePath();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 7. Inkreis (unverändert)
+    const incenter = {
+        x: (a * A.x + b * B.x + c * C.x) / (a + b + c),
+        y: (a * A.y + b * B.y + c * C.y) / (a + b + c)
+    };
+    ctx.beginPath();
+    ctx.arc(incenter.x, incenter.y, inradius * scale, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 8. Beschriftungen (Original-Logik)
+    ctx.font = '14px Arial';
+    ctx.fillStyle = 'yellow';
+    ctx.fillText(`α: ${(alpha * 180 / Math.PI).toFixed(1)}°`, A.x - (A.x > B.x ? 50 : -10), A.y + 5);
+    ctx.fillText(`β: ${(beta * 180 / Math.PI).toFixed(1)}°`, B.x + 10, B.y + (B.y < A.y ? -5 : 20));
+    ctx.fillText(`γ: ${(gamma * 180 / Math.PI).toFixed(1)}°`, C.x - 30, C.y - 10);
+    ctx.fillStyle = 'white';
+    const labelOffset = 15;
+    ctx.fillText(`a: ${a.toFixed(1)}`, (B.x + C.x)/2 + labelOffset, (B.y + C.y)/2);
+    ctx.fillText(`b: ${b.toFixed(1)}`, (A.x + C.x)/2 - labelOffset*2, (A.y + C.y)/2);
+    ctx.fillText(`c: ${c.toFixed(1)}`, (A.x + B.x)/2, (A.y + B.y)/2 + labelOffset);
+
+    // 9. Maßstab-Info (angepasst)
+    document.getElementById('scale-info').textContent = 
+        `Hilfsumkreis (blass) | Realer Umkreis (rot) | Maßstab: 1 ≈ ${(1/scale).toFixed(2)}px`;
+}
+
+
+// Neue Hilfsfunktion für Umkreismittelpunkt
+function berechneUmkreismittelpunkt(A, B, C) {
+    // Mittelsenkrechte AB
+    const mAB = { x: (A.x + B.x)/2, y: (A.y + B.y)/2 };
+    const deltaAB = { x: B.x - A.x, y: B.y - A.y };
+    const mABSteigung = deltaAB.y !== 0 ? -deltaAB.x / deltaAB.y : Infinity;
+    
+    // Mittelsenkrechte AC
+    const mAC = { x: (A.x + C.x)/2, y: (A.y + C.y)/2 };
+    const deltaAC = { x: C.x - A.x, y: C.y - A.y };
+    const mACSteigung = deltaAC.y !== 0 ? -deltaAC.x / deltaAC.y : Infinity;
+
+    // Schnittpunkt berechnen (Fallunterscheidung für senkrechte Linien)
+    if (Math.abs(mABSteigung) === Infinity && Math.abs(mACSteigung) !== Infinity) {
+        return { x: mAB.x, y: mACSteigung * (mAB.x - mAC.x) + mAC.y };
+    }
+    if (Math.abs(mACSteigung) === Infinity && Math.abs(mABSteigung) !== Infinity) {
+        return { x: mAC.x, y: mABSteigung * (mAC.x - mAB.x) + mAB.y };
+    }
+    
+    // Allgemeiner Fall
+    const ox = (mABSteigung*mAB.x - mACSteigung*mAC.x + mAC.y - mAB.y) / (mABSteigung - mACSteigung);
+    const oy = mABSteigung*(ox - mAB.x) + mAB.y;
+    
+    return { x: ox, y: oy };
+}
+
+
+function updateResults(values, heights, inradius, circumradius) {
+    document.getElementById('side-a').textContent = values.a.toFixed(2);
+    document.getElementById('side-b').textContent = values.b.toFixed(2);
+    document.getElementById('side-c').textContent = values.c.toFixed(2);
+    document.getElementById('angle-alpha').textContent = (values.alpha * 180 / Math.PI).toFixed(2);
+    document.getElementById('angle-beta').textContent = (values.beta * 180 / Math.PI).toFixed(2);
+    document.getElementById('angle-gamma').textContent = (values.gamma * 180 / Math.PI).toFixed(2);
+    document.getElementById('height-a').textContent = heights.ha.toFixed(2);
+    document.getElementById('height-b').textContent = heights.hb.toFixed(2);
+    document.getElementById('height-c').textContent = heights.hc.toFixed(2);
+    document.getElementById('inradius').textContent = inradius.toFixed(2);
+    document.getElementById('circumradius').textContent = circumradius.toFixed(2);
+}
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
