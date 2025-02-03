@@ -1,0 +1,887 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Skip-Bo Mobile</title>
+    <style>
+        /* BASIS-STYLING */
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1B5E20;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #status-label {
+            position: sticky;
+            top: 0;
+            background: #2E7D32;
+            padding: 10px;
+            text-align: center;
+            font-size: 1rem;
+            z-index: 1000;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .game-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .opponent-area {
+            flex: 0 0 22%;
+            padding: 10px;
+            margin-bottom: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .build-area {
+            flex: 1;
+            margin: 5px 0;
+            padding: 0 10px;
+            border-top: 15px solid transparent;
+        }
+        .human-area {
+            flex: 0 0 22%;
+            padding: 10px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .main-piles, .hand {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            height: 15vh;
+        }
+        /* KARTENSTYLING */
+        .field {
+            background: rgba(255,255,255,0.1);
+            border: 2px dashed #fff;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .card {
+            border: 2px solid #000 !important;
+            border-radius: 8px;
+            aspect-ratio: 2/3;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px;
+            position: relative;
+        }
+        .card.backface {
+            background: lightgreen !important; /* Hellgrüner Hintergrund für alle Rückseiten */
+            animation: card-glow 2s ease-in-out infinite alternate;
+        }
+        .card.backface::before {
+            content: "SKIP-BO";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: rgba(255,255,255,0.8);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 2px;
+        }
+        .card-corner {
+            position: absolute;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .card-corner.top-left { top: 5px; left: 5px; }
+        .card-corner.top-right { top: 5px; right: 5px; }
+        .card-corner.bottom-left {
+            bottom: 5px;
+            left: 5px;
+            transform: rotate(180deg);
+        }
+        .card-corner.bottom-right {
+            bottom: 5px;
+            right: 5px;
+            transform: rotate(180deg);
+        }
+
+
+.card-middle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+
+.field.card {
+    width: 100%; /* Sorgt dafür, dass die Karten die gleiche Breite wie Handkarten haben */
+    aspect-ratio: 2/3; /* Standard-Kartenverhältnis */
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    position: relative;
+}
+
+/* Stellt sicher, dass die Karten im Stock- und Nachziehstapel dieselbe Größe wie Handkarten haben */
+.human-area .field.stock .card,
+.opponent-area .field.stock .card,
+.build-area .field.draw-pile .card {
+    width: 100%;
+    height: 100%;
+}
+
+
+        /* Kartenfarben */
+        .card:not(.backface)[data-value="1"], .card:not(.backface)[data-value="2"],
+        .card:not(.backface)[data-value="3"], .card:not(.backface)[data-value="4"] {
+            background: #2196F3 !important;
+        }
+        .card:not(.backface)[data-value="5"], .card:not(.backface)[data-value="6"],
+        .card:not(.backface)[data-value="7"], .card:not(.backface)[data-value="8"] {
+            background: #4CAF50 !important;
+        }
+        .card:not(.backface)[data-value="9"], .card:not(.backface)[data-value="10"],
+        .card:not(.backface)[data-value="11"], .card:not(.backface)[data-value="12"] {
+            background: #f44336 !important;
+        }
+        .card:not(.backface)[data-type="joker"] {
+            background: gold !important;
+            color: #000;
+        }
+        @keyframes card-glow {
+            from { box-shadow: 0 0 5px #1565C0; }
+            to { box-shadow: 0 0 15px #0D47A1; }
+        }
+        /* LABEL-STILE */
+        .field::after {
+            content: attr(data-label);
+            position: absolute;
+            bottom: 4px;
+            left: 2px;
+            right: 2px;
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            padding: 2px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 3px;
+        }
+
+
+.field.card.selected {
+    box-shadow: 0 0 15px #FFD700;
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+.field.card {
+    transition: all 0.3s ease;
+    touch-action: manipulation; /* Verbessert Touch-Handling */
+}
+
+.joker-number {
+    position: absolute;
+    top: 5px;  /* Statt bottom: 40% */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8em;
+    color: black;
+    background-color: rgba(255, 255, 255, 0.8); /* Optional: für bessere Lesbarkeit */
+    padding: 1px 3px; /* Optional: etwas Abstand um die Zahl */
+    border-radius: 2px; /* Optional: leicht abgerundete Ecken */
+}
+
+    </style>
+</head>
+<body>
+    <div id="status-label">🎮 Spielstart: Karten werden gemischt...</div>
+    
+    <div class="game-container">
+        <!-- GEGNER -->
+        <section class="opponent-area">
+            <div class="main-piles">
+                <div class="field stock" data-label="🗃️ Gegner Stock (20)"></div>
+                <div class="field" data-label="🗑️ Ablage 1"></div>
+                <div class="field" data-label="🗑️ Ablage 2"></div>
+                <div class="field" data-label="🗑️ Ablage 3"></div>
+                <div class="field" data-label="🗑️ Ablage 4"></div>
+            </div>
+            <div class="hand" id="opponentHand"></div>
+        </section>
+        <!-- MITTE -->
+        <section class="build-area">
+            <div class="main-piles">
+                <div class="field draw-pile" data-label="🃏 Nachzieh- stapel"></div>
+                <div class="field build-pile" data-label="▲ Bau 1 (1)"></div>
+                <div class="field build-pile" data-label="▲ Bau 2 (1)"></div>
+                <div class="field build-pile" data-label="▲ Bau 3 (1)"></div>
+                <div class="field build-pile" data-label="▲ Bau 4 (1)"></div>
+            </div>
+        </section>
+        <!-- SPIELER -->
+        <section class="human-area">
+            <div class="main-piles">
+                <div class="field" data-label="🗑️ Ablage 1"></div>
+                <div class="field" data-label="🗑️ Ablage 2"></div>
+                <div class="field" data-label="🗑️ Ablage 3"></div>
+                <div class="field" data-label="🗑️ Ablage 4"></div>
+                <div class="field stock" data-label=" Fatima Stock (20)"></div>
+            </div>
+            <div class="hand" id="playerHand"></div>
+        </section>
+    </div>
+
+<script>
+/*
+SKIP-BO MOBILE - VOLLSTÄNDIGE REGELN UND IMPLEMENTIERUNG
+Version 1.1
+
+Kernfunktionen:
+- Einheitliche Kartenrückseiten für alle verdeckten Karten
+- Professionelles Kartenlayout mit 4 Wertanzeigen
+- Farbcodierung nach Zahlenbereichen
+- Responsive Mobile-Optimierung
+- Klare Spielregeldokumentation
+
+KARTENMENGEN:
+- Es gibt insgesamt 
+  - 144 Zahlenkarten (12 Stapel à 12 Karten pro Zahl)
+  - 12 Jokerkarten
+- Jeder Spieler erhält:
+  - 5 Startkarten in der Hand.
+  -  Die Handkarten zeigen beim Gegner die Rückseite.
+  -  Die  Handkarten zeigen beim mir die Vorderseite. 
+  - 20 Karten im Stockstapel, sie zeigen immer die Vorderseite. 
+  - Nachziehstapel zeigt oberste Karte mit der Rückseite an.
+  - Stockstapel zeigen immer die oberste Karte mit der Vorderseite an.
+  - Oberste Karten sind nicht transparent und auswählbar.
+  - Anzahl der Karten pro Stapel wird dynamisch über den Feldern angezeigt.
+  - Der Rest der Karten wird in den Nachziehstapel gelegt.
+  - Alle Karten vom Nachziehstapel liegen mit der Rückseite nach oben übereinander.
+  - Alle Karten vom Stockstapel liegen mit der Vorderseite nach oben übereinander.
+*/
+
+// Globale Variablen für die Kartenauswahl
+let selectedCard = null;
+let selectedSource = null;
+let selectedIndex = null;
+
+// Globale Game-Struktur
+const Game = {
+    deck: [], // Das vollständige Kartendeck
+    players: {
+        human: { hand: [], stock: [], discards: [[], [], [], []] }, // Menschlicher Spieler
+        ai: { hand: [], stock: [], discards: [[], [], [], []] }     // KI-Spieler
+    },
+    buildPiles: [[], [], [], []], // Die vier Baukartenstapel
+    drawPile: [] // Der Nachziehstapel
+};
+
+// Funktion zur Initialisierung des Spiels
+function initGame() {
+    // Kartendeck erstellen
+    for (let s = 0; s < 12; s++) { // 12 Stapel
+        for (let n = 1; n <= 12; n++) { // Jede Zahl von 1 bis 12
+            Game.deck.push({ type: 'number', value: n });
+        }
+    }
+    for (let j = 0; j < 12; j++) { // 12 Jokerkarten
+        Game.deck.push({ type: 'joker', value: '★' });
+    }
+
+    // Karten mischen
+    for (let i = Game.deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [Game.deck[i], Game.deck[j]] = [Game.deck[j], Game.deck[i]];
+    }
+
+    // Karten verteilen
+    // Jeder Spieler erhält 5 Startkarten in die Hand
+    Game.players.human.hand = Game.deck.splice(0, 5);
+    Game.players.ai.hand = Game.deck.splice(0, 5);
+
+    // Jeder Spieler erhält 20 Karten in seinen Stockstapel
+    Game.players.human.stock = Game.deck.splice(0, 20);
+    Game.players.ai.stock = Game.deck.splice(0, 20);
+
+    // Der Rest der Karten geht in den Nachziehstapel
+    Game.drawPile = Game.deck;
+
+    // Initialisieren der faceUp Eigenschaft für jede Karte
+    Game.players.human.hand.forEach(card => card.faceUp = true); // Menschliche Hand ist sichtbar
+    Game.players.ai.hand.forEach(card => card.faceUp = false);  // KI-Hand ist verdeckt
+
+    // Ansicht aktualisieren
+    updateView();
+showMessage('Spiel initialisiert. Du bist am Zug!');
+}
+
+// Update-Funktion, um die Ansicht zu aktualisieren
+function updateView() {
+    updateHand('human', document.getElementById('playerHand'));
+    updateHand('ai', document.getElementById('opponentHand'));
+    updateStock('human', document.querySelector('.human-area .field.stock'));
+    updateStock('ai', document.querySelector('.opponent-area .field.stock'));
+    updateDrawPile(document.querySelector('.build-area .field.draw-pile'));
+    updateBuildPiles();
+    updateDiscardPiles();
+}
+
+// Touch-Event Handler hinzufügen
+// Verbesserte Setup-Funktion
+// Verbesserte setupTouchEvents Funktion
+function setupTouchEvents() {
+    // Alte Event-Listener entfernen
+    document.querySelectorAll('.field.card, .build-pile, [data-label*="Ablage"]').forEach(element => {
+        element.removeEventListener('touchstart', handleCardSelect);
+        element.removeEventListener('touchstart', handleCardPlace);
+        element.removeEventListener('click', handleCardSelect);
+        element.removeEventListener('click', handleCardPlace);
+    });
+    
+    // Neue Event-Listener hinzufügen
+    document.querySelectorAll('.field.card').forEach(card => {
+        card.addEventListener('touchstart', handleCardSelect);
+        card.addEventListener('click', handleCardSelect);
+    });
+
+    // Event-Listener für Baustapel verbessert
+    document.querySelectorAll('.build-pile, .build-pile .card').forEach(target => {
+        target.addEventListener('touchstart', handleCardPlace);
+        target.addEventListener('click', handleCardPlace);
+    });
+
+    // Event-Listener für Ablagestapel
+    document.querySelectorAll('[data-label*="Ablage"]').forEach(target => {
+        target.addEventListener('touchstart', handleCardPlace);
+        target.addEventListener('click', handleCardPlace);
+    });
+}
+
+
+// Verbesserte Funktion zum Auswählen einer Karte
+function handleCardSelect(event) {
+    event.preventDefault();
+    
+    // Vorherige Auswahl entfernen
+    document.querySelectorAll('.selected').forEach(el => 
+        el.classList.remove('selected'));
+    
+    const card = event.target.closest('.field.card');
+    if (!card) return;
+    
+    // Neue Auswahl markieren
+    card.classList.add('selected');
+    
+    // Karteninformationen speichern
+    selectedCard = {
+        value: parseInt(card.dataset.value) || card.dataset.value,
+        type: card.dataset.type
+    };
+    
+    selectedSource = getSourceType(card);
+    selectedIndex = getSourceIndex(card);
+    
+    showMessage('Karte ausgewählt - wählen Sie ein Zielfeld');
+}
+
+
+// Funktion zum Ablegen einer Karte
+// Verbesserte Funktion zum Ablegen einer Karte
+// Verbesserte handleCardPlace Funktion
+// Verbesserte handleCardPlace Funktion mit korrekter Regel für neue Handkarten
+function handleCardPlace(event) {
+    event.preventDefault();
+    
+    if (!selectedCard) {
+        showMessage('Bitte zuerst eine Karte auswählen');
+        return;
+    }
+    
+    const target = event.target.closest('.build-pile') || 
+                  event.target.closest('[data-label*="Ablage"]');
+    if (!target) return;
+    
+    let success = false;
+    const wasLastHandCard = selectedSource === 'hand' && Game.players.human.hand.length === 1;
+    
+    if (target.classList.contains('build-pile') || target.closest('.build-pile')) {
+        const buildPiles = document.querySelectorAll('.build-pile');
+        const buildPileIndex = Array.from(buildPiles).indexOf(
+            target.classList.contains('build-pile') ? target : target.closest('.build-pile')
+        );
+        
+        if (handleBuildPileDrop('human', selectedSource, selectedIndex, buildPileIndex)) {
+            success = true;
+            showMessage('Karte erfolgreich auf Baustapel gelegt');
+            
+            // Nur neue Karten ziehen, wenn die letzte Handkarte auf einen Baustapel gelegt wurde
+            if (wasLastHandCard) {
+                drawNewHand();
+            }
+        } else {
+            showMessage('Dieser Zug ist nicht erlaubt');
+        }
+    } else if (target.matches('[data-label*="Ablage"]')) {
+        const discardPiles = document.querySelectorAll('.human-area [data-label*="Ablage"]');
+        const discardPileIndex = Array.from(discardPiles).indexOf(target);
+        
+        if (handleDiscardPileDrop('human', selectedSource, selectedIndex, discardPileIndex)) {
+            success = true;
+            showMessage('Karte auf Ablagestapel gelegt');
+            // Keine neuen Karten beim Ablegen auf Ablagestapel
+        }
+    }
+    
+    if (success) {
+        selectedCard = null;
+        selectedSource = null;
+        selectedIndex = null;
+        
+        document.querySelectorAll('.selected').forEach(el => 
+            el.classList.remove('selected'));
+        
+        updateView();
+        setupTouchEvents();
+    }
+}
+
+
+// Neue Funktion zum Ziehen neuer Handkarten
+function drawNewHand() {
+    // Ziehe 5 neue Karten vom Nachziehstapel
+    for (let i = 0; i < 5; i++) {
+        if (Game.drawPile.length > 0) {
+            const card = Game.drawPile.pop();
+            card.faceUp = true; // Karte aufgedeckt für den menschlichen Spieler
+            Game.players.human.hand.push(card);
+        }
+    }
+    showMessage('5 neue Handkarten gezogen');
+}
+
+
+function setupDragAndDrop() {
+    const cardElements = document.querySelectorAll('.field.card');
+    cardElements.forEach(card => {
+        card.draggable = true;
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('drop', handleDrop);
+    });
+
+    const dropZones = document.querySelectorAll('.field');
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('drop', handleDrop);
+    });
+}
+
+function handleDragStart(event) {
+    const card = event.target;
+    const sourceType = getSourceType(card);
+    const sourceIndex = getSourceIndex(card);
+    
+    event.dataTransfer.setData('text/plain', card.dataset.value);
+    event.dataTransfer.setData('source-type', sourceType);
+    event.dataTransfer.setData('source-index', sourceIndex);
+    event.dataTransfer.setData('player', 'human'); // Momentan nur für menschlichen Spieler
+}
+
+
+function handleDragOver(event) {
+    event.preventDefault();
+}
+
+// Verbesserte Funktion zum Erkennen der Kartenquelle
+function getSourceType(element) {
+    if (element.closest('.hand')) return 'hand';
+    if (element.closest('.stock')) return 'stock';
+    if (element.closest('[data-label*="Ablage"]')) return 'discard';
+    return null;
+}
+
+// Verbesserte getSourceIndex Funktion
+function getSourceIndex(element) {
+    if (element.closest('.hand')) {
+        return Array.from(element.parentElement.children).indexOf(element);
+    }
+    if (element.closest('[data-label*="Ablage"]')) {
+        // Korrigierte Indizierung für Ablagestapel
+        const discardPiles = document.querySelectorAll('.human-area [data-label*="Ablage"]');
+        return Array.from(discardPiles).indexOf(element.closest('[data-label*="Ablage"]'));
+    }
+    return 0; // Für Stock
+}
+
+
+// Erweiterte Version von handleDrop
+function handleDrop(event) {
+    event.preventDefault();
+    const cardValue = event.dataTransfer.getData('text/plain');
+    const sourceType = event.dataTransfer.getData('source-type'); // new
+    const sourceIndex = event.dataTransfer.getData('source-index');
+    const player = event.dataTransfer.getData('player');
+    const dropZone = event.target.closest('.field'); // Verbesserte Zielerkennung
+
+    if (!dropZone) return;
+
+    if (dropZone.classList.contains('build-pile')) {
+        const buildPileIndex = Array.from(dropZone.parentElement.children).indexOf(dropZone);
+        handleBuildPileDrop(player, sourceType, sourceIndex, buildPileIndex);
+    } else if (dropZone.classList.contains('discard-pile')) {
+        const discardPileIndex = Array.from(dropZone.parentElement.children).indexOf(dropZone);
+        handleDiscardPileDrop(player, sourceType, sourceIndex, discardPileIndex);
+    }
+}
+
+
+function getJokerValue(buildPile, jokerPosition) {
+    // Wenn Joker erste Karte ist, repräsentiert er eine 1
+    if (jokerPosition === 0) return 1;
+    
+    // Sonst ist der Wert die Position + 1 oder der Wert der vorherigen Karte + 1
+    const previousCard = buildPile[jokerPosition - 1];
+    if (previousCard.type === 'joker') {
+        return jokerPosition + 1;
+    } else {
+        return parseInt(previousCard.value) + 1;
+    }
+}
+
+
+
+
+// Erweiterte Version von handleBuildPileDrop
+// Verbesserte handleBuildPileDrop Funktion
+// Verbesserte handleBuildPileDrop Funktion
+function handleBuildPileDrop(player, sourceType, sourceIndex, buildPileIndex) {
+    let card;
+    let sourceArray;
+
+    // Bestimme die Quelle der Karte
+    switch (sourceType) {
+        case 'hand':
+            sourceArray = Game.players[player].hand;
+            card = sourceArray[sourceIndex];
+            break;
+        case 'stock':
+            sourceArray = Game.players[player].stock;
+            card = sourceArray[sourceArray.length - 1];
+            break;
+        case 'discard':
+            // Korrigierte Behandlung von Ablagestapeln
+            sourceArray = Game.players[player].discards[sourceIndex];
+            if (sourceArray && sourceArray.length > 0) {
+                card = sourceArray[sourceArray.length - 1];
+            }
+            break;
+        default:
+            return false;
+    }
+
+    // Prüfe ob die Karte existiert
+    if (!card) {
+        return false;
+    }
+
+    // Prüfe ob der Zug erlaubt ist
+    if (isValidBuildMove(card, buildPileIndex)) {
+        // Führe den Zug aus
+        Game.buildPiles[buildPileIndex].push(card);
+        
+        // Entferne die Karte von der Quelle
+        if (sourceType === 'hand') {
+            sourceArray.splice(sourceIndex, 1);
+        } else {
+            // Für Stock und Discard immer die oberste Karte entfernen
+            sourceArray.pop();
+        }
+        
+        // Prüfe ob der Stapel voll ist
+        if (isBuildPileComplete(buildPileIndex)) {
+            clearBuildPile(buildPileIndex);
+        }
+        
+        return true;
+    }
+    return false;
+}
+
+
+// Verbesserte handleDiscardPileDrop Funktion
+function handleDiscardPileDrop(player, sourceType, sourceIndex, discardPileIndex) {
+    let card;
+    let sourceArray;
+
+    switch (sourceType) {
+        case 'hand':
+            sourceArray = Game.players[player].hand;
+            card = sourceArray[sourceIndex];
+            break;
+        case 'stock':
+            sourceArray = Game.players[player].stock;
+            card = sourceArray[sourceArray.length - 1];
+            break;
+        default:
+            return false;
+    }
+    
+    if (card) {
+        // Stelle sicher, dass das Discards-Array initialisiert ist
+        if (!Game.players[player].discards[discardPileIndex]) {
+            Game.players[player].discards[discardPileIndex] = [];
+        }
+        
+        // Füge die Karte zum Ablagestapel hinzu
+        Game.players[player].discards[discardPileIndex].push(card);
+        
+        // Entferne die Karte von der Quelle
+        if (sourceType === 'hand') {
+            sourceArray.splice(sourceIndex, 1);
+        } else {
+            sourceArray.pop();
+        }
+        
+        return true;
+    }
+    
+    return false;
+}
+
+
+
+function handleHandDrop(player, cardIndex, dropZone) {
+    // Logik zum Ablegen der Karte in die Hand (falls erforderlich)
+}
+
+function switchPlayer() {
+    // Logik zum Wechseln des Spielers
+}
+
+// Funktion zum Ziehen einer Karte vom Nachziehstapel, wenn weniger als 5 Karten in der Hand sind
+function drawCard(player) {
+    if (Game.players[player].hand.length < 5 && Game.drawPile.length > 0) {
+        const card = Game.drawPile.pop();
+        card.faceUp = true;
+        Game.players[player].hand.push(card);
+        updateView();
+    }
+}
+
+// Funktion zur Aktualisierung der Bauplätze
+// Verbesserte updateBuildPiles Funktion für bessere Klick-Erkennung
+function updateBuildPiles() {
+    const buildPiles = document.querySelectorAll('.build-pile');
+    buildPiles.forEach((pile, index) => {
+        const cards = Game.buildPiles[index];
+        if (cards.length > 0) {
+            const topCard = cards[cards.length - 1];
+           if (topCard.type === 'joker') {
+    const jokerValue = getJokerValue(cards, cards.length - 1);
+    pile.innerHTML = `
+        <div class="field card" 
+             data-type="joker" 
+             data-value="joker"
+             data-pile-index="${index}">
+            <div class="card-corner top-left">★</div>
+            <div class="joker-number">${jokerValue}</div>  <!-- Verschoben nach oben -->
+            <div class="card-corner top-right">★</div>
+            <div class="card-middle">★</div>
+            <div class="card-corner bottom-left">★</div>
+            <div class="card-corner bottom-right">★</div>
+        </div>
+    `;
+            } else {
+                pile.innerHTML = `
+                    <div class="field card" 
+                         data-type="${topCard.type}" 
+                         data-value="${topCard.value}"
+                         data-pile-index="${index}">
+                        <div class="card-corner top-left">${topCard.value}</div>
+                        <div class="card-corner top-right">${topCard.value}</div>
+                        <div class="card-middle">${topCard.value}</div>
+                        <div class="card-corner bottom-left">${topCard.value}</div>
+                        <div class="card-corner bottom-right">${topCard.value}</div>
+                    </div>
+                `;
+            }
+        } else {
+            pile.innerHTML = `<div class="field" data-pile-index="${index}">Leer</div>`;
+        }
+    });
+}
+
+
+// Funktion zur Aktualisierung der Ablagestapel
+// Verbesserte updateDiscardPiles Funktion
+function updateDiscardPiles() {
+    // Update Spieler-Ablagestapel
+    const playerDiscardPiles = document.querySelectorAll('.human-area [data-label*="Ablage"]');
+    playerDiscardPiles.forEach((pile, index) => {
+        const cards = Game.players.human.discards[index];
+        if (cards && cards.length > 0) {
+            const topCard = cards[cards.length - 1];
+            pile.innerHTML = `
+                <div class="field card" data-type="${topCard.type}" data-value="${topCard.value}">
+                    <div class="card-corner top-left">${topCard.value}</div>
+                    <div class="card-corner top-right">${topCard.value}</div>
+                    <div class="card-middle">${topCard.value}</div>
+                    <div class="card-corner bottom-left">${topCard.value}</div>
+                    <div class="card-corner bottom-right">${topCard.value}</div>
+                </div>
+            `;
+        } else {
+            pile.innerHTML = '<div class="field">Leer</div>';
+        }
+    });
+}
+
+
+
+// Funktion zur Aktualisierung der Hand eines Spielers
+function updateHand(player, container) {
+    container.innerHTML = Game.players[player].hand.map((card) => `
+        <div class="field card ${card.faceUp ? '' : 'backface'}" 
+             data-type="${card.type}" 
+             data-value="${card.value}">
+            ${card.faceUp && player === 'human' ? `
+                <div class="card-corner top-left">${card.value}</div>
+                <div class="card-corner top-right">${card.value}</div>
+                <div class="card-middle">${card.value}</div> <!-- Große Zahl in der Mitte -->
+                <div class="card-corner bottom-left">${card.value}</div>
+                <div class="card-corner bottom-right">${card.value}</div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+
+// Funktion zur Aktualisierung des Stockstapels
+function updateStock(player, container) {
+    const stock = Game.players[player].stock;
+    if (stock.length > 0) {
+        const topCard = stock[stock.length - 1];
+        container.innerHTML = `
+            <div class="field card" data-type="${topCard.type}" data-value="${topCard.value}">
+                <div class="card-corner top-left">${topCard.value}</div>
+                <div class="card-corner top-right">${topCard.value}</div>
+                <div class="card-middle">${topCard.value}</div>
+                <div class="card-corner bottom-left">${topCard.value}</div>
+                <div class="card-corner bottom-right">${topCard.value}</div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = '<div class="field">🗃️ Leer</div>';
+    }
+}
+
+
+// Funktion zur Aktualisierung des Nachziehstapels
+function updateDrawPile(container) {
+    if (Game.drawPile.length > 0) {
+        container.innerHTML = `
+            <div class="field card backface"></div>
+        `;
+    } else {
+        container.innerHTML = '<div class="field">🃏 Leer</div>';
+    }
+}
+
+// Funktion zur Änderung des Zustands einer Karte (ob sie mit der Vorder- oder Rückseite nach oben liegt)
+function toggleCardFace(cardIndex, player) {
+    if (Game.players[player].hand[cardIndex]) {
+        Game.players[player].hand[cardIndex].faceUp = !Game.players[player].hand[cardIndex].faceUp;
+    }
+    updateView();
+}
+
+
+        // Funktion zum Anzeigen von Nachrichten im Statuslabel
+        function showMessage(message) {
+            const statusLabel = document.getElementById('status-label');
+            statusLabel.textContent = message;
+    //        setTimeout(() => statusLabel.textContent = '', 3000); // Nachricht nach 3 Sekunden entfernen
+        }
+
+
+// Initialisierung des Spiels
+// Ersetzen Sie setupDragAndDrop() durch:
+document.addEventListener('DOMContentLoaded', () => {
+    initGame();
+    setupTouchEvents();
+});
+
+
+// Prüft, ob eine Karte legal auf einen Baustapel gelegt werden kann
+// Verbesserte Prüfung für legale Züge
+// Verbesserte isValidBuildMove Funktion
+function isValidBuildMove(card, buildPileIndex) {
+    const buildPile = Game.buildPiles[buildPileIndex];
+    
+    // Wenn Stapel leer, nur 1 oder Joker erlaubt
+    if (buildPile.length === 0) {
+        return card.type === 'joker' || parseInt(card.value) === 1;
+    }
+    
+    const topCard = buildPile[buildPile.length - 1];
+    const topValue = topCard.type === 'joker' ? 
+        buildPile.length : parseInt(topCard.value);
+    const cardValue = parseInt(card.value);
+    
+    // Joker ist immer erlaubt, ansonsten muss es die nächste Zahl sein
+    return card.type === 'joker' || cardValue === (topValue + 1);
+}
+
+
+// Prüft ob ein Baustapel voll ist (12 oder Joker als 12)
+function isBuildPileComplete(buildPileIndex) {
+    const buildPile = Game.buildPiles[buildPileIndex];
+    if (buildPile.length === 0) return false;
+    
+    const topCard = buildPile[buildPile.length - 1];
+    return topCard.value === 12 || (topCard.type === 'joker' && buildPile.length === 12);
+}
+
+// Leert einen vollen Baustapel und mischt die Karten in den Nachziehstapel
+function clearBuildPile(buildPileIndex) {
+    if (isBuildPileComplete(buildPileIndex)) {
+        const clearedCards = Game.buildPiles[buildPileIndex];
+        Game.buildPiles[buildPileIndex] = [];
+        
+        // Karten in den Nachziehstapel mischen
+        Game.drawPile = Game.drawPile.concat(clearedCards);
+        shuffleDrawPile();
+    }
+}
+
+// Mischt den Nachziehstapel
+function shuffleDrawPile() {
+    for (let i = Game.drawPile.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [Game.drawPile[i], Game.drawPile[j]] = [Game.drawPile[j], Game.drawPile[i]];
+    }
+}
+
+
+</script>
+
+</body>
+</html>
+
+
