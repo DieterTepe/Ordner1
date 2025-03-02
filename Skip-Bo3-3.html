@@ -2,7 +2,11 @@
 
 <!--
 Skip-Bo Mobile Version 3.3 
-  - Erweiterung neue Logik Erweiterung 
+  - Erweiterung neue Logik Erweiterung mit Protokoll 
+  - Erweiterung durch eine Spielauswertung mit Hilfe der
+    besten Ki von Grok dem besten Progamierer Versuch die 
+    Spiele Ki zu optimieren. 
+
 
 Code Informationen:
 
@@ -529,6 +533,7 @@ let playerName = 'Spieler';
 
 
 let spielGeschwindigkeit = 4; // Standardwert (mittel)
+let currentGameId = Date.now(); // Einzigartige ID für jedes Spiel
 
 // Alternativen für verschiedene Geschwindigkeiten
 const GESCHWINDIGKEIT = {
@@ -1236,6 +1241,15 @@ function handleBuildPileDrop(player, sourceType, sourceIndex, buildPileIndex) {
 
 
 // Funktion handleDiscardPileDrop
+
+// 
+// Funktion zum Ablegen einer Karte auf einen Ablagestapel
+// Verarbeitet das Ablegen für menschliche Spieler und KI
+// Neu: Beobachtung für Gegnerblockaden speichern, wenn der menschliche Spieler legt
+// Anpassbar: 
+// - Nachrichtentexte können geändert werden (z. B. mehr Details hinzufügen)
+// - Beobachtungsdaten können erweitert werden (z. B. Ablagestapel-Index speichern)
+//
 function handleDiscardPileDrop(player, sourceType, sourceIndex, discardPileIndex) {
     let card;
     let sourceArray;
@@ -1268,12 +1282,28 @@ function handleDiscardPileDrop(player, sourceType, sourceIndex, discardPileIndex
             sourceArray.pop();
         }
         
+        // 
+        // Neu: Beobachtung speichern, wenn der menschliche Spieler legt
+        // Dies hilft zu tracken, ob der Gegner die KI blockiert
+        // Anpassbar: Füge weitere Daten hinzu, z. B. discardPileIndex, wenn du Ablagestapel analysieren willst
+        //
+        if (player === 'human') {
+            trackGameObservations('opponentDiscard', { cardValue: card.value });
+        }
+        
         return true;
     }
     
     showMessage(`${player === 'human' ? 'Du' : 'KI'} konnte keine Karte ablegen.`);
     return false;
 }
+
+
+
+
+
+
+
 
 
 // Funktion zur Nachziehung von Karten bis zu 5 Karten in der Hand
@@ -1371,7 +1401,12 @@ function evaluateMoveCandidates(player) {
             score = 20;
         }
 
-        // Joker-Strategie angepasst
+        // 
+        // Joker-Strategie angepasst mit Vorausschau
+        // Wenn es ein Joker ist und kein Stockzug, berechnen wir den Zukunftswert
+        // Zukunftswert = Wie viele Stockkarten könnten später durch diesen Joker gespielt werden?
+        // Gewichtung kann hier angepasst werden (z. B. * 2 auf * 3 erhöhen für mehr Stockfokus)
+        //
         if (card.type === 'joker' && sourceType !== 'stock') { // Joker nur für Nicht-Stock
             const gap = calculateGapSize(Game.buildPiles[buildPileIndex], card);
             score += gap * 5;
@@ -1386,11 +1421,20 @@ function evaluateMoveCandidates(player) {
             if (pileValue < 6) {
                 score -= 100; // Starke Strafe, um Joker für höhere Werte zu sparen
             }
+            // 
+            // Neuer Zukunftswert für Joker
+            // Kann angepasst werden: Ändere Gewichtung (z. B. von * 2 auf * 1 oder * 3) oder Tiefe in calculateJokerFutureValue
+            //
+            const futureValue = calculateJokerFutureValue(card, buildPileIndex);
+            score += futureValue * 2; // Gewichtung für langfristigen Nutzen
         } else if (sourceType !== 'stock') {
             score += (12 - card.value) * 2; // Höhere Karten bevorzugen (nur Nicht-Stock)
         }
 
+        // 
         // Ablagestapel-Sequenzbonus (nur für Handkarten)
+        // Bonus kann angepasst werden: z. B. 15 auf 20 erhöhen, um Sequenzen stärker zu fördern
+        //
         if (sourceType === 'hand') {
             let maxDiscardBonus = 0;
             for (let i = 0; i < 4; i++) {
@@ -1415,8 +1459,11 @@ function evaluateMoveCandidates(player) {
         });
     }
 
-    // Neu: Zweiphasige Kandidatensuche
-    // Phase 1: Nur Stockkarten prüfen
+    // 
+    // Zweiphasige Kandidatensuche
+    // Phase 1: Nur Stockkarten prüfen – absolute Priorität
+    // Keine Anpassung nötig, bleibt wie ist
+    //
     if (Game.players[player].stock.length > 0) {
         const stockCard = Game.players[player].stock.slice(-1)[0];
         for (let j = 0; j < Game.buildPiles.length; j++) {
@@ -1433,7 +1480,10 @@ function evaluateMoveCandidates(player) {
         }
     }
 
+    // 
     // Phase 2: Falls keine Stockkarte passt, Hand- und Ablagekarten bewerten
+    // Keine Anpassung nötig, bleibt wie ist
+    //
     const orderedHand = orderCardsForMove(player);
     orderedHand.forEach(card => {
         const originalIndex = Game.players[player].hand.indexOf(card);
@@ -1452,6 +1502,32 @@ function evaluateMoveCandidates(player) {
     });
 
     return candidates;
+}
+
+
+// 
+// Neue Funktion: Berechnet den Zukunftswert eines Jokers
+// Simuliert, wie viele Stockkarten durch diesen Joker später gespielt werden könnten
+// Anpassbar: 
+// - Tiefe der Simulation (aktuell 3 Züge voraus, kann auf 2 oder 5 geändert werden)
+// - Bonus pro Stockkarte (aktuell 50, kann z. B. auf 30 oder 70 angepasst werden)
+//
+function calculateJokerFutureValue(jokerCard, buildPileIndex) {
+    const simulatedPile = [...Game.buildPiles[buildPileIndex], jokerCard];
+    let futureValue = 0;
+    
+    // Simuliere die nächsten 3 Züge
+    for (let i = 0; i < 3; i++) {
+        const neededValue = simulatedPile.length + 1;
+        const hasStockCard = Game.players.ai.stock.some(c => c.value === neededValue);
+        if (hasStockCard) {
+            futureValue += 50; // Bonus für jeden möglichen Stockabbau
+        }
+        // Füge einen Platzhalter hinzu, um den nächsten Wert zu simulieren
+        simulatedPile.push({ type: "number", value: neededValue });
+    }
+    
+    return futureValue;
 }
 
 
@@ -1544,13 +1620,16 @@ function selectAndRemoveCardFromHand(player) {
 }
 
 
-// KI-Zug-Funktion: Sie kombiniert die oben beschriebenen Taktiken.
-// Zuerst wird geprüft, ob ein Bauzug möglich ist; dabei werden strategisch 
-// sortierte Karten verwendet. Falls keine Baufelder bedient werden können, 
-// erfolgt das Ablegen in einen Ablagestapel.
-// Anschließend zieht die KI neue Karten und der Spielerwechsel erfolgt.
-// Aktualisierte KI-Zug-Funktion für Version 2.0
-// MODIFIZIERTE AI-TURN-FUNKTION MIT MELDUNGEN
+
+// 
+// KI-Zug-Funktion: Steuert den gesamten Zug der KI
+// Kombiniert Baustapel-Züge mit Neubewertung und erzwungenem Ablagestapel-Zug
+// Neu: Speichert Beobachtungen für jeden KI-Zug mit Debugging-Logs
+// Anpassbar:
+// - Pausenzeiten (z. B. 0.8 auf 1.0 ändern für längere Anzeige)
+// - Beobachtungsdaten können erweitert werden (z. B. Gegnerstockgröße hinzufügen)
+// - Schleifenlogik (kein festes Limit, läuft bis keine Züge möglich)
+//
 async function aiTurn() {
     // 1. Handkarten zu Beginn des KI-Zugs auffüllen
     drawCardsUntilFive('ai');
@@ -1559,35 +1638,64 @@ async function aiTurn() {
 
     let moved = false;
     let moveCount = 0;
-    let kein_zug_mehr = 0; // Neu: Steuervariable, 0 = Züge möglich, 1 = keine Züge mehr
+    let kein_zug_mehr = 0; // Steuervariable, 0 = Züge möglich, 1 = keine Züge mehr
     
-    // 2. Mehrfachzug-Schleife mit vollständiger Prüfung aller Möglichkeiten (bis zu 3 Züge oder keine Züge mehr)
+    // 2. Schleife läuft, solange Züge möglich sind
     do {
         showMessage('KI analysiert mögliche Züge...');
         await pauseForSeconds(0.5);
         
-        // Kandidatenbewertung mit neuer Logik (inkl. Verbesserungen), jedes Mal neu
+        // Kandidatenbewertung mit neuer Logik, jedes Mal neu
         const candidates = evaluateMoveCandidates('ai');
         if (candidates.length === 0) {
-            kein_zug_mehr = 1; // Keine Züge möglich, Schleife beenden
+            const stockCard = Game.players.ai.stock.slice(-1)[0];
+            let stockPlayable = false;
+            if (stockCard) {
+                for (let j = 0; j < Game.buildPiles.length; j++) {
+                    if (isValidBuildMove(stockCard, j)) {
+                        stockPlayable = true;
+                        showMessage(`KI legt Stockkarte (${stockCard.value}) auf Bau ${j + 1}`);
+                        await pauseForSeconds(1.2);
+                        if (handleBuildPileDrop('ai', 'stock', 0, j)) {
+                            moved = true;
+                            moveCount++;
+                            // Tracking für Stockzug mit Debug-Log
+                            const trackingData = {
+                                sourceType: 'stock',
+                                cardValue: stockCard.value,
+                                cardType: stockCard.type,
+                                buildPileIndex: j
+                            };
+                            console.log('Tracking Stockzug:', trackingData);
+                            trackGameObservations('kiMove', trackingData);
+                            if (moveCount >= 2) {
+                                showMessage('KI führt Kombinationszug aus...');
+                                await pauseForSeconds(0.8);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            if (!stockPlayable) {
+                kein_zug_mehr = 1;
+                if (stockCard && Game.buildPiles.some(pile => isValidBuildMove(stockCard, Game.buildPiles.indexOf(pile)))) {
+                    const missedData = { stockCardValue: stockCard.value };
+                    console.log('Tracking verpasster Stockzug:', missedData);
+                    trackGameObservations('missedStock', missedData);
+                }
+            }
             break;
         }
 
         candidates.sort((a, b) => b.score - a.score);
         const best = candidates[0];
         
-        // Detaillierte Zugmeldung
         let sourceText = '';
         switch(best.sourceType) {
-            case 'hand': 
-                sourceText = `Handposition ${best.sourceIndex + 1}`;
-                break;
-            case 'stock':
-                sourceText = 'Stock-Stapel';
-                break;
-            case 'discard':
-                sourceText = `Ablagestapel ${best.sourceIndex + 1}`;
-                break;
+            case 'hand': sourceText = `Handposition ${best.sourceIndex + 1}`; break;
+            case 'stock': sourceText = 'Stock-Stapel'; break;
+            case 'discard': sourceText = `Ablagestapel ${best.sourceIndex + 1}`; break;
         }
 
         showMessage(`KI spielt ${best.card.type === 'joker' ? 'Joker' : best.card.value} ` +
@@ -1595,33 +1703,29 @@ async function aiTurn() {
                     `(Strategie-Score: ${best.score})`);
         await pauseForSeconds(1.2);
 
-        // Zugausführung mit Erfolgsprüfung
         if (handleBuildPileDrop('ai', best.sourceType, best.sourceIndex, best.buildPileIndex)) {
             moved = true;
             moveCount++;
-            
-            // Spezielle Mehrfachzug-Meldung
+            // Tracking für alle Züge mit Debug-Log
+            const trackingData = {
+                sourceType: best.sourceType,
+                cardValue: best.card.value,
+                cardType: best.card.type,
+                buildPileIndex: best.buildPileIndex
+            };
+            console.log('Tracking Zug:', trackingData);
+            trackGameObservations('kiMove', trackingData);
             if (moveCount >= 2) {
                 showMessage('KI führt Kombinationszug aus...');
                 await pauseForSeconds(0.8);
             }
         } else {
-            // Falls der Zug fehlschlägt (selten, aber möglich), Schleife beenden
             kein_zug_mehr = 1;
             break;
         }
-        
-        // Neu: Keine separate Prüfung nötig, da die Schleife bei jedem Durchlauf neu bewertet
-        // Schleife läuft weiter, solange Züge möglich sind und das Limit nicht erreicht ist
-    } while (moveCount < 3 && !kein_zug_mehr); // Maximal 3 Züge, solange Züge möglich sind
+    } while (!kein_zug_mehr);
 
-    // 3. Erzwungener Ablagestapel-Zug (Nur wenn keine Baustapel-Züge mehr möglich sind)
-    if (!kein_zug_mehr) {
-        // Sollte nicht vorkommen, da Schleife nur bei kein_zug_mehr = 1 abbricht, aber als Sicherheitsnetz
-        showMessage('KI prüft letzte Möglichkeiten...');
-        await pauseForSeconds(0.5);
-    }
-
+    // 3. Erzwungener Ablagestapel-Zug, wenn keine Baustapel-Züge mehr möglich sind
     if (Game.players.ai.hand.length > 0) {
         showMessage('KI legt eine Karte auf den Ablagestapel...');
         await pauseForSeconds(1);
@@ -1643,6 +1747,8 @@ async function aiTurn() {
     await pauseForSeconds(0.5);
     switchPlayer();
 }
+
+
 
 
 // Modifizierte switchPlayer-Funktion
@@ -1688,9 +1794,17 @@ function getDiscardSequenceBonus(player, discardIndex, newCard) {
 
 
 function getOpponentBlockingPotential(card, buildPileIndex) {
+    // 
+    // Erweiterte Gegneranalyse
+    // Prüft nicht nur Topkarten, sondern alle Karten in Ablagestapeln des Gegners
+    // Anpassbar:
+    // - Malus für nächste Zahl (aktuell 100, kann z. B. auf 80 oder 120 geändert werden)
+    // - Kritischer Malus bei Stock ≤ 5 (aktuell +200, kann auf +150 oder +250 angepasst werden)
+    // - Joker-Malus (aktuell 50, kann z. B. auf 40 oder 60 geändert werden)
+    //
     const opponentVisible = [
-        ...Game.players.human.stock.slice(-1),
-        ...Game.players.human.discards.flatMap(p => p.slice(-1))
+        ...Game.players.human.stock.slice(-1), // Topkarte vom Stock
+        ...Game.players.human.discards.flat()  // Alle Karten aus Ablagestapeln
     ];
     
     let riskScore = 0;
@@ -1698,17 +1812,18 @@ function getOpponentBlockingPotential(card, buildPileIndex) {
 
     opponentVisible.forEach(oppCard => {
         if (oppCard.value === card.value + 1) {
-            // Neu: Stärkerer Malus (vorher 50, jetzt 100)
-            riskScore += 100;
-            // Neu: Noch stärker bei kritischem Gegner-Stock (≤ 5)
+            // Stärkerer Malus für nächste Zahl
+            riskScore += 100; // Vorher 50, jetzt 100
+            // Noch stärker bei kritischem Gegner-Stock (≤ 5)
             if (opponentStockSize <= 5) riskScore += 200; // Vorher +100, jetzt +200
         }
         if (oppCard.type === 'joker' && card.value >= 5) {
-            // Erhöhter Joker-Risiko (vorher 30, jetzt 50)
-            riskScore += 50;
+            // Erhöhter Joker-Risiko
+            riskScore += 50; // Vorher 30, jetzt 50
             if (opponentStockSize <= 5) riskScore += 100; // Vorher +50, jetzt +100
         }
     });
+
     return riskScore;
 }
 
@@ -2104,10 +2219,24 @@ function handleRelease() {
 }
 
 
+// 
 // Funktion zum Beenden des Spiels
+// Zeigt das Endergebnis an und deaktiviert Interaktionen
+// Neu: Ruft die Analyse direkt im Gewinnfenster auf
+// Anpassbar:
+// - Stil des Gewinnfensters (z. B. Größe, Farben) kann geändert werden
+// - Beobachtungsdaten können erweitert werden (z. B. Spielzeit hinzufügen)
+//
 function endGame(winner, loser, points) {
-    showEndGameMessage(winner, loser, points);
-    document.getElementById('game-board').style.pointerEvents = 'none'; 
+    // Speichere Beobachtungen und hole Analyse
+    const analysis = trackGameObservations('gameEnd', {
+        winner: winner,
+        loserStockSize: Game.players[loser === 'KI' ? 'ai' : 'human'].stock.length
+    });
+    
+    // Zeige Gewinnfenster mit Analyse
+    showEndGameMessage(winner, loser, points, analysis);
+    document.getElementById('game-board').style.pointerEvents = 'none';
 }
 
 
@@ -2129,7 +2258,15 @@ function checkForWinner() {
 
 
 // Funktion zur Anzeige der Endspielnachricht als Overlay
-function showEndGameMessage(winner, loser, points) {
+
+// 
+// Funktion zur Anzeige der Endspielnachricht als Overlay
+// Integriert jetzt die Analyse direkt im Gewinnfenster
+// Anpassbar:
+// - Stil des Overlays (z. B. Größe, Farben) kann geändert werden
+// - Textarea-Größe (height) oder Button-Styling kann angepasst werden
+//
+function showEndGameMessage(winner, loser, points, analysis) {
     const overlay = document.createElement('div');
     overlay.id = 'end-game-overlay';
     overlay.style.position = 'fixed';
@@ -2148,22 +2285,43 @@ function showEndGameMessage(winner, loser, points) {
     overlay.style.zIndex = '1000';
     overlay.style.textAlign = 'center';
 
+    // 
+    // Neu: Analyse direkt im Gewinnfenster mit Schließen-Button
+    // Anpassbar: Ändere height der Textarea (z. B. 300px) oder Button-Position
+    //
     overlay.innerHTML = `
-        <div style="background: white; color: black; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);">
+        <div style="background: white; color: black; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(255, 255, 255, 0.5); position: relative; width: 80%; max-width: 600px;">
             <h1>Spiel beendet!</h1>
             <p><strong>Gewinner:</strong> ${winner} 🎉</p>
             <p><strong>Verlierer:</strong> ${loser} mit ${points} Punkten</p>
-            <button id="restart-button" style="font-size: 1em; padding: 10px 20px; margin-top: 20px;">Neues Spiel</button>
+            <button id="restart-button" style="font-size: 1em; padding: 10px 20px; margin-top: 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Neues Spiel</button>
+            <div id="analysis-section" style="margin-top: 20px; text-align: left; font-size: 0.8em;">
+                <h2>KI-Auswertung</h2>
+                <textarea style="width: 100%; height: 200px; font-size: 14px; resize: none;">${analysis}</textarea>
+                <p>Kopiere den Text und sende ihn an den Entwickler!</p>
+                <button id="close-analysis" style="font-size: 1em; padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">Schließen</button>
+            </div>
         </div>
     `;
 
     document.body.appendChild(overlay);
 
+    // Event-Handler für Neues Spiel
     document.getElementById('restart-button').addEventListener('click', () => {
         document.body.removeChild(overlay);
         location.reload(); // Lädt die Seite neu für ein neues Spiel
     });
+
+    // 
+    // Neu: Schließen-Button entfernt nur den Analysebereich
+    // Gewinnfenster bleibt sichtbar, bis "Neues Spiel" geklickt wird
+    //
+    document.getElementById('close-analysis').addEventListener('click', () => {
+        const analysisSection = document.getElementById('analysis-section');
+        analysisSection.parentNode.removeChild(analysisSection);
+    });
 }
+
 
 document.querySelectorAll('.human-area [data-label*="Ablage"]').forEach(target => {
     target.addEventListener('touchstart', (event) => {
@@ -2243,7 +2401,237 @@ document.querySelectorAll('.opponent-area [data-label*="Ablage"]').forEach(targe
     
     // Rufe die Funktion initial auf.
     adjustLayoutForPortrait();
-  
+
+
+
+// 
+// Unabhängige Funktion zur Beobachtung und Auswertung von Spielen
+// Sammelt Daten im Local Storage und gibt Analyse für das Gewinnfenster zurück
+// Neu: Nutzt currentGameId zur Trennung der Spiele und fügt Debugging hinzu
+// Anpassbar: 
+// - Anzahl Spiele (aktuell 10, änderbar in maxGames)
+// - Beobachtungsdaten (füge weitere Felder in observations hinzu, z. B. discardPileIndex)
+// - Logging (entferne console.log für Produktion)
+//
+function trackGameObservations(eventType, data) {
+    // Initialisiere Local Storage-Daten
+    let storedData = JSON.parse(localStorage.getItem('skipbo_observations')) || { games: [], count: 0 };
+    const maxGames = 10; // Anpassbar: Maximale Anzahl gespeicherter Spiele
+
+    // Debug-Ausgabe zur Überprüfung der übergebenen Daten
+    console.log(`Tracking ${eventType}:`, data);
+
+    // Beobachtungsobjekt mit Spiel-ID
+    let observations = { gameId: currentGameId };
+    switch (eventType) {
+        case 'opponentDiscard':
+            // Gegner legt eine Karte in Ablage
+            observations.type = 'opponentDiscard';
+            observations.cardValue = data.cardValue;
+            observations.opponentStockSize = Game.players.human.stock.length;
+            observations.kiNextNeeded = calculateKINextNeeded();
+            observations.timestamp = Date.now();
+            break;
+        case 'kiMove':
+            // KI macht einen Zug
+            observations.type = 'kiMove';
+            observations.sourceType = data.sourceType;
+            observations.cardValue = data.cardValue;
+            observations.isJoker = data.cardType === 'joker'; // Sicherstellen, dass Joker korrekt erkannt wird
+            observations.buildPileIndex = data.buildPileIndex;
+            observations.stockSize = Game.players.ai.stock.length;
+            observations.timestamp = Date.now();
+            // Neu: Gegnernutzen prüfen
+            observations.helpedOpponent = Game.players.human.stock.slice(-1)[0]?.value === data.cardValue + 1 ||
+                                          Game.players.human.discards.some(p => p[p.length - 1]?.value === data.cardValue + 1);
+            break;
+        case 'missedStock':
+            // Verpasster Stockzug
+            observations.type = 'missedStock';
+            observations.stockCardValue = data.stockCardValue;
+            observations.timestamp = Date.now();
+            break;
+        case 'gameEnd':
+            // Spielende
+            observations.type = 'gameEnd';
+            observations.winner = data.winner;
+            observations.loserStockSize = data.loserStockSize;
+            observations.timestamp = Date.now();
+            storedData.games.push(observations);
+            storedData.count++;
+            break;
+        default:
+            return null; // Unbekanntes Event, ignorieren
+    }
+
+    // Speichere Beobachtung (außer bei gameEnd, da das schon oben gemacht wird)
+    if (eventType !== 'gameEnd') {
+        storedData.games.push(observations);
+    }
+
+    // Speichere im Local Storage
+    localStorage.setItem('skipbo_observations', JSON.stringify(storedData));
+
+    // Bei Spielende Analyse zurückgeben
+    if (eventType === 'gameEnd') {
+        const currentGame = storedData.games.filter(g => g.gameId === currentGameId);
+        const currentAnalysis = generateCurrentGameAnalysis(currentGame);
+        const overallAnalysis = generateOverallAnalysis(storedData.games);
+        // Optional: Daten zurücksetzen nach 10 Spielen (anpassbar)
+        if (storedData.count >= maxGames) {
+            localStorage.setItem('skipbo_observations', JSON.stringify({ games: [], count: 0 }));
+        }
+        // Neue Spiel-ID für das nächste Spiel
+        currentGameId = Date.now();
+        return `${currentAnalysis}\n\n${overallAnalysis}`;
+    }
+    
+    return null;
+}
+
+
+
+
+// 
+// Hilfsfunktion: Berechnet, welche Werte die KI als nächstes braucht
+// Kann angepasst werden, um mehr Baustapel oder Präzision zu berücksichtigen
+// z. B. nur aktive Baustapel prüfen oder Gewichtung einführen
+//
+function calculateKINextNeeded() {
+    return Game.buildPiles.map(pile => 
+        pile.length === 0 ? 1 : pile[pile.length - 1].type === 'joker' 
+            ? pile.length + 1 
+            : pile[pile.length - 1].value + 1
+    );
+}
+
+
+// 
+// Generiert die Auswertung aus gesammelten Daten
+// Anpassbar: Ändere den Text oder die Statistiken nach Bedarf
+// z. B. mehr Details wie durchschnittliche Stockgröße hinzufügen
+//
+function generateAnalysis(games) {
+    let analysis = "Skip-Bo KI-Auswertung (5 Spiele):\n\n";
+    
+    // Gegnerblockaden zählen
+    const blocks = games.filter(g => g.type === 'opponentDiscard' && g.kiNextNeeded.includes(g.cardValue)).length;
+    analysis += `Gegnerblockaden: ${blocks} Mal hat der Gegner eine benötigte Karte gelegt.\n`;
+    
+    // Joker-Nutzung
+    const jokerUses = games.filter(g => g.type === 'kiMove' && g.isJoker);
+    const earlyJoker = jokerUses.filter(g => g.buildPileIndex < 2).length;
+    analysis += `Joker-Nutzung: ${jokerUses.length} Mal eingesetzt, davon ${earlyJoker} auf niedrigen Stapeln (< 2).\n`;
+    
+    // Stockabbau
+    const stockMoves = games.filter(g => g.type === 'kiMove' && g.sourceType === 'stock').length;
+    analysis += `Stockabbau: ${stockMoves} Stockkarten erfolgreich gelegt.\n`;
+    
+    // Spielergebnisse
+    const wins = games.filter(g => g.type === 'gameEnd' && g.winner === 'KI').length;
+    analysis += `Spiele gewonnen: ${wins} von 5.\n`;
+    
+    return analysis;
+}
+
+
+// 
+// Neu: Generiert die Auswertung für das aktuelle Spiel
+// Anpassbar: Ändere den Text oder füge weitere Statistiken hinzu
+// z. B. Anzahl KI-Züge oder Gegneraktionen im aktuellen Spiel
+//
+function generateCurrentGameAnalysis(currentGame) {
+    let analysis = "Auswertung des aktuellen Spiels:\n\n";
+    
+    // Gegnerblockaden im aktuellen Spiel
+    const blocks = currentGame.filter(g => g.type === 'opponentDiscard' && g.kiNextNeeded.includes(g.cardValue)).length;
+    analysis += `Gegnerblockaden: ${blocks} Mal hat der Gegner eine benötigte Karte gelegt.\n`;
+    
+    // Joker-Nutzung im aktuellen Spiel
+    const jokerUses = currentGame.filter(g => g.type === 'kiMove' && g.isJoker).length;
+    const earlyJoker = currentGame.filter(g => g.type === 'kiMove' && g.isJoker && g.buildPileIndex < 2).length;
+    analysis += `Joker-Nutzung: ${jokerUses} Mal eingesetzt, davon ${earlyJoker} auf niedrigen Stapeln (< 2).\n`;
+    
+    // Stockabbau im aktuellen Spiel
+    const stockMoves = currentGame.filter(g => g.type === 'kiMove' && g.sourceType === 'stock').length;
+    analysis += `Stockabbau: ${stockMoves} Stockkarten erfolgreich gelegt.\n`;
+    
+    // Verpasste Stockzüge
+    const missedStock = currentGame.filter(g => g.type === 'missedStock').length;
+    analysis += `Verpasste Stockzüge: ${missedStock} Mal hätte eine Stockkarte gelegt werden können.\n`;
+    
+    // Gegnerhilfe
+    const helpedOpponent = currentGame.filter(g => g.type === 'kiMove' && g.helpedOpponent).length;
+    analysis += `Gegnerhilfe: ${helpedOpponent} Mal hat die KI dem Gegner geholfen.\n`;
+    
+    // Spielergebnis
+    const gameEnd = currentGame.find(g => g.type === 'gameEnd');
+    analysis += `Ergebnis: ${gameEnd.winner} hat gewonnen, Verlierer hatte ${gameEnd.loserStockSize} Stockkarten.\n`;
+    
+    return analysis;
+}
+
+
+
+// 
+// Generiert die Gesamtbewertung aus allen gesammelten Daten
+// Anpassbar: Ändere den Text oder die Statistiken nach Bedarf
+// z. B. Durchschnittswerte oder detailliertere Statistiken hinzufügen
+//
+function generateOverallAnalysis(games) {
+    let analysis = "Gesamtbewertung (bisherige Spiele):\n\n";
+    
+    // Gegnerblockaden zählen
+    const blocks = games.filter(g => g.type === 'opponentDiscard' && g.kiNextNeeded.includes(g.cardValue)).length;
+    analysis += `Gegnerblockaden: ${blocks} Mal hat der Gegner eine benötigte Karte gelegt.\n`;
+    
+    // Joker-Nutzung
+    const jokerUses = games.filter(g => g.type === 'kiMove' && g.isJoker).length;
+    const earlyJoker = games.filter(g => g.type === 'kiMove' && g.isJoker && g.buildPileIndex < 2).length;
+    analysis += `Joker-Nutzung: ${jokerUses} Mal eingesetzt, davon ${earlyJoker} auf niedrigen Stapeln (< 2).\n`;
+    
+    // Stockabbau
+    const stockMoves = games.filter(g => g.type === 'kiMove' && g.sourceType === 'stock').length;
+    analysis += `Stockabbau: ${stockMoves} Stockkarten erfolgreich gelegt.\n`;
+    
+    // Verpasste Stockzüge
+    const missedStock = games.filter(g => g.type === 'missedStock').length;
+    analysis += `Verpasste Stockzüge: ${missedStock} Mal hätte eine Stockkarte gelegt werden können.\n`;
+    
+    // Gegnerhilfe
+    const helpedOpponent = games.filter(g => g.type === 'kiMove' && g.helpedOpponent).length;
+    analysis += `Gegnerhilfe: ${helpedOpponent} Mal hat die KI dem Gegner geholfen.\n`;
+    
+    // Spielergebnisse
+    const totalGames = games.filter(g => g.type === 'gameEnd').length;
+    const wins = games.filter(g => g.type === 'gameEnd' && g.winner === 'KI').length;
+    analysis += `Spiele gewonnen: ${wins} von ${totalGames} (max. 10).\n`;
+    
+    return analysis;
+}
+
+
+
+// 
+// Öffnet ein Extrafenster mit kopierbarem Text im Vordergrund
+// Anpassbar: Ändere Größe (width, height) oder Stil des Fensters
+// z. B. width auf 500 oder height auf 400 für größeres Fenster
+//
+function showAnalysisWindow(analysis) {
+    const win = window.open('', 'Skip-Bo Analyse', 'width=400,height=400');
+    win.document.write(`
+        <html>
+        <body style="font-family: Arial; padding: 10px;">
+            <h2>KI-Auswertung</h2>
+            <textarea style="width: 100%; height: 300px; font-size: 14px;">${analysis}</textarea>
+            <p>Kopiere den Text und sende ihn an den Entwickler!</p>
+        </body>
+        </html>
+    `);
+    win.document.close();
+    win.focus(); // Stellt sicher, dass das Fenster im Vordergrund ist
+}
+
 
 </script>
 
