@@ -1,0 +1,642 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lotto 6aus49 KI-Analyzer</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1.0/dist/chartjs-chart-matrix.min.js"></script>
+  <style>
+    :root {
+      --hot-color: #ff4444;
+      --cold-color: #4285f4;
+      --neutral-color: #4CAF50;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .content-wrapper {
+      flex-grow: 1;
+      padding: 20px;
+      margin-bottom: 120px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-top: 0;
+    }
+
+    #controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    select {
+      padding: 8px 12px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    #charts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      padding: 10px;
+      max-width: 1200px;
+      margin: 20px auto;
+    }
+
+    .chart-container {
+      flex: 1 1 300px;
+      max-width: 450px;
+      min-width: 280px;
+      height: 350px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    canvas {
+      max-height: 100%;
+      width: 100% !important;
+    }
+
+    #topNumbersFooter {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #e9e9e9;
+      padding: 8px 10px 10px 10px;
+      z-index: 1000;
+      text-align: center;
+      border-top: 2px solid #4CAF50;
+      box-shadow: 0 -3px 6px rgba(0,0,0,0.15);
+    }
+
+    #topNumbersFooter h2 {
+      margin: 2px 0;
+      font-size: 0.85em;
+      color: #333;
+    }
+
+    .number-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .top-section {
+      margin-bottom: 4px;
+    }
+
+    .number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--neutral-color);
+      color: white;
+      width: 32px;
+      height: 32px;
+      margin: 2px;
+      border-radius: 50%;
+      font-size: 15px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .superzahl-display {
+      background: #FFC107;
+      color: #333;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 15px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #45a049;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    input[type="file"] {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .loading-message {
+      text-align: center;
+      padding: 10px;
+      font-style: italic;
+      color: #555;
+    }
+
+    .advanced-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      background: #fff;
+      margin: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .stat-box {
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid var(--neutral-color);
+    }
+
+    .stat-box.hot {
+      border-color: var(--hot-color);
+    }
+
+    .stat-box.cold {
+      border-color: var(--cold-color);
+    }
+
+    .heatmap-container {
+      width: 100%;
+      max-height: 600px;
+      overflow: auto;
+    }
+
+    @media (max-width: 900px) {
+      .chart-container {
+        max-width: 100%;
+        height: 330px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .content-wrapper {
+        padding: 10px;
+        margin-bottom: 130px;
+      }
+      h1 {
+        font-size: 18px;
+      }
+      #controls {
+        gap: 10px;
+      }
+      button, input[type="file"], select {
+        width: 90%;
+        font-size: 14px;
+        padding: 10px;
+      }
+      .chart-container {
+        height: 280px;
+      }
+      #topNumbersFooter h2 {
+        font-size: 0.75em;
+      }
+      .number {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="content-wrapper">
+    <h1>Lotto 6aus49 KI-Analyzer</h1>
+    <div id="controls">
+      <button id="githubBtn">Daten von GitHub laden</button>
+      <input type="file" id="fileInput" accept=".json" />
+      <select id="dataSubsetSelect">
+        <option value="all">Alle Ziehungen verwenden</option>
+        <option value="1000">Letzte 1000 Ziehungen</option>
+        <option value="500">Letzte 500 Ziehungen</option>
+        <option value="100">Letzte 100 Ziehungen</option>
+        <option value="50">Letzte 50 Ziehungen</option>
+        <option value="25">Letzte 25 Ziehungen</option>
+      </select>
+      <button id="analyzeBtn" disabled>Analyse starten</button>
+      <div id="loadingStatus" class="loading-message" style="display: none;"></div>
+    </div>
+
+    <div id="charts">
+      <div class="chart-container">
+        <h3>Häufigkeit Lottozahlen (1–49)</h3>
+        <canvas id="freqChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3>Häufigkeit Superzahlen (0–9)</h3>
+        <canvas id="superzahlFreqChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3>Entropie (Lottozahlen)</h3>
+        <canvas id="entropyGauge"></canvas>
+      </div>
+    </div>
+
+    <div class="advanced-stats" id="advancedStats">
+      <div class="stat-box" id="chiSquareResult">
+        <h3>Chi-Quadrat-Test</h3>
+        <p>Lädt...</p>
+      </div>
+      <div class="stat-box" id="hotColdInfo">
+        <h3>Hot/Cold-Zahlen</h3>
+        <div id="hotColdNumbers" class="number-container"></div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <h3>Übergangswahrscheinlichkeiten (Heatmap)</h3>
+      <div class="heatmap-container">
+        <canvas id="transitionHeatmap"></canvas>
+      </div>
+    </div>
+
+    <div class="advanced-stats">
+      <div class="stat-box">
+        <h3>KI-basierte Vorhersage</h3>
+        <p>Diese Zahlen kombinieren Häufigkeit, Trends, Entropie & Übergänge:</p>
+        <div id="kiTopNumbers" class="number-container"></div>
+      </div>
+    </div>
+  </div> <!-- Ende .content-wrapper -->
+
+  <div id="topNumbersFooter">
+    <div class="top-section">
+      <h2>Top 6 Lottozahlen</h2>
+      <div id="topLottozahlenList" class="number-container"></div>
+    </div>
+    <div class="top-section">
+      <h2>Top Superzahl</h2>
+      <div id="topSuperzahlList" class="number-container"></div>
+    </div>
+  </div>
+
+  <script>
+    const GITHUB_URL = "https://raw.githubusercontent.com/JohannesFriedrich/LottoNumberArchive/5c85bef99dbcc4c812fe339c69c1e5f0c3dc351b/Lottonumbers_complete.json";
+
+    let allLottoEntries = [];
+    let chartInstances = {};
+    let transitionMatrix = [];
+    let chiSquareResult = null;
+    let expectedFrequency = 0;
+    let hotColdMap = [];
+
+    window.addEventListener('load', () => loadGitHubJson());
+    document.getElementById('githubBtn').addEventListener('click', loadGitHubJson);
+    document.getElementById('fileInput').addEventListener('change', handleFileInput);
+    document.getElementById('analyzeBtn').addEventListener('click', performAnalysis);
+
+    function showLoadingMessage(msg) {
+      const el = document.getElementById('loadingStatus');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function hideLoadingMessage() {
+      document.getElementById('loadingStatus').style.display = 'none';
+    }
+
+    async function loadGitHubJson() {
+      document.getElementById('analyzeBtn').disabled = true;
+      showLoadingMessage("Lade Daten von GitHub...");
+      try {
+        const res = await fetch(GITHUB_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        validateAndProcessData(json, "GitHub");
+      } catch (err) {
+        handleError("Fehler beim Laden: ", err);
+      } finally {
+        hideLoadingMessage();
+      }
+    }
+
+    function handleFileInput(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      showLoadingMessage("Verarbeite Datei...");
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const json = JSON.parse(evt.target.result);
+          validateAndProcessData(json, "Datei");
+        } catch (err) {
+          handleError("Fehler beim Parsen: ", err);
+        } finally {
+          hideLoadingMessage();
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function validateAndProcessData(json, source) {
+      if (!json || !Array.isArray(json.data)) throw new Error("Ungültige Struktur.");
+      allLottoEntries = json.data;
+      if (!allLottoEntries.length) throw new Error("Keine Daten gefunden.");
+      const valid = allLottoEntries.some(e => Array.isArray(e.Lottozahl) && e.Lottozahl.length === 6);
+      if (!valid) throw new Error("Keine gültigen Lottozahlen.");
+      alert(`Daten erfolgreich von ${source} geladen. ${allLottoEntries.length} Ziehungen.`);
+      document.getElementById('analyzeBtn').disabled = false;
+    }
+
+    function getDatensatzSubset() {
+      const select = document.getElementById('dataSubsetSelect');
+      const value = select.value;
+      if (value === 'all') return [...allLottoEntries];
+      const count = parseInt(value);
+      return allLottoEntries.slice(-count);
+    }
+
+    function classifyHotColdNumbers(freqs) {
+      const mean = freqs.reduce((a, b) => a + b, 0) / 49;
+      return freqs.map((f, i) => ({
+        number: i + 1,
+        status: f > mean * 1.02 ? 'hot' : f < mean * 0.98 ? 'cold' : 'neutral',
+        count: f
+      }));
+    }
+
+    function renderHotColdNumbers(freqs) {
+      hotColdMap = classifyHotColdNumbers(freqs);
+      const el = document.getElementById('hotColdNumbers');
+      el.innerHTML = hotColdMap.map(n => `
+        <span class="number" style="background:${{
+          hot: 'var(--hot-color)',
+          cold: 'var(--cold-color)',
+          neutral: 'var(--neutral-color)'
+        }[n.status]}">${n.number}</span>`).join('');
+    }
+
+    function performAnalysis() {
+      const daten = getDatensatzSubset();
+
+      const lottoFreqs = Array(49).fill(0);
+      const superFreqs = Array(10).fill(0);
+      const superStart = new Date(1991, 11, 7);
+
+      daten.forEach(e => {
+        if (Array.isArray(e.Lottozahl)) {
+          e.Lottozahl.forEach(n => {
+            const z = parseInt(n);
+            if (z >= 1 && z <= 49) lottoFreqs[z - 1]++;
+          });
+        }
+        if (e.Superzahl != null && e.date) {
+          const [d, m, y] = e.date.split('.').map(Number);
+          const date = new Date(y, m - 1, d);
+          if (date >= superStart) {
+            const sz = parseInt(e.Superzahl);
+            if (sz >= 0 && sz <= 9) superFreqs[sz]++;
+          }
+        }
+      });
+
+      const entropy = computeEntropy(lottoFreqs);
+      const topLotto = getTopNumbers(lottoFreqs, 6, false);
+      const topSZ = getTopNumbers(superFreqs, 1, true);
+
+      renderHotColdNumbers(lottoFreqs);
+      calculateTransitionMatrix(daten);
+      calculateChiSquare(lottoFreqs);
+      renderKIVorhersage(lottoFreqs, entropy);
+
+      renderFreqChart(lottoFreqs, 'freqChart', 'Häufigkeit Lottozahlen', 49, false);
+      renderFreqChart(superFreqs, 'superzahlFreqChart', 'Häufigkeit Superzahlen', 10, true);
+      renderEntropyGauge(entropy);
+      renderTopLottozahlen(topLotto);
+      renderTopSuperzahl(topSZ);
+      renderTransitionHeatmap();
+      renderChiSquareResult();
+    }
+
+    function renderKIVorhersage(freqs, entropy) {
+      if (!transitionMatrix.length || !hotColdMap.length) {
+        console.warn("KI-Vorhersage übersprungen: Daten nicht bereit");
+        return;
+      }
+
+      const scores = freqs.map((f, i) => {
+        const hotCold = hotColdMap[i] || { status: "neutral" };
+        const hotColdFactor = {
+          hot: 1.1,
+          cold: 0.85,
+          neutral: 1.0
+        }[hotCold.status];
+
+        const transitions = Array.isArray(transitionMatrix[i]) ? transitionMatrix[i] : [];
+        const transitionBonus = transitions.reduce((a, b) => a + b, 0) / 10;
+        const chiFactor = chiSquareResult > 65 ? 1.1 : 1.0;
+        const entropyFactor = entropy < 5.2 ? 1.1 : 0.95;
+
+        return {
+          number: i + 1,
+          score: f * hotColdFactor * chiFactor * entropyFactor + transitionBonus
+        };
+      });
+
+      const top = scores.sort((a, b) => b.score - a.score).slice(0, 6);
+      const el = document.getElementById('kiTopNumbers');
+      el.innerHTML = top.length
+        ? top.map(n => `<span class="number">${n.number}</span>`).join('')
+        : "<p style='color:#999'>Keine Daten</p>";
+    }
+
+    function calculateTransitionMatrix(daten) {
+      transitionMatrix = Array(49).fill().map(() => Array(49).fill(0));
+      daten.forEach(e => {
+        const nums = [...e.Lottozahl].sort((a, b) => a - b);
+        for (let i = 0; i < nums.length - 1; i++) {
+          const a = nums[i] - 1;
+          const b = nums[i + 1] - 1;
+          if (a >= 0 && b >= 0) transitionMatrix[a][b]++;
+        }
+      });
+    }
+
+    function computeEntropy(freqs) {
+      const total = freqs.reduce((a, b) => a + b, 0);
+      return freqs.reduce((sum, c) => {
+        if (c === 0) return sum;
+        const p = c / total;
+        return sum - p * Math.log2(p);
+      }, 0);
+    }
+
+    function calculateChiSquare(obs) {
+      const total = obs.reduce((a, b) => a + b, 0);
+      expectedFrequency = total / 49;
+      chiSquareResult = obs.reduce((sum, o) => sum + ((o - expectedFrequency) ** 2) / expectedFrequency, 0);
+    }
+
+    function renderChiSquareResult() {
+      const df = 48;
+      const critical = 65.171;
+      const significant = chiSquareResult > critical;
+      const box = document.getElementById('chiSquareResult');
+      box.className = `stat-box ${significant ? 'hot' : ''}`;
+      box.innerHTML = `
+        <h3>Chi-Quadrat-Test</h3>
+        <p>Wert: ${chiSquareResult.toFixed(2)}</p>
+        <p>Erwartet: ${expectedFrequency.toFixed(1)}</p>
+        <p>Signifikanz: ${significant ? '⚠️ Abweichung' : '✅ Normal'}</p>
+      `;
+    }
+
+    function getTopNumbers(freqs, count, isSuper) {
+      return freqs.map((c, i) => ({ number: isSuper ? i : i + 1, count: c }))
+                  .sort((a, b) => b.count - a.count)
+                  .slice(0, count);
+    }
+
+    function renderTopLottozahlen(arr) {
+      const el = document.getElementById('topLottozahlenList');
+      el.innerHTML = arr.map(n => `<span class="number">${n.number}</span>`).join('');
+    }
+
+    function renderTopSuperzahl(arr) {
+      const el = document.getElementById('topSuperzahlList');
+      el.innerHTML = arr.length
+        ? `<span class="number superzahl-display">${arr[0].number}</span>`
+        : "Keine Daten";
+    }
+
+    function renderFreqChart(freqs, id, label, max, isSuper = false) {
+      const ctx = document.getElementById(id).getContext('2d');
+      if (chartInstances[id]) chartInstances[id].destroy();
+      const labels = Array.from({ length: max }, (_, i) => isSuper ? i : i + 1);
+      const maxVal = Math.max(...freqs);
+      const colors = freqs.map(c => `rgba(76, 175, 80, ${0.2 + (c / maxVal) * 0.7})`);
+
+      chartInstances[id] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label, data: freqs, backgroundColor: colors, borderColor: '#3e8e41', borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Häufigkeit' } },
+            x: { title: { display: true, text: isSuper ? 'Superzahlen 0–9' : 'Lottozahlen 1–49' } }
+          }
+        }
+      });
+    }
+
+    function renderEntropyGauge(entropy) {
+      const ctx = document.getElementById('entropyGauge').getContext('2d');
+      if (chartInstances.entropyGauge) chartInstances.entropyGauge.destroy();
+
+      const maxEntropy = Math.log2(49);
+      chartInstances.entropyGauge = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Entropie', 'Rest'],
+          datasets: [{
+            data: [entropy, maxEntropy - entropy],
+            backgroundColor: ['#4CAF50', '#e0e0e0']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '70%',
+          rotation: 270,
+          circumference: 180,
+          plugins: {
+            legend: { display: true, position: 'bottom' },
+            title: {
+              display: true,
+              text: `Entropie: ${entropy.toFixed(2)} / ${maxEntropy.toFixed(2)}`
+            }
+          }
+        }
+      });
+    }
+
+    function renderTransitionHeatmap() {
+      const ctx = document.getElementById('transitionHeatmap').getContext('2d');
+      if (chartInstances.transitionHeatmap) chartInstances.transitionHeatmap.destroy();
+
+      const matrixData = transitionMatrix.flatMap((row, x) =>
+        row.map((val, y) => ({ x, y, v: val }))
+      );
+
+      chartInstances.transitionHeatmap = new Chart(ctx, {
+        type: 'matrix',
+        data: {
+          datasets: [{
+            label: 'Heatmap',
+            data: matrixData,
+            width: 10,
+            height: 10,
+            backgroundColor: ctx => {
+              const v = ctx.raw.v;
+              const alpha = Math.min(v / 10, 0.9);
+              return `rgba(255, 68, 68, ${alpha})`;
+            }
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                title: ctx => `Von ${ctx[0].raw.x + 1} zu ${ctx[0].raw.y + 1}`,
+                label: ctx => `Häufigkeit: ${ctx.raw.v}`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function handleError(msg, err) {
+      console.error(msg, err);
+      alert(msg + err.message);
+    }
+  </script>
+</body>
+</html>
