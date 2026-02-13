@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projekt Sovereign: Master Handbuch v7</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /* --- DESIGN: Paper / Typewriter Look --- */
+        body {
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'Courier New', Courier, monospace; 
+        }
+        .font-sans-reading {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* --- TABLET SCROLL FIX --- */
+        main {
+            padding-bottom: 600px !important;
+            min-height: 100vh;
+        }
+
+        /* --- NAVIGATION --- */
+        .nav-btn { transition: all 0.2s; border-left: 4px solid transparent; }
+        .nav-btn:hover { background-color: #f3f4f6; border-left-color: #000; }
+        .nav-btn.active { background-color: #000; color: #fff; border-left-color: #000; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #000; }
+
+        /* Accordion / Details */
+        details > summary { list-style: none; cursor: pointer; transition: background 0.2s; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] > summary { background-color: #f3f4f6; border-bottom: 2px solid black; }
+        
+        /* Timeline / Example Card Design */
+        .example-card { border: 2px solid black; margin-bottom: 2rem; box-shadow: 4px 4px 0px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .example-card:hover { transform: translateY(-2px); box-shadow: 6px 6px 0px rgba(0,0,0,0.2); }
+        .phase-block { padding: 1rem; border-left: 4px solid; margin-bottom: 1rem; }
+        .phase-blue { background-color: #eff6ff; border-color: #2563eb; }
+        .phase-green { background-color: #f0fdf4; border-color: #16a34a; }
+        .phase-purple { background-color: #faf5ff; border-color: #9333ea; }
+        
+        /* Chart Container */
+        .chart-container { position: relative; width: 100%; max-width: 400px; margin: 0 auto; height: 300px; }
+        
+        /* Checkbox */
+        .custom-checkbox input:checked + div { background-color: #000; border-color: #000; }
+        .custom-checkbox input:checked + div svg { display: block; }
+        
+        /* Warning Box Animation */
+         @keyframes pulse-warning {
+            0%, 100% { border-color: #dc2626; }
+            50% { border-color: #fca5a5; }
+        }
+        .critical-warning { animation: pulse-warning 2s infinite; border: 2px solid #dc2626; }
+
+        /* Simulator Styles */
+        .sim-step { opacity: 0.5; pointer-events: none; transition: all 0.3s; }
+        .sim-step.active { opacity: 1; pointer-events: all; }
+        .sim-step.completed { opacity: 0.8; border-color: #16a34a; background-color: #f0fdf4; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-base">
+
+    <nav class="w-80 bg-gray-50 border-r-2 border-black flex-shrink-0 flex flex-col h-full overflow-y-auto hidden md:flex">
+        <div class="p-6 border-b-2 border-black bg-white">
+            <h1 class="text-2xl font-bold tracking-tighter">PROJEKT<br>SOVEREIGN</h1>
+            <p class="text-xs mt-2 text-gray-500">v7.0 // Fortified Edition</p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-2 space-y-1">
+            <button onclick="showSection('intro')" id="btn-intro" class="nav-btn w-full text-left p-3 font-bold">0. START</button>
+            <button onclick="showSection('phase1')" id="btn-phase1" class="nav-btn w-full text-left p-3">I. Hardware & OS</button>
+            <button onclick="showSection('phase2')" id="btn-phase2" class="nav-btn w-full text-left p-3">II. Konnektivität</button>
+            <button onclick="showSection('phase3')" id="btn-phase3" class="nav-btn w-full text-left p-3">III. Gold & Recht (GwG)</button>
+            <button onclick="showSection('phase4')" id="btn-phase4" class="nav-btn w-full text-left p-3">IV. Software Deep-Dive</button>
+            <button onclick="showSection('phase5')" id="btn-phase5" class="nav-btn w-full text-left p-3">V. Bitcoin (Peach & Bisq)</button>
+            <button onclick="showSection('examples')" id="btn-examples" class="nav-btn w-full text-left p-3 font-bold border-t border-gray-300">VI. Fallstudien</button>
+            <button onclick="showSection('opsec')" id="btn-opsec" class="nav-btn w-full text-left p-3 text-red-700 font-bold border-t border-red-200">VII. OpSec & Drill</button>
+        </div>
+        <div class="p-4 border-t-2 border-black bg-white">
+            <div class="text-xs text-gray-500 mb-1">Status</div>
+            <div class="w-full bg-gray-200 h-2 border border-black">
+                <div id="progress-bar" class="bg-black h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="md:hidden fixed top-0 w-full bg-white border-b-2 border-black z-50 p-4 flex justify-between items-center shadow-md">
+        <h1 class="font-bold text-lg">PROJEKT SOVEREIGN</h1>
+        <button onclick="toggleMenu()" class="border-2 border-black px-3 py-1 font-bold bg-gray-100">MENÜ</button>
+    </div>
+
+    <div id="mobile-menu" class="fixed inset-0 bg-white z-40 hidden flex-col pt-20 px-6 space-y-4 overflow-y-auto">
+        <button onclick="showSection('intro'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">0. Start</button>
+        <button onclick="showSection('phase1'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">I. Hardware</button>
+        <button onclick="showSection('phase2'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">II. Konnektivität</button>
+        <button onclick="showSection('phase3'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">III. Gold & Recht</button>
+        <button onclick="showSection('phase4'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">IV. Software</button>
+        <button onclick="showSection('phase5'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">V. Kauf (Profi)</button>
+        <button onclick="showSection('examples'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">VI. Beispiele</button>
+        <button onclick="showSection('opsec'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left text-red-600">VII. OpSec & Drill</button>
+        <button onclick="toggleMenu()" class="mt-8 text-center text-red-600 font-bold border-2 border-red-600 p-3">Schließen</button>
+    </div>
+
+    <main class="flex-1 overflow-y-auto p-6 md:p-12 font-sans-reading pt-24 md:pt-12 bg-white relative">
+
+        <section id="intro" class="section-content max-w-4xl mx-auto">
+            <div class="border-l-4 border-black pl-6 mb-8">
+                <h2 class="text-4xl font-bold mb-4 uppercase tracking-tight">Das Protokoll</h2>
+                <p class="text-xl leading-relaxed text-gray-800">
+                    Dies ist die Blaupause für finanzielle Unsichtbarkeit. Wir decken alles ab: Von der Hardware, über die SIM-Karte, bis hin zur professionellen Verwaltung von 20.000€+ in Bitcoin.
+                </p>
+            </div>
+            
+            <div class="bg-yellow-50 border-2 border-yellow-600 p-6 mb-8">
+                <h3 class="font-bold text-yellow-900 text-lg mb-2">🚀 Update v7.0 (Fortified):</h3>
+                <ul class="list-disc pl-5 space-y-1 text-sm">
+                    <li><strong>Gold-Profi:</strong> Neue Legierungen (900er Münzgold, 916er Krugerrand, 833er).</li>
+                    <li><strong>Rechtssicherheit:</strong> Exakte GwG-Grenzwerte für anonyme Käufe.</li>
+                    <li><strong>Bisq Deep-Dive:</strong> Anleitung für den dezentralen Handel am Desktop.</li>
+                    <li><strong>Steel-Backup & Drill:</strong> Physische Sicherheit & interaktiver Notfall-Simulator.</li>
+                </ul>
+            </div>
+
+            <button onclick="showSection('phase1')" class="bg-black text-white px-8 py-4 font-bold text-lg hover:bg-gray-800 w-full md:w-auto shadow-lg">
+                Protokoll starten &rarr;
+            </button>
+        </section>
+
+        <section id="phase1" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4">I. HARDWARE & OS</h2>
+            
+            <details class="border-2 border-black mb-4 group open:bg-gray-50">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>1.1 Das Gerät (Pixel)</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <p class="mb-4 text-sm">Wir nutzen ausschließlich <strong>Google Pixel (7/8/9)</strong>. Nicht wegen Google, sondern wegen des Titan M2 Chips.</p>
+                    <div class="bg-red-50 p-4 border-l-4 border-red-600 text-sm font-bold">
+                        REGEL: Kaufe das Gerät BAR im Laden (MediaMarkt/Saturn) oder gebraucht. Bestelle es NICHT zu dir nach Hause.
+                    </div>
+                </div>
+            </details>
+
+            <details class="border-2 border-black mb-4 group">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>1.2 GrapheneOS (Der Exorzismus)</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <p class="text-sm mb-2">Wir entfernen das Google-Android und ersetzen es durch GrapheneOS.</p>
+                    <ol class="list-decimal pl-5 space-y-2 text-sm">
+                        <li>Pixel einschalten > Einstellungen > Über das Telefon > 7x auf "Build-Nummer" tippen.</li>
+                        <li>System > Entwickleroptionen > <strong>"OEM-Entsperrung"</strong> einschalten.</li>
+                        <li>Pixel an PC anschließen (Kabel nicht wackeln!).</li>
+                        <li>Webseite öffnen: <strong>grapheneos.org/install/web</strong></li>
+                        <li>Klicke nacheinander: "Unlock Bootloader" -> "Download Release" -> "Flash Release".</li>
+                        <li><strong>WICHTIG:</strong> Am Ende "Lock Bootloader" klicken. Das sichert den Chip wieder ab.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <div class="mt-8 flex justify-end">
+                <button onclick="showSection('phase2')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Konnektivität &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase2" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4">II. DER DIGITALE TUNNEL</h2>
+            
+            <div class="bg-gray-100 p-4 mb-6 text-sm italic">
+                "Ein anonymes Handy nützt nichts mit einer registrierten SIM-Karte."
+            </div>
+
+            <details class="border-2 border-black mb-4 group">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>2.1 Schritt 1: VPN Installieren</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <p class="text-sm mb-2">Bevor wir irgendetwas machen, verschlüsseln wir den Verkehr.</p>
+                    <ol class="list-decimal pl-5 space-y-2 text-sm">
+                        <li>Öffne "Vanadium" (Browser).</li>
+                        <li>Lade <strong>Mullvad VPN</strong> als .apk herunter.</li>
+                        <li>Installieren. Ein Konto erstellen (du bekommst eine Nummer). Schreibe sie auf!</li>
+                        <li><strong>Der Kill-Switch:</strong> Gehe in Android Einstellungen > Netzwerk > VPN. Klicke auf das Zahnrad neben Mullvad. Aktiviere "Durchgehend aktives VPN" UND "Verbindungen ohne VPN blockieren".</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="border-2 border-black mb-4 group">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>2.2 Schritt 2: Die anonyme eSIM</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <p class="text-sm mb-2">Wir nutzen <strong>Silent.Link</strong>. Das ist mobiles Internet ohne Ausweis.</p>
+                    <ol class="list-decimal pl-5 space-y-2 text-sm">
+                        <li>Verbinde dich kurz mit einem öffentlichen WLAN (mit VPN!).</li>
+                        <li>Gehe auf silent.link.</li>
+                        <li>Kaufe ein Datenpaket (z.B. 3GB Europa).</li>
+                        <li>Bezahle mit Bitcoin Lightning (siehe Phase 4/5).</li>
+                        <li>Du bekommst einen QR-Code.</li>
+                        <li>Gehe in Android: Einstellungen > Netzwerk > SIMs > eSIM hinzufügen > QR-Code scannen.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <div class="mt-8 flex justify-between">
+                <button onclick="showSection('phase1')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('phase3')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Gold & Cash &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase3" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4">III. KAPITAL & GOLD & RECHT</h2>
+            <p class="mb-4 text-gray-700">Wir verwandeln physisches Gold in anonymes Bargeld, um den digitalen Pfad zu finanzieren. Hier sind alle wichtigen Legierungen integriert.</p>
+            
+            <div class="bg-gray-50 border-2 border-black p-6 mb-8 shadow-lg">
+                <h3 class="text-xl font-bold mb-4 border-b border-gray-300 pb-2">⚖️ Der Profi-Rechner</h3>
+                
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1">Gewicht (Gramm)</label>
+                        <input type="number" id="gold-weight" class="w-full border-2 border-black p-2 font-mono text-lg" placeholder="z.B. 31.1" oninput="calculateGold()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1">Legierung</label>
+                        <select id="gold-purity" class="w-full border-2 border-black p-2 font-mono text-lg" onchange="calculateGold()">
+                            <option value="0.333">333 (8 Karat)</option>
+                            <option value="0.585" selected>585 (14 Karat)</option>
+                            <option value="0.750">750 (18 Karat)</option>
+                            <option value="0.833">833 (20 Karat - Zahngold)</option>
+                            <option value="0.900">900 (Münzgold - Reichsmark/Vreneli)</option>
+                            <option value="0.916">916 (22 Karat - Krugerrand)</option>
+                            <option value="0.999">999 (24 Karat - Barren)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1">Börsenpreis (€/g)</label>
+                        <input type="number" id="spot-price" class="w-full border-2 border-black p-2 font-mono text-lg" value="70" oninput="calculateGold()">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="p-3 bg-white border border-gray-300">
+                        <div class="text-xs text-gray-500">Reiner Marktwert</div>
+                        <div id="result-market" class="text-xl font-bold">0.00 €</div>
+                    </div>
+                    <div class="p-3 bg-white border-2 border-green-600">
+                        <div class="text-xs text-green-700 font-bold">Fairer Händlerpreis (ab)</div>
+                        <div id="result-fair" class="text-xl font-bold text-green-700">0.00 €</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container mt-6">
+                    <canvas id="goldChart"></canvas>
+                </div>
+            </div>
+
+            <div class="border-l-4 border-red-600 bg-red-50 p-6 mb-8">
+                <h3 class="text-red-900 font-bold text-lg mb-2">⚠️ WICHTIG: Die Anonymitäts-Grenzen (GwG)</h3>
+                <p class="text-sm mb-3">In Deutschland und der EU gelten strenge Geldwäschegesetze (GwG). Kenne deine Limits beim "Tafelgeschäft" (Barverkauf/Kauf):</p>
+                
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 border border-red-200">
+                        <p class="font-bold text-green-700">Unter 2.000 €</p>
+                        <p class="text-xs mt-1">Absolut anonym möglich. Der Händler muss keine Personalien aufnehmen (Kulanzgrenze variiert je nach Händler, rechtlich aber bis 1.999,99€ möglich).</p>
+                    </div>
+                    <div class="bg-white p-4 border border-red-200">
+                        <p class="font-bold text-red-700">Ab 2.000 €</p>
+                        <p class="text-xs mt-1">Ausweispflicht! Deine Daten werden aufgenommen. Ab 10.000€ muss zudem die Herkunft des Geldes (Mittelherkunftsnachweis) belegt werden.</p>
+                    </div>
+                </div>
+                <p class="text-xs mt-3 italic">Strategie: Verkaufe/Kaufe in Tranchen unter 2.000€ an verschiedenen Tagen oder bei verschiedenen Händlern (Stückelung).</p>
+            </div>
+
+            <div class="mt-8 flex justify-between">
+                <button onclick="showSection('phase2')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('phase4')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Software Deep-Dive &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase4" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4">IV. SOFTWARE HANDBUCH</h2>
+            <p class="mb-6">Hier richten wir deine digitale Bank ein. Wir nutzen <strong>BlueWallet</strong>, weil es am einfachsten ist und alles kann.</p>
+
+            <div class="mb-8 border-l-4 border-gray-400 pl-4">
+                <h3 class="font-bold text-xl mb-2">A. Der App Store (F-Droid)</h3>
+                <p class="text-sm mb-2">Auf einem GrapheneOS Handy gibt es keinen PlayStore. Wir nutzen F-Droid (Open Source).</p>
+                <ul class="list-disc pl-5 text-sm space-y-1">
+                    <li>Öffne Browser -> <strong>f-droid.org</strong> -> "Download F-Droid".</li>
+                    <li>Installieren & Öffnen.</li>
+                    <li>Warte, bis die "Paketquellen" aktualisiert sind.</li>
+                </ul>
+            </div>
+
+            <div class="mb-8 border-l-4 border-blue-600 pl-4 bg-blue-50 p-4">
+                <h3 class="font-bold text-xl mb-2">B. BlueWallet: Die Installation</h3>
+                <ol class="list-decimal pl-5 text-sm space-y-2">
+                    <li>Suche in F-Droid nach "BlueWallet". Installieren.</li>
+                    <li>Öffne die App. Du wirst jetzt <strong>ZWEI</strong> Wallets erstellen.</li>
+                </ol>
+            </div>
+
+            <details class="border-2 border-black mb-4 group open:bg-gray-50">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>1. Der "Tresor" (On-Chain)</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <p class="text-sm font-bold mb-2">Für Beträge über 100€. Das ist dein Sparbuch.</p>
+                    <ol class="list-decimal pl-5 text-sm space-y-3">
+                        <li>Klicke in BlueWallet auf "Neue Wallet hinzufügen".</li>
+                        <li>Wähle <strong>"Bitcoin"</strong> (blau).</li>
+                        <li><strong>STOPP!</strong> Jetzt werden dir 12 Wörter angezeigt.</li>
+                        <li>Nimm Stift und Papier. Schreibe sie ab: "1. witch, 2. hammer, 3. ..."</li>
+                        <li>Bestätige die Wörter in der App.</li>
+                        <li><strong>Regel:</strong> Diese Wörter sind dein Geld. Wenn das Handy kaputt geht, brauchst du das Papier.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="border-2 border-black mb-4 group">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>2. Die "Kaffeekasse" (Lightning)</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <p class="text-sm font-bold mb-2">Für Beträge unter 100€. Für Kaffee, VPN, SIM.</p>
+                    <ol class="list-decimal pl-5 text-sm space-y-3">
+                        <li>Klicke auf "Neue Wallet hinzufügen".</li>
+                        <li>Wähle <strong>"Lightning"</strong> (gelb).</li>
+                        <li>Klicke auf "Erstellen". Fertig.</li>
+                        <li><strong>Der Unterschied:</strong> Lightning ist sekundenschnell und kostet fast keine Gebühr. Bitcoin (Tresor) ist langsam (10-60 Min) und kostet Gebühren, ist aber sicherer für große Summen.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <div class="mt-8 flex justify-between">
+                <button onclick="showSection('phase3')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('phase5')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Kaufen &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase5" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4">V. BITCOIN KAUFEN</h2>
+            
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="border-2 border-black p-6 relative bg-white">
+                    <div class="absolute -top-3 left-4 bg-black text-white px-2 font-bold text-sm">EINSTEIGER</div>
+                    <h3 class="font-bold text-xl mb-2 mt-2">Peach Bitcoin (App)</h3>
+                    <p class="text-sm mb-4">Mobile App. Einfach. Perfekt für Beträge bis 1.000€.</p>
+                    <ul class="list-disc pl-5 text-sm space-y-2">
+                        <li>Kein Ausweis (No-KYC).</li>
+                        <li>Läuft auf dem GrapheneOS Handy.</li>
+                        <li>Zahlung: Bar (Meetup) oder SEPA (Risiko).</li>
+                        <li>Matching dauert manchmal länger.</li>
+                    </ul>
+                </div>
+
+                <div class="border-2 border-black p-6 relative bg-gray-50">
+                    <div class="absolute -top-3 left-4 bg-black text-white px-2 font-bold text-sm">PROFI (Bisq)</div>
+                    <h3 class="font-bold text-xl mb-2 mt-2">Bisq Network (Desktop)</h3>
+                    <p class="text-sm mb-4">Dezentrales Netzwerk über Tor. Für größere Summen & absolute Profis.</p>
+                    <ul class="list-disc pl-5 text-sm space-y-2">
+                        <li>Läuft nur am PC/Laptop (nicht Handy).</li>
+                        <li>Nutzt Tor-Netzwerk (unsichtbar).</li>
+                        <li><strong>Hürde:</strong> Du brauchst bereits etwas Bitcoin als "Kaution" (Security Deposit).</li>
+                    </ul>
+                    <button onclick="toggleDetail('bisq-guide')" class="mt-4 w-full border border-black p-2 text-sm font-bold hover:bg-black hover:text-white transition-colors">Anleitung öffnen ⌄</button>
+                </div>
+            </div>
+
+            <div id="bisq-guide" class="hidden border-l-4 border-gray-800 pl-6 py-4 mb-8 bg-gray-100">
+                <h4 class="font-bold text-lg mb-3">Bisq Quick-Start Guide</h4>
+                <ol class="list-decimal pl-5 space-y-2 text-sm">
+                    <li>Lade Bisq von <strong>bisq.network</strong> (PC/Mac). Verifiziere die Signatur!</li>
+                    <li>Starte Bisq. Es verbindet sich mit Tor (dauert beim 1. Mal).</li>
+                    <li>Sende ein wenig BTC (ca. 0.005 BTC) an dein Bisq-Wallet (für die Kaution). <i>Tipp: Kaufe diese ersten Satoshis über Peach oder ATM.</i></li>
+                    <li>Erstelle ein Angebot "Kaufe BTC" oder nimm eines an.</li>
+                    <li>Zahlungsmethode: Wähle "Face-to-Face" (Bargeld) oder "Amazon Gift Card" (kleinere Beträge).</li>
+                    <li>Der Trade ist durch 2-aus-3 Multi-Sig gesichert. Niemand kann stehlen.</li>
+                </ol>
+            </div>
+
+            <div class="border border-gray-300 p-4 mb-8 text-sm text-gray-600">
+                <strong>Fallback: Bitcoin ATM</strong><br>
+                Wenn alles andere zu kompliziert ist: CoinATMRadar.com -> ATM finden -> Bargeld rein -> QR-Code scannen. Teuer (10% Gebühr), aber schnell.
+            </div>
+
+            <div class="mt-8 flex justify-between">
+                <button onclick="showSection('phase4')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('examples')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Alle Beispiele &rarr;</button>
+            </div>
+        </section>
+
+        <section id="examples" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-8 border-b-2 border-black pb-4">VI. FALLSTUDIEN AUS DER PRAXIS</h2>
+
+            <div class="bg-gray-900 text-white p-8 mb-12 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-yellow-500 text-black text-xs font-bold px-3 py-1">MASTER SZENARIO</div>
+                <h3 class="text-3xl font-bold mb-2">Case Study: Hermann</h3>
+                <p class="text-gray-400 mb-6 border-b border-gray-700 pb-4">Ziel: 20.000€ Bargeldvermögen sicher in Bitcoin anlegen ("Cold Storage").</p>
+
+                <div class="space-y-6">
+                    <div class="flex items-start">
+                        <div class="w-12 text-yellow-500 font-bold text-xl">01</div>
+                        <div>
+                            <p class="font-bold text-lg">Hardware Wallet</p>
+                            <p class="text-sm text-gray-400">Hermann installiert nicht nur eine App. Er kauft eine <strong>BitBox02</strong>. Das ist ein USB-Stick, der den Schlüssel offline hält. Sein Handy dient nur als "Fernbedienung" (Watch-Only).</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="w-12 text-yellow-500 font-bold text-xl">02</div>
+                        <div>
+                            <p class="font-bold text-lg">Der "Dollar Cost Average" (DCA)</p>
+                            <p class="text-sm text-gray-400">Er kauft nicht alles auf einmal (zu auffällig). Er kauft über 4 Monate verteilt. Mal 2.000€ am ATM in Österreich, mal 3.000€ über private Treffen (Peach App).</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="w-12 text-yellow-500 font-bold text-xl">03</div>
+                        <div>
+                            <p class="font-bold text-lg">Das Ergebnis</p>
+                            <p class="text-sm text-gray-400">Hermann hat 20.000€ auf dem Stick. Niemand weiß davon. Er schläft ruhig.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="example-card bg-white p-6">
+                <h3 class="text-2xl font-bold mb-4">📖 Sarah (34) - Von Gold zu Bitcoin</h3>
+                
+                <div class="phase-block phase-blue">
+                    <p class="font-bold text-blue-800">Woche 1: Vorbereitung</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Pixel 6a bar gekauft (Kleinanzeigen).</li>
+                        <li>• GrapheneOS installiert (45 Min).</li>
+                        <li>• Gold (Schmuck/Zahngold 833er) geschätzt.</li>
+                        <li>• <strong>Verkauft für 3.100€ bar</strong> (bestes Angebot angenommen).</li>
+                    </ul>
+                </div>
+
+                <div class="phase-block phase-green">
+                    <p class="font-bold text-green-800">Woche 2: Der Tausch</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• 3x Besuch am Bitcoin ATM (verschiedene Tage).</li>
+                        <li>• Jeweils ~1.000€ eingezahlt (unter der Grenze!).</li>
+                        <li>• Gebühr: ca. 8-9%. Teuer, aber anonym.</li>
+                    </ul>
+                </div>
+
+                <div class="phase-block phase-purple">
+                    <p class="font-bold text-purple-800">Ergebnis</p>
+                    <p class="text-sm mt-1">Sarah besitzt jetzt ca. 0.043 BTC. Niemand außer ihr hat den Schlüssel.</p>
+                </div>
+            </div>
+
+            <div class="example-card bg-white p-6">
+                <h3 class="text-2xl font-bold mb-4">📖 Michael (42) - Der P2P Händler</h3>
+                <div class="phase-block phase-blue">
+                    <p class="font-bold text-blue-800">Ausgangslage</p>
+                    <p class="text-sm mt-1">Handwerker, hat 5.000€ Bargeld. Will keine hohen ATM-Gebühren zahlen.</p>
+                </div>
+                <div class="phase-block phase-green">
+                    <p class="font-bold text-green-800">Aktion (Bisq & Peach)</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Nutzt Peach App für lokales Treffen.</li>
+                        <li>• Trifft Verkäufer im öffentlichen Park.</li>
+                        <li>• Tauscht 2.000€ gegen BTC.</li>
+                        <li>• Zahlt nur 3% Aufschlag (Premium).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="example-card bg-white p-6">
+                <h3 class="text-2xl font-bold mb-4">📖 Julia (28) - Bitcoin im Alltag</h3>
+                <div class="phase-block phase-green">
+                    <p class="font-bold text-green-800">Lösung (Bitrefill)</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Geht auf Bitrefill.com (via Tor).</li>
+                        <li>• Kauft Amazon-Gutschein für 1.200€.</li>
+                        <li>• Zahlt via Lightning (Gebühr: 0,01€).</li>
+                        <li>• Laptop bestellt. Keine Banktransaktion sichtbar.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-12 flex justify-between">
+                <button onclick="showSection('phase5')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('opsec')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: OpSec & Drill &rarr;</button>
+            </div>
+        </section>
+
+        <section id="opsec" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4">VII. OPSEC & NOTFALL-DRILL</h2>
+            
+            <div class="critical-warning p-6 mb-8 bg-red-50">
+                <h3 class="font-bold text-xl mb-2 text-red-800">⚠️ Faktor Mensch</h3>
+                <p>Die beste Technik nützt nichts, wenn du Fehler machst. Diese Regeln sind nicht verhandelbar.</p>
+            </div>
+
+            <div class="border-2 border-black p-6 mb-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-black text-white w-8 h-8 flex items-center justify-center font-bold rounded-full mr-4">1</div>
+                    <h3 class="text-xl font-bold">Das "Reines Gerät" Prinzip</h3>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="bg-red-50 p-4 border-l-4 border-red-600">
+                        <p class="font-bold text-red-800 mb-2">⛔ VERBOTEN:</p>
+                        <ul class="text-sm space-y-1">
+                            <li>• WhatsApp / Instagram / Facebook</li>
+                            <li>• Banking Apps</li>
+                            <li>• Google Maps</li>
+                            <li>• Alles, was deinen Klarnamen kennt!</li>
+                        </ul>
+                    </div>
+                    <div class="bg-green-50 p-4 border-l-4 border-green-600">
+                        <p class="font-bold text-green-800 mb-2">✅ ERLAUBT:</p>
+                        <ul class="text-sm space-y-1">
+                            <li>• Mullvad VPN</li>
+                            <li>• BlueWallet / Peach / Bisq</li>
+                            <li>• Signal (mit anonymer Nummer)</li>
+                            <li>• Tor Browser</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-2 border-black p-6 mb-6 bg-gray-50">
+                <div class="flex items-center mb-4">
+                    <div class="bg-black text-white w-8 h-8 flex items-center justify-center font-bold rounded-full mr-4">2</div>
+                    <h3 class="text-xl font-bold">Physisches Backup (Stahl)</h3>
+                </div>
+                <p class="text-sm mb-4">Papier verbrennt. Tinte verblasst. Profis (wie Hermann) nutzen Stahl.</p>
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <span class="text-2xl mr-3">🔨</span>
+                        <div>
+                            <p class="font-bold">Die Methode:</p>
+                            <p class="text-sm">Kaufe Unterlegscheiben aus Edelstahl (Baumarkt, M8 oder M10) und Schlagbuchstaben. Stanze die ersten 4 Buchstaben jedes deiner 12 Seed-Wörter auf die Scheiben. Fädle sie auf eine Schraube und verschließe sie mit einer Mutter.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-2xl mr-3">🔥</span>
+                        <div>
+                            <p class="font-bold">Der Schutz:</p>
+                            <p class="text-sm">Hält bis zu 1400°C (Hausbrand) aus. Wasserfest. Rostfrei.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-4 border-black p-8 mb-12 mt-12 bg-white">
+                <h3 class="font-bold text-2xl mb-4 text-center uppercase tracking-widest">🚨 Notfall-Drill Simulator</h3>
+                <p class="text-center text-sm mb-6 text-gray-600">Simuliere den Verlust deines Handys. Bestätige jeden Schritt, um das Training abzuschließen.</p>
+                
+                <div id="sim-container" class="space-y-4 max-w-md mx-auto">
+                    <div class="sim-step border border-gray-300 p-4 cursor-pointer hover:bg-gray-50 active" onclick="completeStep(this, 1)">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 border-2 border-black rounded-full mr-3 flex items-center justify-center font-bold" id="icon-1">1</div>
+                            <span class="font-bold">Gerät verloren / gestohlen</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 pl-9">Ruhe bewahren. Kein Zugriff auf Daten möglich dank GrapheneOS.</p>
+                    </div>
+
+                    <div class="sim-step border border-gray-300 p-4 cursor-pointer hover:bg-gray-50" onclick="completeStep(this, 2)">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 border-2 border-black rounded-full mr-3 flex items-center justify-center font-bold" id="icon-2">2</div>
+                            <span class="font-bold">Neues Gerät beschafft</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 pl-9">Wieder anonym gekauft. BlueWallet neu installiert.</p>
+                    </div>
+
+                    <div class="sim-step border border-gray-300 p-4 cursor-pointer hover:bg-gray-50" onclick="completeStep(this, 3)">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 border-2 border-black rounded-full mr-3 flex items-center justify-center font-bold" id="icon-3">3</div>
+                            <span class="font-bold">Backup eingespielt (12 Wörter)</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 pl-9">Papier/Stahl-Backup geholt. "Wallet importieren" gewählt.</p>
+                    </div>
+
+                    <div class="sim-step border border-gray-300 p-4 cursor-pointer hover:bg-gray-50" onclick="completeStep(this, 4)">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 border-2 border-black rounded-full mr-3 flex items-center justify-center font-bold" id="icon-4">4</div>
+                            <span class="font-bold">Geld ist wieder da!</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 pl-9">Blockchain synchronisiert. Guthaben sichtbar.</p>
+                    </div>
+
+                    <div id="sim-success" class="hidden text-center p-4 bg-green-100 text-green-800 font-bold border-2 border-green-600 mt-4">
+                        DRILL ERFOLGREICH! DU BIST VORBEREITET.
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 flex justify-between">
+                <button onclick="showSection('examples')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('intro')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">🏠 Zum Start</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- Navigation Logic ---
+        function showSection(id) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById(id);
+            if(target) target.classList.remove('hidden');
+            document.querySelector('main').scrollTop = 0;
+
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById('btn-' + id);
+            if(activeBtn) activeBtn.classList.add('active');
+
+            if(id === 'phase3') setTimeout(calculateGold, 100);
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                menu.classList.add('flex');
+            } else {
+                menu.classList.add('hidden');
+                menu.classList.remove('flex');
+            }
+        }
+
+        function toggleDetail(id) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+
+        // --- Simulator Logic ---
+        let currentSimStep = 1;
+        function completeStep(el, stepNum) {
+            if(stepNum !== currentSimStep) return; // Enforce order
+            
+            el.classList.add('completed');
+            el.querySelector('.w-6').innerText = "✓";
+            el.querySelector('.w-6').classList.add('bg-green-500', 'text-white', 'border-green-600');
+            
+            currentSimStep++;
+            
+            // Activate next
+            const next = el.nextElementSibling;
+            if(next && next.classList.contains('sim-step')) {
+                next.classList.add('active');
+            } else if (stepNum === 4) {
+                document.getElementById('sim-success').classList.remove('hidden');
+            }
+        }
+
+        // --- Gold Chart Logic ---
+        let chartInstance = null;
+
+        function calculateGold() {
+            const weightInput = document.getElementById('gold-weight');
+            const purityInput = document.getElementById('gold-purity');
+            const spotInput = document.getElementById('spot-price');
+
+            if(!weightInput || !purityInput || !spotInput) return;
+
+            const weight = parseFloat(weightInput.value) || 0;
+            const purity = parseFloat(purityInput.value) || 0;
+            const spot = parseFloat(spotInput.value) || 0;
+
+            const pure = weight * purity;
+            const market = pure * spot;
+            const fair = market * 0.85;
+
+            const marketEl = document.getElementById('result-market');
+            const fairEl = document.getElementById('result-fair');
+            
+            if(marketEl) marketEl.innerText = market.toFixed(2) + " €";
+            if(fairEl) fairEl.innerText = fair.toFixed(2) + " €";
+
+            renderChart(market, fair);
+        }
+
+        function renderChart(market, fair) {
+            const ctxEl = document.getElementById('goldChart');
+            if(!ctxEl) return;
+            const ctx = ctxEl.getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            let userShare = 0;
+            let dealerShare = 0;
+
+            if (market > 0) {
+                userShare = (fair / market) * 100;
+                dealerShare = 100 - userShare;
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Dein Geld', 'Gebühren/Händler'],
+                    datasets: [{
+                        data: [userShare, dealerShare],
+                        backgroundColor: ['#16a34a', '#dc2626'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Init
+        window.onload = () => {
+            showSection('intro');
+            calculateGold(); 
+        };
+    </script>
+</body>
+</html>
