@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projekt Sovereign: Master Handbuch v9.8 (Supply Chain)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /* --- DESIGN: Paper / Typewriter Look --- */
+        body {
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'Courier New', Courier, monospace; 
+        }
+        .font-sans-reading {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* --- TABLET SCROLL FIX --- */
+        main {
+            padding-bottom: 600px !important;
+            min-height: 100vh;
+        }
+
+        /* --- NAVIGATION --- */
+        .nav-btn { transition: all 0.2s; border-left: 4px solid transparent; display: flex; align-items: center; }
+        .nav-btn:hover { background-color: #f3f4f6; border-left-color: #000; }
+        .nav-btn.active { background-color: #000; color: #fff; border-left-color: #000; }
+        .nav-btn svg { margin-right: 10px; width: 18px; height: 18px; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #000; }
+
+        /* Accordion / Details */
+        details > summary { list-style: none; cursor: pointer; transition: background 0.2s; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] > summary { background-color: #f3f4f6; border-bottom: 2px solid black; }
+        
+        /* Specific Details styling for Dark Mode Cards */
+        .dark-details[open] > summary { background-color: #374151; color: white; border-bottom: 1px solid #fbbf24; }
+        
+        /* Timeline / Example Card Design */
+        .example-card { border: 2px solid black; margin-bottom: 2rem; box-shadow: 4px 4px 0px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .example-card:hover { transform: translateY(-2px); box-shadow: 6px 6px 0px rgba(0,0,0,0.2); }
+        .phase-block { padding: 1rem; border-left: 4px solid; margin-bottom: 1rem; }
+        .phase-blue { background-color: #eff6ff; border-color: #2563eb; }
+        .phase-green { background-color: #f0fdf4; border-color: #16a34a; }
+        .phase-purple { background-color: #faf5ff; border-color: #9333ea; }
+        .phase-orange { background-color: #fff7ed; border-color: #f97316; }
+        
+        /* Mobile Step Guide Styles */
+        .mobile-step { border-left: 2px dashed #ccc; padding-left: 20px; padding-bottom: 30px; position: relative; }
+        .mobile-step:last-child { border-left: none; }
+        .step-dot { position: absolute; left: -11px; top: 0; width: 20px; height: 20px; background: black; border-radius: 50%; color: white; text-align: center; font-size: 12px; line-height: 20px; font-weight: bold; }
+        .screen-mockup { background: #111; color: #fff; padding: 10px; border-radius: 8px; font-family: sans-serif; font-size: 12px; margin-top: 10px; border: 2px solid #444; }
+
+        /* Chart Container */
+        .chart-container { position: relative; width: 100%; max-width: 400px; margin: 0 auto; height: 300px; }
+        
+        /* Checkbox */
+        .custom-checkbox input:checked + div { background-color: #000; border-color: #000; }
+        .custom-checkbox input:checked + div svg { display: block; }
+
+        /* Simulator Styles */
+        .sim-step { opacity: 0.5; pointer-events: none; transition: all 0.3s; }
+        .sim-step.active { opacity: 1; pointer-events: all; }
+        .sim-step.completed { opacity: 0.8; border-color: #16a34a; background-color: #f0fdf4; }
+
+        /* --- PRINT STYLES --- */
+        @media print {
+            @page { margin: 2cm; }
+            nav, .md\:hidden, #mobile-menu, button:not(.print-visible), .no-print { display: none !important; }
+            main { padding: 0 !important; margin: 0 !important; height: auto !important; overflow: visible !important; width: 100% !important; }
+            body { font-size: 12pt; background: white; color: black; }
+            .section-content { display: block !important; margin-bottom: 40px; page-break-after: always; }
+            details[open] > summary { border-bottom: 1px solid #000; }
+            details { border: 1px solid #ccc; margin-bottom: 10px; page-break-inside: avoid; }
+            .example-card, .phase-block { break-inside: avoid; border: 1px solid #000; box-shadow: none; }
+            a { text-decoration: underline; color: black; }
+            .bg-gray-900 { background-color: #fff !important; color: #000 !important; border: 2px solid #000; }
+            .text-gray-400 { color: #555 !important; }
+            .chart-container { display: none; }
+            .critical-warning, .bg-red-50 { border: 2px solid black; background: #fff; }
+            .dark-details { border: 1px solid black; background: white; color: black; }
+            .dark-details summary { background: #eee; color: black; }
+            .dark-details div { background: white; color: black; }
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-base">
+
+    <nav class="w-80 bg-gray-50 border-r-2 border-black flex-shrink-0 flex flex-col h-full overflow-y-auto hidden md:flex">
+        <div class="p-6 border-b-2 border-black bg-white">
+            <h1 class="text-2xl font-bold tracking-tighter">PROJEKT<br>SOVEREIGN</h1>
+            <p class="text-xs mt-2 text-gray-500">v9.8 // Supply Chain</p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-2 space-y-1">
+            <button onclick="showSection('intro')" id="btn-intro" class="nav-btn w-full text-left p-3 font-bold">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                0. START
+            </button>
+            <button onclick="showSection('phase1')" id="btn-phase1" class="nav-btn w-full text-left p-3">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                I. Hardware & OS
+            </button>
+            <button onclick="showSection('phase2')" id="btn-phase2" class="nav-btn w-full text-left p-3">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                II. Konnektivität
+            </button>
+            <button onclick="showSection('phase3')" id="btn-phase3" class="nav-btn w-full text-left p-3">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                III. Gold & Recht
+            </button>
+            <button onclick="showSection('phase4')" id="btn-phase4" class="nav-btn w-full text-left p-3">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                IV. Software
+            </button>
+            <button onclick="showSection('phase5')" id="btn-phase5" class="nav-btn w-full text-left p-3">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                V. Bitcoin Kauf
+            </button>
+            <button onclick="showSection('examples')" id="btn-examples" class="nav-btn w-full text-left p-3 font-bold border-t border-gray-300">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                VI. Fallstudien
+            </button>
+            <button onclick="showSection('opsec')" id="btn-opsec" class="nav-btn w-full text-left p-3 text-red-700 font-bold border-t border-red-200">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                VII. OpSec & Drill
+            </button>
+            <button onclick="showSection('phase8')" id="btn-phase8" class="nav-btn w-full text-left p-3 font-bold text-orange-700 bg-orange-50 border-t border-orange-200">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                VIII. Living on Bitcoin
+            </button>
+            <button onclick="showSection('phase9')" id="btn-phase9" class="nav-btn w-full text-left p-3 font-bold text-gray-600 bg-gray-100 border-t border-gray-300">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                IX. Wartung & Pflege
+            </button>
+        </div>
+    </nav>
+
+    <div class="md:hidden fixed top-0 w-full bg-white border-b-2 border-black z-50 p-4 flex justify-between items-center shadow-md">
+        <h1 class="font-bold text-lg">PROJEKT SOVEREIGN</h1>
+        <button onclick="toggleMenu()" class="border-2 border-black px-3 py-1 font-bold bg-gray-100">MENÜ</button>
+    </div>
+
+    <div id="mobile-menu" class="fixed inset-0 bg-white z-40 hidden flex-col pt-20 px-6 space-y-4 overflow-y-auto">
+        <button onclick="showSection('intro'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">0. Start</button>
+        <button onclick="showSection('phase1'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">I. Hardware</button>
+        <button onclick="showSection('phase2'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">II. Konnektivität</button>
+        <button onclick="showSection('phase3'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">III. Gold & Recht</button>
+        <button onclick="showSection('phase4'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">IV. Software</button>
+        <button onclick="showSection('phase5'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">V. Kauf (Profi)</button>
+        <button onclick="showSection('examples'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left">VI. Beispiele</button>
+        <button onclick="showSection('opsec'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left text-red-600">VII. OpSec & Drill</button>
+        <button onclick="showSection('phase8'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left text-orange-600">VIII. Living on Bitcoin</button>
+        <button onclick="showSection('phase9'); toggleMenu()" class="text-xl font-bold border-b pb-2 text-left text-gray-600">IX. Wartung</button>
+        <button onclick="toggleMenu()" class="mt-8 text-center text-red-600 font-bold border-2 border-red-600 p-3">Schließen</button>
+    </div>
+
+    <main class="flex-1 overflow-y-auto p-6 md:p-12 font-sans-reading pt-24 md:pt-12 bg-white relative">
+
+        <section id="intro" class="section-content max-w-4xl mx-auto">
+            <div class="border-l-4 border-black pl-6 mb-8">
+                <h2 class="text-4xl font-bold mb-4 uppercase tracking-tight">Das Protokoll</h2>
+                <p class="text-xl leading-relaxed text-gray-800">
+                    Dies ist die Blaupause für finanzielle Unsichtbarkeit. Wir decken alles ab: Von der Hardware bis zum anonymen Bezahlen im Alltag.
+                </p>
+            </div>
+            
+            <div class="bg-gray-50 border-2 border-gray-600 p-6 mb-8 no-print">
+                <h3 class="font-bold text-gray-900 text-lg mb-2">🚀 Update v9.8 (Supply Chain):</h3>
+                <ul class="list-disc pl-5 space-y-1 text-sm">
+                    <li><strong>EINKAUFS-GUIDE (NEU):</strong> Phase I enthält jetzt eine detaillierte Einkaufsliste mit anonymen Bezugsquellen und Links.</li>
+                    <li><strong>Media Markt Mission:</strong> Anleitung für den Barkauf des Pixels.</li>
+                    <li><strong>BitBox Beschaffung:</strong> Warnung vor Amazon und Links zu sicheren Händlern (Copiaro/Shift).</li>
+                </ul>
+            </div>
+
+            <div class="flex gap-4 flex-col md:flex-row">
+                <button onclick="showSection('phase1')" class="bg-black text-white px-8 py-4 font-bold text-lg hover:bg-gray-800 shadow-lg no-print">
+                    Protokoll starten &rarr;
+                </button>
+                <button onclick="printManual()" class="bg-white border-2 border-black text-black px-8 py-4 font-bold text-lg hover:bg-gray-100 shadow-lg no-print flex items-center justify-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    Handbuch drucken
+                </button>
+            </div>
+        </section>
+
+        <section id="phase1" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                I. HARDWARE & OS
+            </h2>
+
+            <details class="border-2 border-black mb-4 group open:bg-gray-50">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white border-l-4 border-green-500">
+                    <span>1.0 Der Beschaffungs-Plan (Einkaufsliste)</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-bold text-lg mb-2 border-b border-gray-400 pb-1">A. Das Google Pixel</h4>
+                            <p class="text-sm font-bold text-green-700 mb-2">Ort: Media Markt / Saturn (Lokal)</p>
+                            <ul class="list-disc pl-5 text-sm space-y-2">
+                                <li><strong>Zahlung:</strong> Nur BARGELD. (Geld 2 Tage vorher abheben).</li>
+                                <li><strong>An der Kasse:</strong>
+                                    <ul class="list-none pl-2 mt-1 space-y-1 text-gray-700">
+                                        <li>❌ "Haben Sie Payback?" -> "Nein."</li>
+                                        <li>❌ "Ihre Postleitzahl?" -> "Nein."</li>
+                                        <li>❌ "Zusatzversicherung?" -> "Nein." (Benötigt Adresse).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Quittung:</strong> Mitnehmen (Garantie), aber nirgendwo scannen.</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-bold text-lg mb-2 border-b border-gray-400 pb-1">B. Die BitBox02</h4>
+                            <p class="text-sm font-bold text-blue-700 mb-2">Ort: Online-Bestellung (Nicht Amazon!)</p>
+                            <div class="bg-red-50 border border-red-200 p-2 text-xs mb-3">
+                                ⚠️ Warnung: Kaufe NIEMALS gebraucht oder auf eBay. Die Geräte könnten manipuliert sein.
+                            </div>
+                            <ul class="list-disc pl-5 text-sm space-y-2">
+                                <li><strong>Modell:</strong> "Bitcoin-only edition".</li>
+                                <li><strong>Bezugsquellen:</strong>
+                                    <ul class="list-none pl-2 mt-1 space-y-1">
+                                        <li>🇩🇪 <a href="https://copiaro.de" target="_blank" class="underline font-bold hover:text-blue-600">Copiaro.de</a> (Deutscher Reseller, schnelle Lieferung an Packstation möglich).</li>
+                                        <li>🇨🇭 <a href="https://shiftcrypto.ch" target="_blank" class="underline font-bold hover:text-blue-600">Shift Crypto</a> (Hersteller, Versand aus Schweiz kann Zoll/Daten erfordern).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Versand:</strong> Nutze eine DHL Packstation oder die Adresse eines Freundes.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </details>
+            
+            <details class="border-2 border-black mb-4 group">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>1.1 Das Gerät & Hygiene (Kritisch!)</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <p class="mb-4 text-sm">Wir nutzen ausschließlich <strong>Google Pixel (7/8/9)</strong> wegen des Titan M2 Chips.</p>
+                    
+                    <div class="bg-red-50 p-4 border-l-4 border-red-600 text-sm font-bold mb-4">
+                        ⚠️ ERSTINBETRIEBNAHME HYGIENE (Quelle: Handbuch Kap. 2.2.2):<br>
+                        1. Lege NIEMALS eine SIM-Karte ein, bevor GrapheneOS installiert ist.<br>
+                        2. Verbinde dich NIEMALS mit deinem Heim-WLAN, solange noch das Standard-Google-OS läuft.<br>
+                        Grund: Das Gerät sendet sonst sofort IMEI und IP an Google und verknüpft sie mit deiner Identität!
+                    </div>
+                </div>
+            </details>
+
+            <details class="border-2 border-black mb-4 group">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>1.2 GrapheneOS Installation</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <p class="text-sm mb-2">Die Installation über <strong>grapheneos.org/install/web</strong>.</p>
+                    <ol class="list-decimal pl-5 space-y-2 text-sm">
+                        <li>Entwickleroptionen: 7x auf "Build-Nummer" tippen.</li>
+                        <li>OEM-Entsperrung aktivieren (Kurz ins Gast-WLAN dafür).</li>
+                        <li>Web-Installer nutzen (Browser: Chrome/Brave/Edge nutzen!).</li>
+                        <li><strong>WICHTIG:</strong> Am Ende "Lock Bootloader" nicht vergessen!</li>
+                    </ol>
+                </div>
+            </details>
+
+            <div class="mt-8 flex justify-end no-print">
+                <button onclick="showSection('phase2')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Konnektivität &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase2" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                II. DER DIGITALE TUNNEL
+            </h2>
+            
+            <details class="border-2 border-black mb-4 group">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>2.1 Schritt 1: VPN (Mullvad)</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <p class="text-sm mb-2">Zuerst den Tunnel bauen.</p>
+                    <ol class="list-decimal pl-5 space-y-2 text-sm">
+                        <li>Lade Mullvad APK (ohne PlayStore) via Vanadium.</li>
+                        <li>Erstelle Konto (Generiere Nummer -> Schreib sie auf!).</li>
+                        <li>Aktiviere "Durchgehend aktives VPN" + "Verbindungen ohne VPN blockieren".</li>
+                    </ol>
+                </div>
+            </details>
+
+            <details class="border-2 border-black mb-4 group">
+                <summary class="p-4 font-bold text-lg flex justify-between items-center bg-white">
+                    <span>2.2 Schritt 2: Silent.Link (eSIM)</span>
+                    <span class="text-2xl group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <div class="p-6 border-t-2 border-black">
+                    <div class="bg-yellow-50 p-3 mb-4 text-sm border border-yellow-400">
+                        <strong>🔧 WICHTIG (Handbuch Kap 4.1.2):</strong><br>
+                        Damit eSIMs funktionieren, musst du in GrapheneOS erst:<br>
+                        <i>Einstellungen > Netzwerk > "eSIM-Unterstützung"</i> aktivieren.<br>
+                        Das lädt eine isolierte Google-Komponente, die nur mit dem SIM-Chip spricht.
+                    </div>
+                    <ol class="list-decimal pl-5 space-y-2 text-sm">
+                        <li>Kaufe auf silent.link ein Datenpaket (via Lightning).</li>
+                        <li>Scanne den QR-Code unter "SIMs hinzufügen".</li>
+                        <li>Fertig: Mobiles Internet ohne Ausweis.</li>
+                    </ol>
+                </div>
+            </details>
+
+            <div class="mt-8 flex justify-between no-print">
+                <button onclick="showSection('phase1')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('phase3')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Gold & Cash &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase3" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                III. KAPITAL & GOLD & RECHT
+            </h2>
+            
+            <div class="bg-gray-50 border-2 border-black p-6 mb-8 shadow-lg">
+                <h3 class="text-xl font-bold mb-4 border-b border-gray-300 pb-2">⚖️ Der Profi-Rechner</h3>
+                
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1">Gewicht (Gramm)</label>
+                        <input type="number" id="gold-weight" class="w-full border-2 border-black p-2 font-mono text-lg" placeholder="z.B. 31.1" oninput="calculateGold()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1">Legierung</label>
+                        <select id="gold-purity" class="w-full border-2 border-black p-2 font-mono text-lg" onchange="calculateGold()">
+                            <option value="0.333">333 (8 Karat)</option>
+                            <option value="0.585" selected>585 (14 Karat)</option>
+                            <option value="0.750">750 (18 Karat)</option>
+                            <option value="0.833">833 (20 Karat - Zahngold)</option>
+                            <option value="0.900">900 (Münzgold - Reichsmark)</option>
+                            <option value="0.916">916 (22 Karat - Krugerrand)</option>
+                            <option value="0.999">999 (24 Karat - Barren)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase mb-1">Börsenpreis (€/g)</label>
+                        <input type="number" id="spot-price" class="w-full border-2 border-black p-2 font-mono text-lg" value="70" oninput="calculateGold()">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="p-3 bg-white border border-gray-300">
+                        <div class="text-xs text-gray-500">Reiner Marktwert</div>
+                        <div id="result-market" class="text-xl font-bold">0.00 €</div>
+                    </div>
+                    <div class="p-3 bg-white border-2 border-green-600">
+                        <div class="text-xs text-green-700 font-bold">Fairer Händlerpreis (ab)</div>
+                        <div id="result-fair" class="text-xl font-bold text-green-700">0.00 €</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container mt-6">
+                    <canvas id="goldChart"></canvas>
+                </div>
+            </div>
+
+            <div class="border-l-4 border-red-600 bg-red-50 p-6 mb-8">
+                <h3 class="text-red-900 font-bold text-lg mb-2">⚠️ WICHTIG: Die Anonymitäts-Grenzen (GwG)</h3>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 border border-red-200">
+                        <p class="font-bold text-green-700">Unter 2.000 €</p>
+                        <p class="text-xs mt-1">Anonymes Tafelgeschäft rechtlich möglich (Handbuch Kap 7.2). Tipp: Stückelung!</p>
+                    </div>
+                    <div class="bg-white p-4 border border-red-200">
+                        <p class="font-bold text-red-700">Ab 2.000 €</p>
+                        <p class="text-xs mt-1">Ausweispflicht! Deine Daten werden aufgenommen.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-between no-print">
+                <button onclick="showSection('phase2')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('phase4')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Software Deep-Dive &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase4" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                IV. SOFTWARE & WALLETS
+            </h2>
+            
+            <div class="mb-8 border-l-4 border-blue-600 pl-4 bg-blue-50 p-4">
+                <h3 class="font-bold text-xl mb-2">BlueWallet Einrichtung</h3>
+                <p class="text-sm">Installiere BlueWallet via F-Droid oder APK.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="border-2 border-black p-4">
+                    <h4 class="font-bold">1. Der Tresor (Bitcoin)</h4>
+                    <p class="text-xs text-gray-500 mb-2">Für Ersparnisse > 100€</p>
+                    <ul class="list-disc pl-4 text-sm">
+                        <li>Typ: "Bitcoin" (On-Chain)</li>
+                        <li>Backup: 12 Wörter auf Papier/Stahl.</li>
+                        <li><strong>Regel:</strong> Nie online eingeben!</li>
+                    </ul>
+                </div>
+                <div class="border-2 border-black p-4 bg-yellow-50">
+                    <h4 class="font-bold">2. Kaffeekasse (Lightning)</h4>
+                    <p class="text-xs text-gray-500 mb-2">Für Ausgaben < 100€</p>
+                    <ul class="list-disc pl-4 text-sm">
+                        <li>Typ: "Lightning"</li>
+                        <li>Speed: Sekunden</li>
+                        <li>Backup: Lndhub Export URL</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-between no-print">
+                <button onclick="showSection('phase3')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('phase5')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Kaufen &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase5" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                V. BITCOIN KAUFEN
+            </h2>
+            
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="border-2 border-black p-6 relative bg-white">
+                    <div class="absolute -top-3 left-4 bg-black text-white px-2 font-bold text-sm">EINSTEIGER</div>
+                    <h3 class="font-bold text-xl mb-2 mt-2">Peach Bitcoin</h3>
+                    <p class="text-sm mb-4">Mobile App. Perfekt für Cash Trades oder SEPA Instant (klein).</p>
+                    <ul class="list-disc pl-5 text-sm space-y-2">
+                        <li>No-KYC (Kein Ausweis bis Limits).</li>
+                        <li>Option "Meetup" (Bargeld) nutzen!</li>
+                    </ul>
+                </div>
+
+                <div class="border-2 border-black p-6 relative bg-gray-50">
+                    <div class="absolute -top-3 left-4 bg-black text-white px-2 font-bold text-sm">PROFI (Bisq)</div>
+                    <h3 class="font-bold text-xl mb-2 mt-2">Bisq Network</h3>
+                    <p class="text-sm mb-4">Desktop only. Läuft über Tor.</p>
+                    <ul class="list-disc pl-5 text-sm space-y-2">
+                        <li>Benötigt PC/Laptop.</li>
+                        <li>Benötigt Kaution (BTC).</li>
+                        <li>Absolut zensurresistent.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-between no-print">
+                <button onclick="showSection('phase4')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('examples')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Beispiele &rarr;</button>
+            </div>
+        </section>
+
+        <section id="examples" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-8 border-b-2 border-black pb-4 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                VI. FALLSTUDIEN AUS DER PRAXIS
+            </h2>
+
+            <div class="bg-gray-900 text-white p-8 mb-12 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-yellow-500 text-black text-xs font-bold px-3 py-1">MASTER SZENARIO</div>
+                <h3 class="text-3xl font-bold mb-2">Case Study: Hermann</h3>
+                <p class="text-gray-400 mb-6 border-b border-gray-700 pb-4">Ziel: 20.000€ Bargeldvermögen sicher in Bitcoin anlegen ("Cold Storage").</p>
+
+                <div class="space-y-6">
+                    <div class="flex items-start">
+                        <div class="w-12 text-yellow-500 font-bold text-xl">01</div>
+                        <div class="w-full">
+                            <p class="font-bold text-lg">Hardware Wallet</p>
+                            <p class="text-sm text-gray-400">Hermann installiert nicht nur eine App. Er kauft eine <strong>BitBox02</strong>. Das ist ein USB-Stick, der den Schlüssel offline hält. Sein Handy dient nur als "Fernbedienung" (Watch-Only).</p>
+                            
+                            <details class="mt-4 border-l-4 border-yellow-500 bg-gray-800 p-4 dark-details rounded-r">
+                                <summary class="font-bold text-yellow-500 cursor-pointer hover:text-white text-sm">
+                                    [ANLEITUNG: BitBox & Handy verbinden] ⌄
+                                </summary>
+                                <div class="mt-3 text-sm text-gray-300 space-y-3">
+                                    
+                                    <div class="grid grid-cols-2 gap-2 mb-4">
+                                        <div class="bg-red-900/40 border border-red-500 p-2 text-center rounded">
+                                            <div class="text-red-400 font-bold uppercase text-xs">Für den Stick (Tresor)</div>
+                                            <div class="text-white font-bold text-lg">BitBoxApp</div>
+                                            <div class="text-gray-400 text-xs">Vom Hersteller. Zum Einrichten & Updates.</div>
+                                        </div>
+                                        <div class="bg-blue-900/40 border border-blue-500 p-2 text-center rounded">
+                                            <div class="text-blue-400 font-bold uppercase text-xs">Für die Hosentasche (Lightning)</div>
+                                            <div class="text-white font-bold text-lg">BlueWallet</div>
+                                            <div class="text-gray-400 text-xs">Von Drittanbietern. Zum Ausgeben im Alltag.</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-red-900/50 p-2 border border-red-500 text-white font-bold mb-2">
+                                        ⚠️ REIHENFOLGE BEACHTEN: Installiere die <span class="text-yellow-400">BitBoxApp</span>, aber ERSTELLE KEINE WALLET, bevor der Stick da ist! Der Stick erzeugt die Schlüssel, nicht die App.
+                                    </div>
+                                    <div>
+                                        <strong class="text-white block">1. Vorbereitung (Installation)</strong>
+                                        <p>Installiere die "BitBoxApp" (via F-Droid). Öffne sie nur zum Testen. Klicke NICHT auf "Neue Wallet erstellen", solange der Stick nicht eingesteckt ist.</p>
+                                    </div>
+                                    <div>
+                                        <strong class="text-white block">2. Das Pairing (Wenn Stick da ist)</strong>
+                                        <ul class="list-disc pl-5 mt-1">
+                                            <li>Stecke die BitBox02 ins Pixel.</li>
+                                            <li>Öffne die BitBoxApp.</li>
+                                            <li><strong>Der Pairing-Code:</strong> Auf dem Handy-Display UND auf dem kleinen Display der BitBox erscheint ein Code. Prüfe, ob sie identisch sind! Das beweist, dass du mit DEINEM Stick sprichst.</li>
+                                            <li>Bestätige am Stick (Touch-Sensoren an der Seite).</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <strong class="text-white block">3. Muss die App offen bleiben?</strong>
+                                        <p>NEIN. Die App ist nur ein Fenster. Deine Coins liegen auf der Blockchain (im Internet), dein Schlüssel im Stick. Du kannst die App schließen, das Handy neustarten oder die App löschen. Solange du das Backup (Wörter) hast, ist alles sicher.</p>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="w-12 text-yellow-500 font-bold text-xl">02</div>
+                        <div class="w-full">
+                            <p class="font-bold text-lg">Der "Dollar Cost Average" (DCA)</p>
+                            <p class="text-sm text-gray-400">Er kauft nicht alles auf einmal (zu auffällig). Er kauft über 4 Monate verteilt. Mal 2.000€ am ATM in Österreich, mal 3.000€ über private Treffen (Peach App).</p>
+                            
+                            <details class="mt-4 border-l-4 border-green-500 bg-gray-800 p-4 dark-details rounded-r">
+                                <summary class="font-bold text-green-400 cursor-pointer hover:text-white text-sm">
+                                    [ANLEITUNG: ATM & Treffen] ⌄
+                                </summary>
+                                <div class="mt-3 text-sm text-gray-300 space-y-3">
+                                    <div>
+                                        <strong class="text-white block">A. Am Bitcoin ATM (z.B. Kurant)</strong>
+                                        <ol class="list-decimal pl-5 mt-1">
+                                            <li>Öffne BlueWallet -> Klicke auf deine Wallet -> "Empfangen".</li>
+                                            <li>Gehe zum Automaten. Wähle "Bitcoin Kaufen".</li>
+                                            <li>Halte den QR-Code deines Handys vor die Kamera des Automaten.</li>
+                                            <li>Füttere den Automaten mit Bargeld (z.B. 500€).</li>
+                                            <li>Bestätige am Bildschirm. Der Automat druckt eine Quittung.</li>
+                                            <li>Warte (ca. 10-20 Min), bis das Geld in der App erscheint.</li>
+                                        </ol>
+                                        <p class="text-xs text-gray-500 mt-1">Hinweis: In AT/DE gibt es Grenzen (oft 250€-1000€ ohne ID, je nach Anbieter). Informiere dich vorher auf CoinATMRadar.</p>
+                                    </div>
+                                    <div>
+                                        <strong class="text-white block">B. Private Treffen (Peach App)</strong>
+                                        <ol class="list-decimal pl-5 mt-1">
+                                            <li>In Peach "Cash" wählen. Match finden.</li>
+                                            <li>Im verschlüsselten Chat Treffpunkt vereinbaren (Öffentlich! Café, Bahnhof).</li>
+                                            <li>Treffen. Du gibst Bargeld. Der Verkäufer gibt in seiner App "Freigeben" ein.</li>
+                                            <li><strong>WICHTIG:</strong> Gehe erst, wenn du in DEINER Peach-App siehst, dass die Transaktion im Mempool ist (mindestens unbestätigt sichtbar).</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="w-12 text-yellow-500 font-bold text-xl">03</div>
+                        <div class="w-full">
+                            <p class="font-bold text-lg">Management & Transfers</p>
+                            <p class="text-sm text-gray-400">Das Herzstück: Geld zwischen "Tresor" (BitBox) und "Hosentasche" (BlueWallet) verschieben.</p>
+                            
+                             <details class="mt-4 border-l-4 border-blue-500 bg-gray-800 p-4 dark-details rounded-r">
+                                <summary class="font-bold text-blue-400 cursor-pointer hover:text-white text-sm">
+                                    [ANLEITUNG: Geld verschieben (Stick &lt;-&gt; App)] ⌄
+                                </summary>
+                                <div class="mt-3 text-sm text-gray-300 space-y-4">
+                                    
+                                    <div class="border-b border-gray-600 pb-4">
+                                        <strong class="text-blue-300 block mb-1">Szenario A: Aufladen (BitBox ➔ BlueWallet)</strong>
+                                        <p class="text-xs mb-2">Du brauchst Geld für den Alltag.</p>
+                                        <ol class="list-decimal pl-5 space-y-1">
+                                            <li>Öffne <strong>BlueWallet</strong> ➔ Wähle deine "Bitcoin Wallet" ➔ Drücke "Empfangen".</li>
+                                            <li>Kopiere die Adresse (bc1...).</li>
+                                            <li>Schließe BlueWallet. Stecke die <strong>BitBox</strong> an.</li>
+                                            <li>Öffne <strong>BitBoxApp</strong> ➔ Drücke "Senden".</li>
+                                            <li>Füge die Adresse ein. Wähle Betrag (z.B. 50€).</li>
+                                            <li><strong>Signieren:</strong> Bestätige die Transaktion durch Berühren des Sticks.</li>
+                                            <li>Warte ca. 10-20 Min. Das Geld ist in der BlueWallet.</li>
+                                        </ol>
+                                    </div>
+
+                                    <div class="border-b border-gray-600 pb-4">
+                                        <strong class="text-green-300 block mb-1">Szenario B: Sichern (BlueWallet ➔ BitBox)</strong>
+                                        <p class="text-xs mb-2">Du hast zu viel Geld auf dem Handy (z.B. nach einem Verkauf).</p>
+                                        <ol class="list-decimal pl-5 space-y-1">
+                                            <li>Öffne <strong>BitBoxApp</strong> (Geht auch ohne Stick im "Watch-Only" Modus).</li>
+                                            <li>Drücke "Empfangen" ➔ Kopiere die Adresse.</li>
+                                            <li>Öffne <strong>BlueWallet</strong> ➔ Wähle "Bitcoin Wallet" ➔ Drücke "Senden".</li>
+                                            <li>Füge Adresse ein ➔ Wähle "Alles" (oder Teilbetrag).</li>
+                                            <li>Sende ab. Dein Geld ist jetzt sicher im Cold Storage.</li>
+                                        </ol>
+                                    </div>
+
+                                    <div class="bg-yellow-900/40 border border-yellow-500 p-3 rounded">
+                                        <strong class="text-yellow-400 block mb-1">⚡ WICHTIG: Lightning & der Stick</strong>
+                                        <p class="text-xs leading-relaxed">
+                                            Die BitBox02 versteht nur "klassisches" Bitcoin (On-Chain). Sie kann <strong>kein Lightning</strong> direkt senden!<br>
+                                            <strong>Der Weg zu Lightning:</strong><br>
+                                            1. Sende Geld vom Stick an deine BlueWallet "Bitcoin Wallet" (wie in Szenario A).<br>
+                                            2. Wenn es dort ankommt, gehe in BlueWallet auf deine "Lightning Wallet".<br>
+                                            3. Drücke dort auf "Verwalten" ➔ "Aufladen" (Refill).<br>
+                                            4. Wähle "Vom Bitcoin Guthaben aufladen". BlueWallet tauscht es intern für dich um.
+                                        </p>
+                                    </div>
+
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="example-card bg-white p-6">
+                <h3 class="text-2xl font-bold mb-4">📖 Sarah (34) - Von Gold zu Bitcoin</h3>
+                
+                <div class="phase-block phase-blue">
+                    <p class="font-bold text-blue-800">Woche 1: Vorbereitung</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Pixel 6a bar gekauft (Kleinanzeigen).</li>
+                        <li>• GrapheneOS installiert (45 Min).</li>
+                        <li>• Gold (Schmuck/Zahngold 833er) geschätzt.</li>
+                        <li>• <strong>Verkauft für 3.100€ bar</strong> (bestes Angebot angenommen).</li>
+                    </ul>
+                </div>
+
+                <div class="phase-block phase-green">
+                    <p class="font-bold text-green-800">Woche 2: Der Tausch</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• 3x Besuch am Bitcoin ATM (verschiedene Tage).</li>
+                        <li>• Jeweils ~1.000€ eingezahlt (unter der Grenze!).</li>
+                        <li>• Gebühr: ca. 8-9%. Teuer, aber anonym.</li>
+                    </ul>
+                </div>
+
+                <div class="phase-block phase-purple">
+                    <p class="font-bold text-purple-800">Ergebnis</p>
+                    <p class="text-sm mt-1">Sarah besitzt jetzt ca. 0.043 BTC. Niemand außer ihr hat den Schlüssel.</p>
+                </div>
+            </div>
+
+            <div class="example-card bg-white p-6">
+                <h3 class="text-2xl font-bold mb-4">📖 Michael (42) - Der P2P Händler</h3>
+                <div class="phase-block phase-blue">
+                    <p class="font-bold text-blue-800">Ausgangslage</p>
+                    <p class="text-sm mt-1">Handwerker, hat 5.000€ Bargeld. Will keine hohen ATM-Gebühren zahlen.</p>
+                </div>
+                <div class="phase-block phase-green">
+                    <p class="font-bold text-green-800">Aktion (Bisq & Peach)</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Nutzt Peach App für lokales Treffen.</li>
+                        <li>• Trifft Verkäufer im öffentlichen Park.</li>
+                        <li>• Tauscht 2.000€ gegen BTC.</li>
+                        <li>• Zahlt nur 3% Aufschlag (Premium).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="example-card bg-white p-6">
+                <h3 class="text-2xl font-bold mb-4">📖 Julia (28) - Bitcoin im Alltag</h3>
+                <div class="phase-block phase-green">
+                    <p class="font-bold text-green-800">Lösung (Bitrefill)</p>
+                    <ul class="text-sm mt-2 space-y-1">
+                        <li>• Geht auf Bitrefill.com (via Tor).</li>
+                        <li>• Kauft Amazon-Gutschein für 1.200€.</li>
+                        <li>• Zahlt via Lightning (Gebühr: 0,01€).</li>
+                        <li>• Laptop bestellt. Keine Banktransaktion sichtbar.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="example-card border-4 border-red-800 bg-red-50 p-6 relative">
+                <div class="absolute -top-4 left-4 bg-red-800 text-white px-3 py-1 font-bold text-sm">⚠️ SPEZIAL-WISSEN</div>
+                <h3 class="text-2xl font-bold mb-4 mt-2 text-red-900">Die "Waschstraße": Google & Visa</h3>
+                
+                <p class="mb-4 text-sm font-bold">Das Problem:</p>
+                <div class="bg-white p-3 border border-red-300 mb-4 text-sm">
+                    Wenn du den Stick direkt an dein normales Google-Handy steckst (um eine Visa-Karte aufzuladen), sieht Google dein ganzes Vermögen auf dem Stick! <strong>Verbinde NIEMALS Stick & Google-Handy direkt!</strong>
+                </div>
+
+                <p class="mb-2 text-sm font-bold">Die Lösung (Der Umweg):</p>
+                <div class="space-y-4">
+                    <div class="flex items-center bg-white p-3 border border-gray-400">
+                        <div class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold mr-3">1</div>
+                        <div class="text-sm">
+                            <span class="font-bold">Stick ➔ GrapheneOS Handy</span><br>
+                            Lade Geld vom Stick auf deine BlueWallet im sicheren Handy (wie bei Hermann beschrieben).<br>
+                            <span class="text-green-600 text-xs">Status: Anonym & Sauber.</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center bg-white p-3 border border-gray-400">
+                        <div class="w-8 h-8 rounded-full bg-gray-500 text-white flex items-center justify-center font-bold mr-3">2</div>
+                        <div class="text-sm">
+                            <span class="font-bold">GrapheneOS ➔ Google Handy (Visa App)</span><br>
+                            Öffne deine Visa-App (z.B. Bitpanda/Binance) auf dem Google-Handy. Drücke "Einzahlen" (Deposit). Kopiere die Adresse.<br>
+                            Sende von GrapheneOS an diese Adresse.<br>
+                            <span class="text-orange-600 text-xs">Status: Google sieht nur Eingang von "Unbekannt".</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center bg-white p-3 border border-gray-400">
+                        <div class="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold mr-3">3</div>
+                        <div class="text-sm">
+                            <span class="font-bold">Ausgeben</span><br>
+                            Jetzt kannst du mit Google Pay oder der Karte zahlen.<br>
+                            <span class="text-red-800 text-xs">Hinweis: Dieser Betrag ist jetzt nicht mehr anonym, aber der Rest auf dem Stick bleibt geschützt!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 flex justify-between no-print">
+                <button onclick="showSection('phase5')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('opsec')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: OpSec & Drill &rarr;</button>
+            </div>
+        </section>
+
+        <section id="opsec" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-black pb-4 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                VII. OPSEC & DRILL
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="border-2 border-black p-4">
+                    <h3 class="font-bold text-lg mb-2">🛡️ Software Hygiene</h3>
+                    <ul class="list-disc pl-5 text-sm space-y-2">
+                        <li><strong>Update-Disziplin:</strong> Apps manuell aktualisieren! (Handbuch Kap 8)</li>
+                        <li><strong>PIN Scrambling:</strong> Aktiviere wechselndes PIN-Layout in Einstellungen > Sicherheit, um Fettflecken-Analyse zu verhindern.</li>
+                    </ul>
+                </div>
+                <div class="border-2 border-black p-4 bg-gray-100">
+                    <h3 class="font-bold text-lg mb-2">🔨 Steel Backup</h3>
+                    <p class="text-sm">Stanze die ersten 4 Buchstaben deiner 12 Wörter in Unterlegscheiben. Feuerfest bis 1400°C.</p>
+                </div>
+            </div>
+
+            <div class="border-4 border-black p-8 mb-12 bg-white">
+                <h3 class="font-bold text-2xl mb-4 text-center uppercase tracking-widest">🚨 Notfall-Drill</h3>
+                <div id="sim-container" class="space-y-4 max-w-md mx-auto">
+                    <div class="sim-step border border-gray-300 p-4 cursor-pointer hover:bg-gray-50 active" onclick="completeStep(this, 1)">
+                        <div class="flex items-center"><div class="w-6 h-6 border-2 border-black rounded-full mr-3 flex items-center justify-center font-bold">1</div><span class="font-bold">Gerät verloren</span></div>
+                    </div>
+                    <div class="sim-step border border-gray-300 p-4 cursor-pointer hover:bg-gray-50" onclick="completeStep(this, 2)">
+                        <div class="flex items-center"><div class="w-6 h-6 border-2 border-black rounded-full mr-3 flex items-center justify-center font-bold">2</div><span class="font-bold">Neues Pixel beschafft</span></div>
+                    </div>
+                    <div class="sim-step border border-gray-300 p-4 cursor-pointer hover:bg-gray-50" onclick="completeStep(this, 3)">
+                        <div class="flex items-center"><div class="w-6 h-6 border-2 border-black rounded-full mr-3 flex items-center justify-center font-bold">3</div><span class="font-bold">Seed importiert (Papier/Stahl)</span></div>
+                    </div>
+                    <div class="sim-step border border-gray-300 p-4 cursor-pointer hover:bg-gray-50" onclick="completeStep(this, 4)">
+                        <div class="flex items-center"><div class="w-6 h-6 border-2 border-black rounded-full mr-3 flex items-center justify-center font-bold">4</div><span class="font-bold">Funds recovered!</span></div>
+                    </div>
+                    <div id="sim-success" class="hidden text-center p-4 bg-green-100 text-green-800 font-bold border-2 border-green-600 mt-4">DRILL BESTANDEN!</div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-between no-print">
+                <button onclick="showSection('examples')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('phase8')" class="bg-orange-600 text-white px-6 py-3 font-bold hover:bg-orange-800 shadow-lg">Weiter: Living on Bitcoin &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase8" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-orange-600 pb-4 text-orange-900 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                VIII. LIVING ON BITCOIN
+            </h2>
+            <p class="mb-6 text-lg">Hier gehen wir in die Praxis. Zwei reale Szenarien, wie du das System täglich auf dem Handy nutzt.</p>
+
+            <div class="bg-black text-white p-4 mb-8">
+                <h3 class="font-bold text-xl mb-1 uppercase tracking-widest">PRAXIS-GUIDES</h3>
+                <p class="text-xs text-gray-400">Nur auf dem GrapheneOS Handy auszuführen.</p>
+            </div>
+
+            <div class="border-2 border-orange-400 p-6 mb-12 bg-white relative">
+                <div class="absolute -top-4 left-4 bg-orange-500 text-white px-3 py-1 font-bold">FALL 1: DER EINKAUF (Supermarkt)</div>
+                <p class="mt-2 mb-6 font-bold text-lg">Szenario: Lukas steht an der Kasse (Rewe/Edeka) und braucht sofort 50€ Guthaben.</p>
+                
+                <div class="ml-4">
+                    <div class="mobile-step">
+                        <div class="step-dot">1</div>
+                        <p class="font-bold text-sm">Vorbereitung (Noch im Gang)</p>
+                        <p class="text-sm mt-1">Prüfe, ob dein VPN (Mullvad) aktiv ist (Schlüsselsymbol oben). Öffne den Browser "Vanadium".</p>
+                    </div>
+
+                    <div class="mobile-step">
+                        <div class="step-dot">2</div>
+                        <p class="font-bold text-sm">Bitrefill aufrufen</p>
+                        <p class="text-sm mt-1">Gehe auf <strong>bitrefill.com</strong>. Wähle "Rewe" (oder anderen Shop). Wähle "50 Euro".</p>
+                        <div class="screen-mockup">
+                            🛒 Kasse: 50,00 €<br>
+                            E-Mail: [Deine Wegwerf-Adresse]<br>
+                            Zahlungsmethode: ⚡ Lightning (BTC)
+                        </div>
+
+                        <details class="mt-4 mb-2 border-l-4 border-red-300 bg-red-50 p-3 no-print">
+                            <summary class="font-bold text-xs cursor-pointer text-red-800 hover:text-black flex items-center">
+                                <span class="bg-red-600 text-white w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full mr-2 shadow-md">?</span>
+                                HILFE: Was ist eine "Wegwerf-Adresse"? (Klick mich)
+                            </summary>
+                            <div class="mt-3 text-xs text-gray-800 leading-relaxed">
+                                <p class="mb-2"><strong>Das Prinzip:</strong> Eine E-Mail-Adresse, die keine Anmeldung braucht und sich oft nach 1 Stunde selbst löscht. Sie schützt deine echte Identität vor Verknüpfung.</p>
+                                <p class="font-bold mb-1">Anleitung:</p>
+                                <ol class="list-decimal pl-5 mb-2 space-y-1">
+                                    <li>Öffne einen neuen Tab im Browser.</li>
+                                    <li>Gehe auf eine dieser Seiten (kostenlos):<br>
+                                        <a href="https://temp-mail.org" target="_blank" class="text-blue-600 underline font-bold">Temp-Mail.org</a> oder 
+                                        <a href="https://10minutemail.com" target="_blank" class="text-blue-600 underline font-bold">10MinuteMail.com</a>
+                                    </li>
+                                    <li>Kopiere die angezeigte E-Mail-Adresse.</li>
+                                    <li>Füge sie bei Bitrefill ein.</li>
+                                </ol>
+                                <p class="font-bold text-red-600 border border-red-200 bg-red-50 p-1">WICHTIG: Lass den Tab mit der Wegwerf-Mail OFFEN, bis du den Gutschein-Code empfangen hast!</p>
+                            </div>
+                        </details>
+                        </div>
+
+                    <div class="mobile-step">
+                        <div class="step-dot">3</div>
+                        <p class="font-bold text-sm">Der "Copy"-Moment (Wichtig!)</p>
+                        <p class="text-sm mt-1">Du klickst auf "Bezahlen". Ein QR-Code erscheint. Darunter steht ein langer Code (lnbc1...).<br>
+                        <strong>Drücke auf den "Kopieren"-Button</strong> neben dem Code.</p>
+                    </div>
+
+                    <div class="mobile-step">
+                        <div class="step-dot">4</div>
+                        <p class="font-bold text-sm">App Switch (Der "Tanz")</p>
+                        <p class="text-sm mt-1">
+                            1. Wische nach oben, wechsle zur App <strong>BlueWallet</strong>.<br>
+                            2. Öffne deine "Kaffeekasse" (Lightning Wallet).<br>
+                            3. Klicke auf "Senden".<br>
+                            4. BlueWallet fragt oft automatisch: "Einfügen aus Zwischenablage?". Klicke JA.
+                        </p>
+                    </div>
+
+                    <div class="mobile-step">
+                        <div class="step-dot">5</div>
+                        <p class="font-bold text-sm">Abschluss</p>
+                        <p class="text-sm mt-1">Drücke "Senden" in BlueWallet. Wechsel sofort zurück in den Browser. Dort steht jetzt "Bezahlt!". Kurz darauf erscheint der Barcode. Lass ihn scannen.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-2 border-blue-600 p-6 mb-12 bg-white relative">
+                <div class="absolute -top-4 left-4 bg-blue-700 text-white px-3 py-1 font-bold">FALL 2: DIE RECHNUNG (IBAN)</div>
+                <p class="mt-2 mb-6 font-bold text-lg">Szenario: Sophie hat eine Handwerker-Rechnung über 120€ vor sich liegen. Sie will keine Banküberweisung machen.</p>
+                
+                <div class="ml-4">
+                    <div class="mobile-step">
+                        <div class="step-dot">1</div>
+                        <p class="font-bold text-sm">Boltz aufrufen</p>
+                        <p class="text-sm mt-1">Öffne Vanadium. Gehe auf <strong>boltz.exchange</strong>.</p>
+                    </div>
+
+                    <div class="mobile-step">
+                        <div class="step-dot">2</div>
+                        <p class="font-bold text-sm">Daten eingeben</p>
+                        <p class="text-sm mt-1">Wähle: <strong>Lightning (Send)</strong> -> <strong>Euro / SEPA (Receive)</strong>.</p>
+                        <div class="screen-mockup">
+                            Betrag: 120 €<br>
+                            IBAN: [IBAN des Handwerkers]<br>
+                            Name: [Name des Handwerkers]<br>
+                            Verwendungszweck: Rechnungsnummer 123
+                        </div>
+                        <p class="text-xs text-red-600 mt-2 font-bold">ACHTUNG: Tippfehler bei IBAN sind fatal. Prüfe 2x!</p>
+                    </div>
+
+                    <div class="mobile-step">
+                        <div class="step-dot">3</div>
+                        <p class="font-bold text-sm">Die Swap-Erstellung</p>
+                        <p class="text-sm mt-1">Klicke auf "Create Swap". Boltz zeigt dir nun eine Lightning-Rechnung an (Invoice).</p>
+                    </div>
+
+                    <div class="mobile-step">
+                        <div class="step-dot">4</div>
+                        <p class="font-bold text-sm">Bezahlen</p>
+                        <p class="text-sm mt-1">Kopiere den Invoice-Code. Wechsle zu BlueWallet. Sende den Betrag.</p>
+                    </div>
+
+                    <div class="mobile-step">
+                        <div class="step-dot">5</div>
+                        <p class="font-bold text-sm">Beweis sichern</p>
+                        <p class="text-sm mt-1">Gehe zurück zu Boltz. Warte auf den grünen Haken. Mache einen <strong>Screenshot</strong> als Zahlungsbeleg (falls der Handwerker fragt).</p>
+                        <p class="text-xs text-gray-500 italic mt-1">Hinweis: Auf dem Kontoauszug des Handwerkers steht als Absender "Boltz" oder ein Zahlungsdienstleister. Nicht dein Name.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 flex justify-between no-print">
+                <button onclick="showSection('opsec')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('phase9')" class="bg-gray-600 text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">Weiter: Wartung &rarr;</button>
+            </div>
+        </section>
+
+        <section id="phase9" class="section-content max-w-4xl mx-auto hidden">
+            <h2 class="text-3xl font-bold mb-6 border-b-2 border-gray-600 pb-4 text-gray-800 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                IX. WARTUNG & ROUTINE
+            </h2>
+            <p class="mb-6 text-lg">Sicherheit ist kein Zustand, sondern ein Prozess. Führe diese Checks regelmäßig durch.</p>
+
+            <div class="border-2 border-gray-400 p-6 bg-white shadow-md">
+                <h3 class="font-bold text-xl mb-4">🗓️ Monatlicher Check</h3>
+                
+                <div class="space-y-4">
+                    <label class="flex items-start custom-checkbox cursor-pointer">
+                        <input type="checkbox" class="hidden">
+                        <div class="w-6 h-6 border-2 border-gray-400 mr-3 flex items-center justify-center flex-shrink-0 bg-white">
+                            <svg class="w-4 h-4 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <div>
+                            <span class="font-bold">GrapheneOS Update</span>
+                            <p class="text-sm text-gray-600">Einstellungen > System > Systemupdate. (Wichtig für Sicherheits-Patches).</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start custom-checkbox cursor-pointer">
+                        <input type="checkbox" class="hidden">
+                        <div class="w-6 h-6 border-2 border-gray-400 mr-3 flex items-center justify-center flex-shrink-0 bg-white">
+                            <svg class="w-4 h-4 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <div>
+                            <span class="font-bold">Apps aktualisieren</span>
+                            <p class="text-sm text-gray-600">Öffne F-Droid -> Aktualisierungen. Öffne Vanadium.</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start custom-checkbox cursor-pointer">
+                        <input type="checkbox" class="hidden">
+                        <div class="w-6 h-6 border-2 border-gray-400 mr-3 flex items-center justify-center flex-shrink-0 bg-white">
+                            <svg class="w-4 h-4 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <div>
+                            <span class="font-bold">Backup-Check</span>
+                            <p class="text-sm text-gray-600">Weißt du noch, wo deine Stahlscheiben/Papier-Backup liegen? Liegen sie dort noch sicher?</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-12 flex justify-between no-print">
+                <button onclick="showSection('phase8')" class="bg-gray-200 text-black px-6 py-3 font-bold hover:bg-gray-300">← Zurück</button>
+                <button onclick="showSection('intro')" class="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 shadow-lg">🏠 Zum Start</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- Navigation Logic ---
+        function showSection(id) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById(id);
+            if(target) target.classList.remove('hidden');
+            document.querySelector('main').scrollTop = 0;
+
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById('btn-' + id);
+            if(activeBtn) activeBtn.classList.add('active');
+
+            if(id === 'phase3') setTimeout(calculateGold, 100);
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                menu.classList.add('flex');
+            } else {
+                menu.classList.add('hidden');
+                menu.classList.remove('flex');
+            }
+        }
+
+        function printManual() {
+            // Expand all details for printing
+            document.querySelectorAll('details').forEach(el => el.open = true);
+            window.print();
+        }
+
+        // --- Simulator Logic ---
+        let currentSimStep = 1;
+        function completeStep(el, stepNum) {
+            if(stepNum !== currentSimStep) return; 
+            
+            el.classList.add('completed');
+            el.querySelector('.w-6').innerText = "✓";
+            el.querySelector('.w-6').classList.add('bg-green-500', 'text-white', 'border-green-600');
+            
+            currentSimStep++;
+            
+            const next = el.nextElementSibling;
+            if(next && next.classList.contains('sim-step')) {
+                next.classList.add('active');
+            } else if (stepNum === 4) {
+                document.getElementById('sim-success').classList.remove('hidden');
+            }
+        }
+
+        // --- Gold Chart Logic ---
+        let chartInstance = null;
+
+        function calculateGold() {
+            const weightInput = document.getElementById('gold-weight');
+            const purityInput = document.getElementById('gold-purity');
+            const spotInput = document.getElementById('spot-price');
+
+            if(!weightInput || !purityInput || !spotInput) return;
+
+            const weight = parseFloat(weightInput.value) || 0;
+            const purity = parseFloat(purityInput.value) || 0;
+            const spot = parseFloat(spotInput.value) || 0;
+
+            const pure = weight * purity;
+            const market = pure * spot;
+            const fair = market * 0.85;
+
+            const marketEl = document.getElementById('result-market');
+            const fairEl = document.getElementById('result-fair');
+            
+            if(marketEl) marketEl.innerText = market.toFixed(2) + " €";
+            if(fairEl) fairEl.innerText = fair.toFixed(2) + " €";
+
+            renderChart(market, fair);
+        }
+
+        function renderChart(market, fair) {
+            const ctxEl = document.getElementById('goldChart');
+            if(!ctxEl) return;
+            const ctx = ctxEl.getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            let userShare = 0;
+            let dealerShare = 0;
+
+            if (market > 0) {
+                userShare = (fair / market) * 100;
+                dealerShare = 100 - userShare;
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Dein Geld', 'Gebühren/Händler'],
+                    datasets: [{
+                        data: [userShare, dealerShare],
+                        backgroundColor: ['#16a34a', '#dc2626'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Init
+        window.onload = () => {
+            showSection('intro');
+        };
+    </script>
+</body>
+</html>
