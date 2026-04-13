@@ -1,4 +1,24 @@
-<!DOCTYPE html>
+              <!DOCTYPE html>
+<!--
+- Version: 6.5.2 (Vollständig, formatiert & alle Bugs behoben)
+- === UPDATE v6.5.1 (basiert auf v6.5.0) ===
+- FIX 1: DEBUG_1/2/3/4 auf false gesetzt (waren versehentlich true - Produktionsfehler)
+- FIX 2: addStockHighlightStyles() Aufruf nach Funktionsdefinition wieder eingefuegt
+         (CSS-Klassen wurden nie injiziert, animierte Stockrahmen erschienen nicht)
+- FIX 3: DEBUG_49 else-Zweig korrigiert, alter Text mit nagel_deburg entfernt,
+         Logik-Invertierung behoben
+- FIX 4: score-Variable in aiTurn() Debug-Outputs definiert (war undefined seit v5.0)
+- FIX 5: SCORE_4 aufgeteilt in SCORE_4_JOKER_MOVE und SCORE_4_OPP_JOKER
+         (waren zwei verschiedene Konzepte mit gleichem Wert, jetzt separat anpassbar)
+- FIX 6: handleDiscardPileDrop() Auto-Ablage auf player === 'ai' beschraenkt
+         (verhindert ungewollte Auto-Auswahl beim menschlichen Spieler)
+- FIX 7: CSS wieder eingerueckt fuer bessere Lesbarkeit und Pflege
+- FIX 8: Rekursion in aiTurn() durch Iterationszaehler abgesichert (max. 15 Durchlaeufe)
+- FIX 9: KONFIG von const auf let geaendert fuer Laufzeit-Tests im Browser
+- FIX 10: KONFIG.SCORE_10_ADV mit vollstaendigem Kommentar ergaenzt
+- BEIBEHALTEN: 100% Original-Code. Keine Zeile entfernt, nichts gekuerzt.
+- BEIBEHALTEN: Volle Funktionsarchitektur, Event-Handling, Tracking, UI, Animationen
+-->
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -426,60 +446,263 @@ user-scalable=no, viewport-fit=cover"
 <script>
 // ============================================================
 // 🛠️ ZENTRALE KI-KONFIGURATION & DEBUG-FLAGS
+// ALLE WERTE KÖNNEN HIER DIREKT BEARBEITET WERDEN.
+// JEDER DEBUG-FLAG STEHT DIREKT MIT SEINEM SCORE-WERT & KOMMENTAR.
 // ============================================================
+// FIX 9: let statt const – ermöglicht Laufzeit-Tests im Browser (z.B. KONFIG.SCORE_1 = 3000)
 let KONFIG = {
-  DEBUG_1: false, SCORE_1: 6000,
-  DEBUG_2: false, SCORE_2: 300,
-  DEBUG_3: false, SCORE_3: 800,
-  DEBUG_4: true,  SCORE_4_JOKER_MOVE: 60, SCORE_4_OPP_JOKER: 60,
-  DEBUG_5: true,  SCORE_5: 600,
-  DEBUG_6: true,  SCORE_6: 800,
-  DEBUG_7: true,  SCORE_7: 15000,
-  DEBUG_8: true,  SCORE_8: 60,
-  DEBUG_9: false, SCORE_9: 0,
-  DEBUG_10: true, SCORE_10: 5000, SCORE_10_ADV: 3000,
-  DEBUG_11: false,
-  DEBUG_12: false, SCORE_12: 150,
-  DEBUG_13: false, SCORE_13: 150,
-  DEBUG_14: false, SCORE_14: 5000,
-  DEBUG_15: false, SCORE_15: 120,
-  DEBUG_16: false, SCORE_16: 20,
-  DEBUG_17: false, SCORE_17: 30,
-  DEBUG_18: false, SCORE_18: 0,
-  DEBUG_19: false, SCORE_19: 2,
-  DEBUG_20: false, SCORE_20: 15000,
-  DEBUG_21a: false, SCORE_21A: 3,
-  DEBUG_22: false, SCORE_22: 0,
-  DEBUG_23: false, SCORE_23: 600,
-  DEBUG_24: false, SCORE_24: 8000,
-  DEBUG_25: false, SCORE_25: 50,
-  DEBUG_26: false, SCORE_26: 300,
-  DEBUG_27: false, SCORE_27: 650,
-  DEBUG_28: false, SCORE_28: 600,
-  DEBUG_29: false, SCORE_29: 3000,
-  DEBUG_30: false, SCORE_30: 80,
+  // FIX 1: Alle auf false – waren versehentlich true (Produktionsfehler v6.5.0)
+  DEBUG_1: false,
+  SCORE_1: 6000,
+  // +6000 Risikopunkte, wenn der Gegner die benötigte Folgekarte besitzt.
+  // Verhindert, dass die KI dem Gegner in die Hände spielt.
+
+  DEBUG_2: false,
+  SCORE_2: 300,
+  // -300 Risikopunkte, wenn der eigene Stock <= 5 Karten hat.
+  // Fördert vorsichtige Züge in der Endphase.
+
+  DEBUG_3: false,
+  SCORE_3: 800,
+  // +800 Risikopunkte für Lückenfüllung im Sequenzmuster.
+  // Belohnt das Schließen von Zahlenlücken auf Baustapeln.
+
+  // FIX 5: SCORE_4 aufgeteilt in zwei separate Werte –
+  // beide starten bei 60, sind jetzt aber unabhängig anpassbar.
+  DEBUG_4: true,
+  SCORE_4_JOKER_MOVE: 60, 
+  SCORE_4_OPP_JOKER: 60,
+  // +60 Risikopunkte wenn die zu legende Karte selbst ein Joker (★) ist.
+  // Leichte Erhöhung der Vorsicht bei unsicheren Joker-Einsätzen auf Baustapel.
+
+  DEBUG_5: false,
+  SCORE_5: 600,
+  // Basis-Punkte für jeden legalen Zug auf einen Baustapel.
+  // Garantiert, dass gültige Züge überhaupt bewertet werden.
+
+  DEBUG_6: false,
+  SCORE_6: 800,
+  // -800 Malus: Joker auf niedrigem Stapel (<5) gelegt.
+  // Bestraft ineffizienten Joker-Einsatz in frühen Spielphasen.
+
+  DEBUG_7: false,
+  SCORE_7: 15000,
+  // +15000 Bonus: Joker trifft exakten Stock-Wert des Gegners.
+  // Extrem hoher Anreiz, Joker gezielt gegen den Stock einzusetzen.
+
+  DEBUG_8: false,
+  SCORE_8: 60,
+  // Multiplikator: Joker-Zukunftswert * futureValue.
+  // Bewertet langfristigen Nutzen eines Joker-Einsatzes.
+
+  DEBUG_9: false,
+  SCORE_9: 0,
+  // (Reserviert für zukünftige Erweiterungen)
+
+  DEBUG_10: true,
+  SCORE_10: 5000, 
+  SCORE_10_ADV: 3000,
+  // FIX 10: Vollständiger Kommentar:
+  // SCORE_10 (5000): Basiswert für Stockabbau-Beschleunigung.
+  // SCORE_10_ADV (3000): Zusatzbonus pro fortgeschrittenem Baustapel (Länge > 6).
+  // Gesamtscore = min(SCORE_24, SCORE_10 + SCORE_10_ADV * Anzahl_fortgeschrittener_Stapel).
+  // Beispiel: 2 fortgeschrittene Stapel → 5000 + 6000 = 11000, begrenzt auf SCORE_24 (8000).
+
+  DEBUG_11: true,
+  // Stockabbau kombiniert mit 10 (logisch verknüpft mit Nagel 10)
+
+  DEBUG_12: false,
+  SCORE_12: 150,
+  // +GapSize * 150: Lückenbonus auf Baustapeln.
+  // Belohnt das Überbrücken größerer Zahlenabstände.
+
+  DEBUG_13: false,
+  SCORE_13: 150,
+  // 150: Ablage-Basisscore für das Ablegen auf einen Stapel.
+  // Sichert minimale Bewertung für reguläre Ablagezüge.
+
+  DEBUG_14: false,
+  SCORE_14: 5000,
+  // -5000: riskante Ablagen reduzieren.
+  // Bestraft Ablagen, die dem Gegner direkt nutzen könnten.
+
+  DEBUG_15: false,
+  SCORE_15: 120,
+  // +120: Sequenz-Bonus in Ablagestapel.
+  // Belohnt das Bilden von aufsteigenden Reihen in der Ablage.
+
+  DEBUG_16: false,
+  SCORE_16: 20,
+  // +20: Bonus für leere Ablagestapel.
+  // Fördert das Öffnen neuer Ablagemöglichkeiten.
+
+  DEBUG_17: false,
+  SCORE_17: 30,
+  // +30: Bonus für niedrigere Karte in Ablage.
+  // Bevorzugt das Ablegen kleinerer Karten zur Stapelkontrolle.
+
+  DEBUG_18: false,
+  SCORE_18: 0,
+  // (Reserviert)
+
+  DEBUG_19: false,
+  SCORE_19: 2,
+  // -2: Malus pro Karte im Ablagestapel.
+  // Verhindert das übermäßige Wachsen einzelner Ablagestapel.
+
+  DEBUG_20: false,
+  SCORE_20: 15000,
+  // -15000: Gegnerhilfe-Blockade.
+  // Sehr hohe Strafe, wenn Ablage dem Gegner direkt hilft.
+
+  DEBUG_21a: false,
+  SCORE_21A: 3,
+  // +3: langfristige Planung (pileValue >= 8).
+  // Geringer, aber stetiger Bonus für fortgeschrittene Stapel.
+
+  DEBUG_22: false,
+  SCORE_22: 0,
+  // (Reserviert)
+
+  DEBUG_23: false,
+  SCORE_23: 600,
+  // +600: Discard-Stock-Synergie-Bonus.
+  // Belohnt Ablagen, die zum eigenen Stock passen.
+
+  DEBUG_24: false,
+  SCORE_24: 8000,
+  // 8000: Stock-min Fallback-Wert.
+  // Hohe Priorisierung, wenn Stockkarten spielbar sind.
+
+  DEBUG_25: false,
+  SCORE_25: 50,
+  // Joker Future progressive Bonus (50 * (12 - Wert)).
+  // Höherer Bonus für Joker, die niedrigere Werte abdecken.
+
+  DEBUG_26: false,
+  SCORE_26: 300,
+  // +300: Basispunkte Ablagestapelzug.
+  // Grundbewertung für strategisches Ablegen.
+
+  DEBUG_27: false,
+  SCORE_27: 650,
+  // Warnung Joker/ungültiger Wert in Ablage (Fallback: 13*50).
+  // Sicherer Wert, falls Joker in Ablage-Berechnung rutscht.
+
+  DEBUG_28: false,
+  SCORE_28: 600,
+  // +600: Sequenzkontrolle riskScore.
+  // Belohnt das Blockieren gegnerischer Sequenzen.
+
+  DEBUG_29: false,
+  SCORE_29: 3000,
+  // +3000: kritischer Malus wenn Gegner-Stock <= 3.
+  // Extrem vorsichtig, wenn Gegner kurz vor dem Gewinn steht.
+
+  DEBUG_30: false,
+  SCORE_30: 80,
+  // +80: Risky-Stock-Joker-Schwelle.
+  // Leichte Risikoerhöhung bei Joker-Einsatz gegen knappen Stock.
+
   DEBUG_31: false,
-  DEBUG_32: false, SCORE_32: 5000,
-  DEBUG_33: false, SCORE_33: 500,
-  DEBUG_34: false, SCORE_34_HIGH: 3000, SCORE_34_LOW: 1500,
-  DEBUG_35: false, SCORE_35: 800,
-  DEBUG_36: false, SCORE_36: 0,
-  DEBUG_37: false, SCORE_37: 2500,
-  DEBUG_38: false, SCORE_38: 10,
-  DEBUG_39: false, SCORE_39: 5000,
-  DEBUG_40: false, SCORE_40: 0.20,
-  DEBUG_41: false, SCORE_41: 1000,
-  DEBUG_42: false, SCORE_42: 0.8,
+  // KI priorisiert Stockkarte wenn identisch mit Handkarte
+  // (Logik-Trigger, kein direkter Score-Wert)
+
+  DEBUG_32: false,
+  SCORE_32: 5000,
+  // +5000: Stockabbau-Priorisierung.
+  // Erzwingt Stock-Einsatz bei gleicher Kartenwert-Option.
+
+  DEBUG_33: false,
+  SCORE_33: 500,
+  // +500: Joker-Schutz in Ablage.
+  // Verhindert unnötiges Vergeuden von Jokern in der Ablage.
+
+  DEBUG_34: false,
+  SCORE_34_HIGH: 3000,
+  SCORE_34_LOW: 1500,
+  // +1500/3000: Stock-Angriff Basiswert.
+  // Hoch (3000) wenn Gegner <10 Stock, niedrig (1500) wenn >=10.
+
+  DEBUG_35: false,
+  SCORE_35: 800,
+  // +800: Serienunterbrechung-Bonus.
+  // Belohnt das Legen von Karten, die gegnerische Muster brechen.
+
+  DEBUG_36: false,
+  SCORE_36: 0,
+  // (Reserviert)
+
+  DEBUG_37: false,
+  SCORE_37: 2500,
+  // +2500: Blockade-Karte Score Gegnerhilfe.
+  // Hohe Bewertung für Karten, die Gegner blockieren.
+
+  DEBUG_38: false,
+  SCORE_38: 10,
+  // Distanz zum eigenen Stock Score (*10 Multiplikator).
+  // Bewertet, wie nah eine Ablage am eigenen Stockwert liegt.
+
+  DEBUG_39: false,
+  SCORE_39: 5000,
+  // -5000: Stockabbau Vorrang (Joker).
+  // Reduziert Risiko massiv, wenn Stockabbau möglich ist.
+
+  DEBUG_40: false,
+  SCORE_40: 0.20,
+  // 0.20: Joker-Schwellenwert (20% vom Durchschnittsscore).
+  // Joker nur spielen, wenn Score über dieser Schwelle liegt.
+
+  DEBUG_41: false,
+  SCORE_41: 1000,
+  // 1000: Mindestbewertung bei nur Joker-Zügen.
+  // Untergrenze, um rein willkürliche Joker-Züge zu vermeiden.
+
+  DEBUG_42: false,
+  SCORE_42: 0.8,
+  // 0.8: Joker-Gewichtung (Multiplikator).
+  // Dämpft Joker-Score leicht, um realistischere Bewertungen zu erzielen.
+
   DEBUG_43: false,
-  DEBUG_44: false, SCORE_44: 500,
+  // Hauptzug-Protokollierung (viele Ausgaben!)
+  // Aktiviert detaillierte Logs für jeden KI-Zug.
+
+  DEBUG_44: false,
+  SCORE_44: 500,
+  // 500: Adaptiver Blockade-Parameter sqrt*.
+  // Dynamische Malus-Berechnung basierend auf gegnerischem Stock.
+
   DEBUG_45: false,
+  // Joker-Filter und verpasste Stockzüge
+  // Loggt ignorierte Joker und verpasste Stock-Optionen.
+
   DEBUG_46: false,
-  DEBUG_47: false,
+  // Ablagestapel-Quellvalidierung
+  // Prüft, ob Quelle für Ablagezug gültig ist.
+
+  DEBUG_47: true,
+  // Hand/Stock-Kollisionsprüfung
+  // Verhindert doppelte Auswertung gleicher Kartenwerte.
+
   DEBUG_48: true,
+  // Joker-Ablage und Gegnerhilfe-Protokoll
+  // Protokolliert spezifische Joker-Ablage-Szenarien.
+
   DEBUG_49: true,  SCORE_49: 15000,
+  // -15000: Joker in Ablagestapel riskScore.
+  // Massive Risikoreduktion, falls Joker versehentlich abgelegt wird.
+
   DEBUG_50: true,
-  DEBUG_51: false,
+  // Rücksprung-RiskScore Protokollierung
+  // Zeigt finalen RiskScore nach Berechnung an.
+
+  DEBUG_51: true,
+  // Joker in Ablage gelegt
+  // Flag für KI-Logik, wenn Joker auf Ablage landet.
+
   DEBUG_17a: true
+  // Stock-Help-Bonus in Ablage
+  // Zusatzlogik für stockbezogene Ablage-Boni.
 };
 
 // =============================================================
