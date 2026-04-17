@@ -1,0 +1,2490 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1B5E20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Skip-Bo Mobile v7.6.3 – Ultimate Edition (VOLLSTÄNDIG)</title>
+<style>
+/* ============================================================ */
+/* BASIS-RESET & BOX-SIZING                                     */
+/* ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background: #1B5E20;
+  color: white;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+/* ============================================================ */
+/* INFOLABEL – verschiebbare Statusleiste                       */
+/* ============================================================ */
+#status-label {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  max-width: 100%;
+  background: rgba(46, 125, 50, 0.94);
+  padding: 8px 10px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 500;
+  z-index: 1000;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0 0 8px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: none;
+}
+#status-label:active { cursor: grabbing; }
+/* ============================================================ */
+/* GAME CONTAINER – 9:16 Proportion für Mobile                 */
+/* ============================================================ */
+.game-container {
+  aspect-ratio: 9 / 16;
+  height: 100dvh;
+  width: min(100vw, calc(100dvh * 9 / 16));
+  margin: 0 auto;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-top: 42px;
+  position: relative;
+}
+/* ============================================================ */
+/* BEREICHE – Gegner, Baustapel, Spieler                       */
+/* ============================================================ */
+.opponent-area {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 4px 2px;
+  min-height: 0;
+}
+.build-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px;
+  min-height: 0;
+}
+.human-area {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 4px 4px;
+  min-height: 0;
+}
+/* ============================================================ */
+/* KARTENGRID – 5 Spalten                                       */
+/* ============================================================ */
+.main-piles, .hand {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  align-items: center;
+  justify-items: center;
+  width: 100%;
+}
+/* ============================================================ */
+/* KARTEN & FELDER                                              */
+/* ============================================================ */
+.field {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed #fff;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  perspective: 1000px;
+  width: 100%;
+  height: 100%;
+}
+.card {
+  border: 2px solid #000 !important;
+  border-radius: 8px;
+  aspect-ratio: 2 / 3;
+  width: 100% !important;
+  height: auto !important;
+  max-height: 100%;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 5px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s, box-shadow 0.5s;
+  box-shadow: 0 0 5px #000000, 0 0 15px #000000 inset;
+  background: radial-gradient(circle, rgba(255,255,255,0.1), rgba(255,255,255,0.8));
+}
+.card.selected {
+  transform: translateY(-40px) rotateY(15deg) rotateX(10deg);
+  animation: neon-pulse 1.5s infinite alternate, card-float 2s infinite;
+}
+.card.backface {
+  background: lightgreen !important;
+  animation: card-glow 2s ease-in-out infinite alternate;
+}
+.card.backface::before {
+  content: "SKIP-BO";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 2px;
+}
+.card-corner {
+  position: absolute;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.card-corner.top-left { top: 5px; left: 5px; }
+.card-corner.top-right { top: 5px; right: 5px; }
+.card-corner.bottom-left { bottom: 5px; left: 5px; transform: rotate(180deg); }
+.card-corner.bottom-right { bottom: 5px; right: 5px; transform: rotate(180deg); }
+.card-middle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+}
+.joker-number {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8em;
+  color: black;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+.stock-count {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8em;
+  color: black;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 1px 3px;
+  border-radius: 2px;
+  z-index: 1;
+}
+/* ============================================================ */
+/* KARTENFARBEN nach Wertgruppen                                */
+/* 1-4: Blau, 5-8: Grün, 9-12: Rot, Joker: Gold               */
+/* ============================================================ */
+.card:not(.backface)[data-value="1"],
+.card:not(.backface)[data-value="2"],
+.card:not(.backface)[data-value="3"],
+.card:not(.backface)[data-value="4"] {
+  background: radial-gradient(circle, #BBDEFB, #64B5F6, #2196F3, #0D47A1) !important;
+  box-shadow: 0 0 15px #2196F3;
+}
+.card:not(.backface)[data-value="5"],
+.card:not(.backface)[data-value="6"],
+.card:not(.backface)[data-value="7"],
+.card:not(.backface)[data-value="8"] {
+  background: radial-gradient(circle, #C8E6C9, #81C784, #4CAF50, #1B5E20) !important;
+  box-shadow: 0 0 15px #4CAF50;
+}
+.card:not(.backface)[data-value="9"],
+.card:not(.backface)[data-value="10"],
+.card:not(.backface)[data-value="11"],
+.card:not(.backface)[data-value="12"] {
+  background: radial-gradient(circle, #FFCDD2, #EF9A9A, #f44336, #B71C1C) !important;
+  box-shadow: 0 0 15px #f44336;
+}
+.card:not(.backface)[data-type="joker"] {
+  background: radial-gradient(circle, #FFF9C4, yellow, gold, #FFD700) !important;
+  color: #000;
+  box-shadow: 0 0 15px gold;
+}
+/* ============================================================ */
+/* ANIMATIONEN                                                 */
+/* ============================================================ */
+@keyframes card-glow {
+  from { box-shadow: 0 0 5px #1565C0; }
+  to { box-shadow: 0 0 15px #0D47A1; }
+}
+@keyframes neon-pulse {
+  from { box-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFD700, 0 0 40px #FFD700; }
+  to { box-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700, 0 0 40px #FFD700, 0 0 50px #FFD700; }
+}
+@keyframes card-float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0); }
+}
+@keyframes card-drop {
+  0% { transform: translateY(-40px) rotateY(15deg) rotateX(10deg); }
+  100% { transform: translateY(0) rotateY(0deg) rotateX(0deg); }
+}
+/* ============================================================ */
+/* KI-Vorhersage-Overlays                                       */
+/* ============================================================ */
+.ai-prediction-overlay {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid #ff4444;
+  border-radius: 8px;
+  animation: prediction-pulse 1.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 999;
+  box-shadow: 0 0 12px rgba(255, 68, 68, 0.3);
+}
+@keyframes prediction-pulse {
+  0% { opacity: 0.4; transform: scale(0.98); }
+  50% { opacity: 0.9; transform: scale(1.02); }
+  100% { opacity: 0.4; transform: scale(0.98); }
+}
+.strategy-tag {
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(40, 40, 40, 0.9);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.85em;
+  font-weight: bold;
+  white-space: nowrap;
+  backdrop-filter: blur(2px);
+  z-index: 1001;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+.field::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 4px;
+  left: 2px;
+  right: 2px;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+}
+#info-window {
+  position: absolute;
+  top: -300px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 1.2rem;
+  z-index: 1001;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 80%;
+  max-width: 600px;
+  display: none;
+}
+#info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+#info-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+}
+/* Stock-Highlight für aktiven Spieler */
+.animated-stock-border {
+  border: 4.5px solid;
+  border-image: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet) 1;
+  animation: blinkActiveStock 1s linear infinite;
+  border-radius: 8px;
+}
+.static-stock-border {
+  border: 4.5px solid gray;
+  border-radius: 8px;
+}
+@keyframes blinkActiveStock {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.5); }
+  100% { filter: brightness(1); }
+}
+/* Overlay-Styles für Einstellungen */
+#overlay-container {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 65%;
+  background: linear-gradient(to bottom, #000, #777);
+  border-radius: 15px;
+  z-index: 2000;
+  display: none;
+  padding: 10px;
+  border: 3px solid;
+  border-image: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet) 1;
+  animation: flashBorder 5s linear infinite;
+}
+@keyframes flashBorder {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+#overlay-header { position: relative; height: 40px; margin-bottom: 10px; }
+#btn-uebernehmen { position: absolute; top: 20px; left: 20px; width: 90px; height: 30px; background: blue; color: white; border: none; border-radius: 5px; cursor: pointer; }
+#btn-uebernehmen:active { transform: scale(0.95); }
+#btn-schliessen { position: absolute; top: 20px; right: 20px; height: 30px; width: auto; background: grey; color: white; border: none; border-radius: 5px; cursor: pointer; }
+#input-name { position: absolute; top: 20px; left: calc(20px + 90px + 10px); right: calc(20px + 70px + 10px); height: 20px; border-radius: 5px; border: 1px solid #ccc; padding: 5px; }
+#overlay-info { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); width: 70%; bottom: 90px; background: #eee; color: black; overflow-y: auto; padding: 10px; border-radius: 10px; }
+.speed-control-container { position: absolute; bottom: 20px; left: 5%; right: 5%; display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; }
+#speed-value { width: 110px; text-align: center; }
+.speed-slider { flex: 1; max-width: 180px; height: 6px; background: #ddd; border-radius: 3px; }
+.speed-slider::-webkit-slider-thumb { width: 18px; height: 18px; background: #ffd700; border-radius: 50%; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="status-label">🎮 Spielstart: Karten werden gemischt...</div>
+<div class="game-container">
+<section class="opponent-area">
+  <div class="main-piles">
+    <div class="field stock" data-label="🗃️ Gegner Stock (20)"></div>
+    <div class="field" data-label="🗑️ Ablage 1"></div>
+    <div class="field" data-label="🗑️ Ablage 2"></div>
+    <div class="field" data-label="🗑️ Ablage 3"></div>
+    <div class="field" data-label="🗑️ Ablage 4"></div>
+  </div>
+  <div class="hand" id="opponentHand"></div>
+</section>
+<section class="build-area">
+  <div class="main-piles">
+    <div class="field draw-pile" data-label="🃏 Nachziehstapel"></div>
+    <div class="field build-pile" data-label="▲ Bau 1 (1)"></div>
+    <div class="field build-pile" data-label="▲ Bau 2 (1)"></div>
+    <div class="field build-pile" data-label="▲ Bau 3 (1)"></div>
+    <div class="field build-pile" data-label="▲ Bau 4 (1)"></div>
+  </div>
+</section>
+<section class="human-area">
+  <div class="main-piles">
+    <div class="field" data-label="🗑️ Ablage 1"></div>
+    <div class="field" data-label="🗑️ Ablage 2"></div>
+    <div class="field" data-label="🗑️ Ablage 3"></div>
+    <div class="field" data-label="🗑️ Ablage 4"></div>
+    <div class="field stock" data-label=" Spieler Stock (20)"></div>
+  </div>
+  <div class="hand" id="playerHand"></div>
+</section>
+</div>
+<div id="info-window" style="display: none;"><table id="info-table"></table></div>
+<script>
+// =============================================================
+// 🛠️ ZENTRALE KI-KONFIGURATION & DEBUG-FLAGS
+// =============================================================
+// ALLE WERTE KÖNNEN HIER DIREKT BEARBEITET WERDEN.
+//
+// WICHTIG FÜR PRODUKTION:
+// - Alle DEBUG_* Flags auf false lassen (sonst viele Log-Ausgaben)
+// - Nur bei Bedarf einzelne Flags auf true setzen
+// - Die SCORE_* Werte steuern das KI-Verhalten:
+//   Höhere Werte = stärkere Bevorzugung dieser Strategie
+// =============================================================
+let KONFIG = {
+  // ==========================================================
+  // TEAM 1: BASIS-BEWERTUNGEN
+  // ==========================================================
+  // DEBUG_1: Risiko durch Gegner-Karten
+  // SCORE_1: 6000 Punkte wenn Gegner die benötigte Folgekarte besitzt
+  DEBUG_1: false, SCORE_1: 6000,
+  
+  // DEBUG_2: Eigenes Stock-Risiko
+  // SCORE_2: 300 Punkte Abzug wenn eigener Stock <= 5 Karten
+  DEBUG_2: false, SCORE_2: 300,
+  
+  // DEBUG_3: Lückenfüllung
+  // SCORE_3: 800 Punkte für das Schließen von Zahlenlücken
+  DEBUG_3: false, SCORE_3: 800,
+  
+  // DEBUG_4: Joker-Bewertung
+  // SCORE_4_JOKER_MOVE: 60 Punkte wenn die zu legende Karte ein Joker ist
+  // SCORE_4_OPP_JOKER: 60 Punkte wenn Gegner einen Joker hat
+  DEBUG_4: false, SCORE_4_JOKER_MOVE: 60, SCORE_4_OPP_JOKER: 60,
+  
+  // DEBUG_5: Basis-Bonus für Baustapel-Züge
+  // SCORE_5: 600 Punkte für jeden legalen Zug auf einen Baustapel
+  DEBUG_5: false, SCORE_5: 600,
+  
+  // DEBUG_6: Joker-Malus
+  // SCORE_6: 800 Punkte Abzug für Joker auf niedrigem Stapel (<5)
+  DEBUG_6: false, SCORE_6: 800,
+  
+  // DEBUG_7: Joker-Stock-Treffer
+  // SCORE_7: 15000 Punkte wenn Joker exakten Stock-Wert trifft
+  DEBUG_7: false, SCORE_7: 15000,
+  
+  // DEBUG_8: Joker-Zukunftswert
+  // SCORE_8: 60 Punkte Multiplikator für futureValue
+  DEBUG_8: false, SCORE_8: 60,
+  
+  DEBUG_9: false, SCORE_9: 0, // Reserviert
+  
+  // DEBUG_10: Stockabbau-Beschleunigung
+  // SCORE_10: 5000 Basiswert
+  // SCORE_10_ADV: 3000 Zusatzbonus pro fortgeschrittenem Baustapel
+  DEBUG_10: false, SCORE_10: 5000, SCORE_10_ADV: 3000,
+  DEBUG_11: false,
+  
+  // DEBUG_12: Lückenbonus
+  // SCORE_12: 150 Punkte pro Lückengröße
+  DEBUG_12: false, SCORE_12: 150,
+  
+  // DEBUG_13: Ablage-Basisscore
+  // SCORE_13: 150 Punkte für das Ablegen
+  DEBUG_13: false, SCORE_13: 150,
+  
+  // DEBUG_14: Riskante Ablagen reduzieren
+  // SCORE_14: 5000 Punkte Abzug für riskante Ablagen
+  DEBUG_14: false, SCORE_14: 5000,
+  
+  // DEBUG_15: Sequenz-Bonus
+  // SCORE_15: 120 Punkte für aufsteigende Reihen
+  DEBUG_15: false, SCORE_15: 120,
+  
+  // DEBUG_16: Leerer Ablagestapel
+  // SCORE_16: 20 Punkte Bonus
+  DEBUG_16: false, SCORE_16: 20,
+  
+  // DEBUG_17: Niedrigere Karten
+  // SCORE_17: 30 Punkte Bonus
+  DEBUG_17: false, SCORE_17: 30,
+  
+  DEBUG_18: false, SCORE_18: 0, // Reserviert
+  
+  // DEBUG_19: Malus pro Ablagekarte
+  // SCORE_19: 2 Punkte Abzug pro Karte
+  DEBUG_19: false, SCORE_19: 2,
+  
+  // DEBUG_20: Gegnerhilfe-Blockade
+  // SCORE_20: 15000 Punkte Abzug
+  DEBUG_20: false, SCORE_20: 15000,
+  
+  // DEBUG_21a: Langfristige Planung
+  // SCORE_21A: 3 Punkte Bonus für Stapelwert >= 8
+  DEBUG_21a: false, SCORE_21A: 3,
+  
+  DEBUG_22: false, SCORE_22: 0, // Reserviert
+  
+  // DEBUG_23: Discard-Stock-Synergie
+  // SCORE_23: 600 Punkte
+  DEBUG_23: false, SCORE_23: 600,
+  
+  // DEBUG_24: Stock-min Fallback
+  // SCORE_24: 8000 Punkte maximale Priorisierung
+  DEBUG_24: false, SCORE_24: 8000,
+  
+  // DEBUG_25: Joker Future Bonus
+  // SCORE_25: 50 Punkte * (12 - Wert) progressiv
+  DEBUG_25: false, SCORE_25: 50,
+  
+  // DEBUG_26: Ablagestapelzug Basis
+  // SCORE_26: 300 Punkte
+  DEBUG_26: false, SCORE_26: 300,
+  
+  // DEBUG_27: Joker-Fallback
+  // SCORE_27: 650 Punkte Fallback
+  DEBUG_27: false, SCORE_27: 650,
+  
+  // DEBUG_28: Sequenzkontrolle
+  // SCORE_28: 600 Punkte
+  DEBUG_28: false, SCORE_28: 600,
+  
+  // DEBUG_29: Kritischer Malus
+  // SCORE_29: 3000 Punkte wenn Gegner-Stock <= 3
+  DEBUG_29: false, SCORE_29: 3000,
+  
+  // DEBUG_30: Risky-Stock-Joker
+  // SCORE_30: 80 Punkte
+  DEBUG_30: false, SCORE_30: 80,
+  
+  DEBUG_31: false, // Logik-Trigger: Priorisiert Stock bei gleichem Wert
+  
+  // DEBUG_32: Stockabbau-Priorisierung
+  // SCORE_32: 5000 Punkte
+  DEBUG_32: false, SCORE_32: 5000,
+  
+  // DEBUG_33: Joker-Schutz
+  // SCORE_33: 500 Punkte
+  DEBUG_33: false, SCORE_33: 500,
+  
+  // DEBUG_34: Stock-Angriff Basiswert
+  // SCORE_34_HIGH: 3000 Punkte wenn Gegner <10 Stock
+  // SCORE_34_LOW: 1500 Punkte wenn Gegner >=10 Stock
+  DEBUG_34: false, SCORE_34_HIGH: 3000, SCORE_34_LOW: 1500,
+  
+  // DEBUG_35: Serienunterbrechung
+  // SCORE_35: 800 Punkte
+  DEBUG_35: false, SCORE_35: 800,
+  
+  DEBUG_36: false, SCORE_36: 0, // Reserviert
+  
+  // DEBUG_37: Blockade-Karte
+  // SCORE_37: 2500 Punkte
+  DEBUG_37: false, SCORE_37: 2500,
+  
+  // DEBUG_38: Distanz zum Stock
+  // SCORE_38: 10 Punkte Multiplikator
+  DEBUG_38: false, SCORE_38: 10,
+  
+  // DEBUG_39: Stockabbau Vorrang
+  // SCORE_39: 5000 Punkte Risikoreduktion
+  DEBUG_39: false, SCORE_39: 5000,
+  
+  // ==========================================================
+  // TEAM 2: JOKER-SCHWELLENWERTE
+  // ==========================================================
+  // DEBUG_40: Joker-Schwellenwert (0.20 = 20% vom Durchschnitt)
+  DEBUG_40: false, SCORE_40: 0.20,
+  
+  // DEBUG_41: Mindestbewertung Joker (1000 Punkte)
+  DEBUG_41: false, SCORE_41: 1000,
+  
+  // DEBUG_42: Joker-Gewichtung (0.8 Multiplikator)
+  DEBUG_42: false, SCORE_42: 0.8,
+  
+  // DEBUG_43: Hauptzug-Protokollierung
+  DEBUG_43: true, // Hier true lassen für gute Logs, später auf false
+  
+  // DEBUG_44: Adaptiver Blockade-Parameter
+  // SCORE_44: 500 Punkte * sqrt
+  DEBUG_44: false, SCORE_44: 500,
+  
+  // ==========================================================
+  // TEAM 3: JOKER-STRATEGIE (v7.6.2)
+  // ==========================================================
+  // DEBUG_JOKER_STOCK: Joker vom Stock hat absoluten Vorrang
+  // SCORE_JOKER_STOCK_FORCE: 25000 Punkte
+  DEBUG_JOKER_STOCK: false, SCORE_JOKER_STOCK_FORCE: 25000,
+  
+  // DEBUG_JOKER_COMBO: Erlaubt Hand→Joker→Hand Combos
+  // SCORE_JOKER_COMBO_BONUS: 4000 Punkte Bonus
+  DEBUG_JOKER_COMBO: false, SCORE_JOKER_COMBO_BONUS: 4000,
+  
+  // DEBUG_JOKER_DISCARD: Joker nur auf leere Ablage oder über anderen Joker
+  // SCORE_JOKER_DISCARD_SAVE: 9000 Punkte Bonus für leeren Stapel
+  // SCORE_JOKER_COVER_PENALTY: 12000 Punkte Strafe für Bedecken mit Zahl
+  DEBUG_JOKER_DISCARD: false, SCORE_JOKER_DISCARD_SAVE: 9000, SCORE_JOKER_COVER_PENALTY: 12000,
+  
+  // DEBUG_JOKER_DEFER: Fallback wenn kein guter Joker-Zug
+  // SCORE_JOKER_DEFER: 1500 Punkte
+  DEBUG_JOKER_DEFER: false, SCORE_JOKER_DEFER: 1500,
+  
+  // ==========================================================
+  // TEAM 4: TIEFENSUCHE (Deep Lookahead 2.0)
+  // ==========================================================
+  // SCORE_DEEP_LOOKAHEAD_DEPTH: 3 = max. 3 Karten tief schauen
+  SCORE_DEEP_LOOKAHEAD_DEPTH: 3,
+  // SCORE_DEEP_LOOKAHEAD_BONUS: 8000 Punkte Basis-Bonus
+  SCORE_DEEP_LOOKAHEAD_BONUS: 8000,
+  // SCORE_JOKER_SAFE_DISCARD: 5000 Punkte für sicheres Joker-Ablegen
+  SCORE_JOKER_SAFE_DISCARD: 5000,
+  // SCORE_COVER_JOKER_PENALTY: 8000 Punkte Strafe für Zahl auf Joker
+  SCORE_COVER_JOKER_PENALTY: 8000,
+  // DISCARD_PREVIEW_DEPTH: 2 = Tiefe für Ablage-Vorschau
+  DISCARD_PREVIEW_DEPTH: 2,
+  
+  // ==========================================================
+  // WEITERE DEBUG-FLAGS
+  // ==========================================================
+  DEBUG_45: false,   // Joker-Filter und Tiefensuche 2.0 Logs
+  DEBUG_46: false,   // Ablagestapel-Quellvalidierung
+  DEBUG_47: false,   // Hand/Stock-Kollisionsprüfung
+  DEBUG_48: false,   // Joker-Ablage und Gegnerhilfe
+  DEBUG_49: false, SCORE_49: 15000,  // Joker-in-Ablage riskScore
+  DEBUG_50: false,   // Rücksprung-RiskScore Protokollierung
+  DEBUG_51: false,   // Joker in Ablage gelegt Flag
+  DEBUG_17a: false   // Stock-Help-Bonus in Ablage
+};
+
+// =============================================================
+// GLOBALE VARIABLEN & KONSTANTEN
+// =============================================================
+let selectedCard   = null;      // Aktuell ausgewählte Karte (DOM-Element)
+let selectedSource = null;      // Quelle der ausgewählten Karte ('hand', 'stock', 'discard')
+let selectedIndex  = null;      // Index der ausgewählten Karte in der Quelle
+let Joker_auf_Ablage   = false; // Flag: Wurde ein Joker auf Ablage gelegt?
+let currentPlayer      = 'human'; // Aktiver Spieler ('human' oder 'ai')
+let playerName         = 'Spieler'; // Name des menschlichen Spielers
+let spielGeschwindigkeit = 4;   // 0-20 Sekunden pro Zug (einstellbar im Overlay)
+let currentGameId      = Date.now(); // Eindeutige ID für das aktuelle Spiel
+let debugInfo          = [];     // Sammelt Debug-Informationen für die Analyse
+let longPressTimer;              // Timer für Long-Press-Erkennung (5 Sekunden Overlay)
+let isGameOver         = false;  // Flag: Spiel beendet?
+let pressTimer;                  // Timer für Long-Press auf Ablagestapel (1 Sekunde Info)
+const GESCHWINDIGKEIT = { schnell: 1, mittel: 4, langsam: 10 };
+
+// =============================================================
+// GAME-OBJEKT – Zentrale Datenstruktur für den Spielzustand
+// =============================================================
+const Game = {
+  deck: [],                       // Gemischtes Deck (alle Karten zu Spielbeginn)
+  players: {
+    human: {
+      hand: [],                   // Handkarten (max. 5, faceUp = true)
+      stock: [],                  // Stockstapel (20 Karten, letzte Karte ist sichtbar)
+      discards: [[], [], [], []]  // 4 Ablagestapel
+    },
+    ai: {
+      hand: [],                   // Handkarten (max. 5, faceUp = false für Gegner)
+      stock: [],                  // Stockstapel (20 Karten)
+      discards: [[], [], [], []]  // 4 Ablagestapel
+    }
+  },
+  buildPiles: [[], [], [], []],   // 4 Baustapel (jeweils 1-12 aufsteigend)
+  drawPile: [],                   // Nachziehstapel (Restkarten nach Verteilung)
+  stockCardIsRemovable: true,     // Flag: Darf die oberste Stockkarte gespielt werden?
+  tracking: {                     // Tracking für KI-Analyse
+    deckComposition: Array.from({ length: 12 }, (_, i) => 12).concat(Array(12).fill('joker')),
+    discardHistory: {
+      human: { values: [], timestamps: [] },
+      ai: { values: [], timestamps: [] }
+    },
+    stockPredictions: {
+      human: { nextExpected: 1, confidence: 0 },
+      ai: { nextExpected: 1, confidence: 0 }
+    }
+  }
+};
+
+// =============================================================
+// HILFSFUNKTION: Verzögerung für sichtbare Züge
+// =============================================================
+// Diese Funktion pausiert die Ausführung für eine bestimmte Zeit.
+// Die Dauer wird durch spielGeschwindigkeit (0-20 Sekunden) multipliziert.
+// multiplier: Zusätzlicher Faktor für längere/kürzere Pausen
+function pauseForSeconds(multiplier = 1) {
+  return new Promise(resolve => {
+    setTimeout(resolve, spielGeschwindigkeit * multiplier * 1000);
+  });
+}
+
+// =============================================================
+// HILFSFUNKTION: Nachricht in der Statusleiste anzeigen
+// =============================================================
+function showMessage(message) {
+  const statusLabel = document.getElementById('status-label');
+  if (statusLabel) {
+    statusLabel.textContent = message;
+    statusLabel.style.minHeight = '40px';
+  }
+}
+
+// =============================================================
+// SPIELINITIALISIERUNG
+// =============================================================
+async function initGame() {
+  // Spielstatus zurücksetzen
+  isGameOver = false;
+  debugInfo = [];
+  currentPlayer = 'human';
+  Joker_auf_Ablage = false; // Zurücksetzen des neuen Joker-Flags
+
+  // Gespeicherte Geschwindigkeit aus localStorage laden
+  try {
+    const savedSpeed = localStorage.getItem('skipbo-speed');
+    if (savedSpeed) spielGeschwindigkeit = parseInt(savedSpeed);
+  } catch (e) {
+    console.error('Fehler beim Zugriff auf localStorage:', e);
+  }
+
+  // ========== 1. DECK ERSTELLEN ==========
+  // 12x Zahlenkarten von 1 bis 12 (insgesamt 144 Zahlenkarten)
+  Game.deck = [];
+  for (let s = 0; s < 12; s++) {
+    for (let n = 1; n <= 12; n++) {
+      Game.deck.push({ type: 'number', value: n });
+    }
+  }
+  // 12 Jokerkarten (★)
+  for (let j = 0; j < 12; j++) {
+    Game.deck.push({ type: 'joker', value: '★' });
+  }
+
+  // ========== 2. DECK MISCHEN (Fisher-Yates) ==========
+  for (let i = Game.deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [Game.deck[i], Game.deck[j]] = [Game.deck[j], Game.deck[i]];
+  }
+
+  // ========== 3. KARTEN VERTEILEN ==========
+  // Jeder Spieler: 5 Handkarten + 20 Stockkarten
+  Game.players.human.hand = Game.deck.splice(0, 5);
+  Game.players.ai.hand = Game.deck.splice(0, 5);
+  Game.players.human.stock = Game.deck.splice(0, 20);
+  Game.players.ai.stock = Game.deck.splice(0, 20);
+  Game.drawPile = Game.deck;
+
+  Game.stockCardIsRemovable = true;
+
+  // Sichtbarkeit der Handkarten (Spieler sieht seine Karten, Gegner sieht Rückseite)
+  Game.players.human.hand.forEach(card => card.faceUp = true);
+  Game.players.ai.hand.forEach(card => card.faceUp = false);
+
+  // ========== 4. INITIALISIERUNG NACHZIEHEN ==========
+  drawCardsUntilFive('ai');
+  updateView();
+  showMessage('Spiel initialisiert. Du bist am Zug!');
+
+  // UI-Elemente aktivieren
+  enableDraggableStatusLabel();
+  showOverlay();
+  setupTouchEvents();
+
+  // Wenn KI am Zug ist, starte KI-Zug nach 3 Sekunden
+  if (currentPlayer === 'ai') setTimeout(() => aiTurn(0), 3000);
+
+  // ========== 5. TRACKING INITIALISIEREN ==========
+  Game.tracking = {
+    deckComposition: Array.from({ length: 12 }, (_, i) => 12).concat(Array(12).fill('joker')),
+    discardHistory: { human: { values: [], timestamps: [] }, ai: { values: [], timestamps: [] } },
+    stockPredictions: { human: { nextExpected: 1, confidence: 0 }, ai: { nextExpected: 1, confidence: 0 } }
+  };
+
+  // Alte Overlays entfernen
+  document.querySelectorAll('.strategy-tag, .ai-prediction-overlay').forEach(el => el.remove());
+}
+
+// =============================================================
+// VERZÖGERUNG MIT CALLBACK
+// =============================================================
+function delayWithCallback(ms, callback) {
+  setTimeout(callback, ms);
+}
+
+// =============================================================
+// VIEW UPDATES & STOCK-RAHMEN (Spielfeld aktualisieren)
+// =============================================================
+function updateView() {
+  updateHand('human', document.getElementById('playerHand'));
+  updateHand('ai', document.getElementById('opponentHand'));
+  updateStock('human', document.querySelector('.human-area .field.stock'));
+  updateStock('ai', document.querySelector('.opponent-area .field.stock'));
+  updateDrawPile(document.querySelector('.build-area .field.draw-pile'));
+  updateBuildPiles();
+  updateDiscardPiles();
+  applyStockFieldBorders();
+}
+
+// =============================================================
+// STOCK-HIGHLIGHT-STYLES (Aktiver Spieler wird hervorgehoben)
+// =============================================================
+function addStockHighlightStyles() {
+  if (document.getElementById('stock-highlight-style')) return;
+  const style = document.createElement('style');
+  style.id = 'stock-highlight-style';
+  style.innerHTML = `
+.animated-stock-border {
+  border: 4.5px solid;
+  border-image: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet) 1;
+  animation: blinkActiveStock 1s linear infinite;
+  border-radius: 8px;
+}
+.static-stock-border {
+  border: 4.5px solid gray;
+  border-radius: 8px;
+}
+@keyframes blinkActiveStock {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.5); }
+  100% { filter: brightness(1); }
+}
+`;
+  document.head.appendChild(style);
+}
+addStockHighlightStyles();
+
+// =============================================================
+// AKTIVEN SPIELER IM STOCK HERVORHEBEN
+// =============================================================
+function applyStockFieldBorders() {
+  const humanStockField = document.querySelector('.human-area .field.stock');
+  const aiStockField = document.querySelector('.opponent-area .field.stock');
+  if (!humanStockField || !aiStockField) return;
+
+  humanStockField.classList.remove('animated-stock-border', 'static-stock-border');
+  aiStockField.classList.remove('animated-stock-border', 'static-stock-border');
+
+  if (currentPlayer === 'human') {
+    humanStockField.classList.add('animated-stock-border');
+    aiStockField.classList.add('static-stock-border');
+  } else if (currentPlayer === 'ai') {
+    aiStockField.classList.add('animated-stock-border');
+    humanStockField.classList.add('static-stock-border');
+  }
+}
+
+// =============================================================
+// OVERLAY & EINSTELLUNGEN (Spielername + Geschwindigkeit)
+// =============================================================
+function showOverlay() {
+  let overlay = document.getElementById('overlay-container');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'overlay-container';
+    overlay.innerHTML = `
+<div id="overlay-header">
+  <button id="btn-uebernehmen">Übernehmen</button>
+  <input type="text" id="input-name" placeholder="Spielername" value="${playerName}">
+  <button id="btn-schliessen">Schließen</button>
+</div>
+<div id="overlay-info">${createInfoText()}</div>
+<div class="speed-control-container">
+  <span class="speed-label">Geschwindigkeit (0–20s)</span>
+  <input type="range" class="speed-slider" id="speed-slider" min="0" max="20" value="${spielGeschwindigkeit}" step="1">
+  <span class="speed-label" id="speed-value">${spielGeschwindigkeit}s</span>
+</div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('btn-uebernehmen').addEventListener('click', () => {
+      const newName = document.getElementById('input-name').value.trim();
+      if (newName) {
+        playerName = newName;
+        const stockField = document.querySelector('.human-area .field.stock');
+        if (stockField) stockField.setAttribute('data-label', ` ${newName} Stock (20)`);
+        showMessage(`Spielername geändert zu: ${newName}`);
+      }
+      spielGeschwindigkeit = parseInt(document.getElementById('speed-slider').value);
+      try { localStorage.setItem('skipbo-speed', spielGeschwindigkeit); } catch(e) {}
+      hideOverlay();
+    });
+    document.getElementById('speed-slider').addEventListener('input', (e) => {
+      document.getElementById('speed-value').textContent = `${e.target.value}s`;
+    });
+    document.getElementById('btn-schliessen').addEventListener('click', hideOverlay);
+  }
+  document.getElementById('input-name').value = playerName;
+  document.getElementById('speed-slider').value = spielGeschwindigkeit;
+  document.getElementById('speed-value').textContent = `${spielGeschwindigkeit}s`;
+  overlay.style.display = 'block';
+}
+function hideOverlay() {
+  const overlay = document.getElementById('overlay-container');
+  if (overlay) overlay.style.display = 'none';
+}
+
+// =============================================================
+// INFOTEXT FÜR OVERLAY (VOLLSTÄNDIG - PUNKTE 1-9)
+// =============================================================
+function createInfoText() {
+  return `
+<h2>Spielregeln und Benutzerinformationen</h2>
+<p><strong>1. Ziel des Spiels:</strong><br>
+- Das Hauptziel ist es, alle Karten aus deinem Stockstapel abzulegen, um das Spiel zu gewinnen.<br>
+- Du kannst Karten auf die Baukartenstapel in aufsteigender Reihenfolge von 1 bis 12 ablegen.<br>
+- Joker können jede Karte ersetzen und haben keinen festen Wert.</p>
+<p><strong>2. Kartentypen:</strong><br>
+- Zahlenkarten: Karten mit Werten von 1 bis 12.<br>
+- Joker: Kann jede Karte ersetzen und wird flexibel verwendet.</p>
+<p><strong>3. Kartenmengen:</strong><br>
+- Es gibt insgesamt 144 Zahlenkarten, aufgeteilt in 12 Stapel à 12 Karten pro Zahl.<br>
+- Zusätzlich gibt es 12 Jokerkarten.</p>
+<p><strong>4. Spielstart:</strong><br>
+- Jeder Spieler erhält zu Beginn 5 Karten in die Hand.<br>
+- Jeder Spieler erhält außerdem 20 Karten in seinen Stockstapel.<br>
+- Die restlichen Karten werden als Nachziehstapel verwendet.</p>
+<p><strong>5. Spielverlauf:</strong><br>
+- Spieler legen abwechselnd Karten auf Baukartenstapel oder Ablagestapel ab.<br>
+- Die Karten müssen in aufsteigender Reihenfolge auf die Baukartenstapel gelegt werden.<br>
+- Ein Joker kann jede Karte ersetzen und kann auf jeden Baukartenstapel gelegt werden.<br>
+- Wenn ein Baukartenstapel vollständig ist, wird er geleert und die Karten in den Nachziehstapel gemischt.<br>
+- Ziehe Karten vom Nachziehstapel, bis du 5 Karten in der Hand hast.<br>
+- Wenn du keine legalen Züge mehr machen kannst, lege eine Karte auf einen deiner Ablagestapel.<br>
+- Ein kurzes Drücken auf den Ablagestapel zeigt, wie die Karten abgelegt werden.</p>
+<p><strong>6. Spieleraktionen:</strong><br>
+- Wähle eine Karte aus deiner Hand, deinem Stockstapel oder deinem Ablagestapel aus, um sie zu spielen.<br>
+- Lege die ausgewählte Karte auf einen Baukartenstapel oder Ablagestapel.<br>
+- Verwende die touchstart- und click-Ereignisse, um Karten auszuwählen und zu legen.<br>
+- Langes Drücken eines Ablagestapels zeigt ein Hinweisfenster, das die Karten im Stapel anzeigt.<br>
+- Die Info-Leiste kann verschoben werden, um sie beim Spielen optimal zu platzieren.</p>
+<p><strong>7. Anpassung der Spielgeschwindigkeit:</strong><br>
+- Die Geschwindigkeit des Spiels kann mit der Variablen spielGeschwindigkeit angepasst werden.<br>
+- Standardwert ist 4 (mittel). Mögliche Werte: 0 (sehr schnell) bis 20 (sehr langsam),
+einstellbar über den Slider im Overlay.</p>
+<p><strong>8. Endgame:</strong><br>
+- Das Spiel endet, wenn ein Spieler alle Karten aus seinem Stockstapel abgelegt hat.<br>
+- Der Spieler ohne Karten im Stockstapel gewinnt.<br>
+- Die Punkte des Verlierers werden basierend auf den verbleibenden Karten in der Hand berechnet
+(5 Punkte pro Karte).</p>
+<p><strong>9. Weitere Details:</strong><br>
+- Wenn der Nachziehstapel leer ist, werden alle vollständigen Baukartenstapel gemischt
+und als neuer Nachziehstapel verwendet.<br>
+- Spieler können nur eine Karte pro Zug legen.<br>
+- Der aktuelle Spieler wird durch die switchPlayer-Funktion verwaltet, die zwischen human und ai wechselt.<br>
+- Die Stockkarten zeigen die verbleibende Anzahl der Karten an.<br>
+- Die Jokerkarte zeigt immer die ersetzte Karte an.<br>
+- Ein langes 5-Sekunden-Drücken auf die HTML-Seite öffnet dieses Info-Fenster wieder.<br>
+- Im Hauptfenster kann man die Infoleiste nach unten schieben, um sie beim Spielen optimal zu platzieren.</p>
+`;
+}
+
+// =============================================================
+// LONG-PRESS LISTENER FÜR OVERLAY (5 Sekunden)
+// =============================================================
+(function addLongPressListener() {
+  let pressTimer;
+  document.addEventListener('touchstart', () => { pressTimer = setTimeout(showOverlay, 5000); });
+  document.addEventListener('touchend', () => { clearTimeout(pressTimer); });
+  document.addEventListener('mousedown', () => { pressTimer = setTimeout(showOverlay, 5000); });
+  document.addEventListener('mouseup', () => { clearTimeout(pressTimer); });
+})();
+
+// =============================================================
+// EVENT-HANDLING & TOUCH (Karten auswählen und ablegen)
+// =============================================================
+function setupTouchEvents() {
+  if (isGameOver) return;
+  // Karten-Klick: Auswählen
+  document.querySelectorAll('.card').forEach(card => {
+    card.onclick = handleCardSelect;
+  });
+  // Bau- und Ablagestapel: Karte ablegen
+  document.querySelectorAll('.build-pile, .human-area [data-label*="Ablage"]').forEach(field => {
+    field.onclick = handleCardPlace;
+  });
+  // Statusleiste: Long-Press für Vibration (optional)
+  const statusLabel = document.getElementById('status-label');
+  if (statusLabel) {
+    statusLabel.ontouchstart = () => {
+      longPressTimer = setTimeout(() => {
+        if (navigator.vibrate) navigator.vibrate(50);
+      }, 1000);
+    };
+    statusLabel.ontouchend = () => clearTimeout(longPressTimer);
+    statusLabel.ontouchmove = () => clearTimeout(longPressTimer);
+  }
+}
+
+// =============================================================
+// KARTE AUSWÄHLEN (Spieler-Zug)
+// =============================================================
+function handleCardSelect(event) {
+  if (isGameOver) return;
+  // Wenn auf Bau- oder Ablagestapel geklickt wird, aber eine Karte ausgewählt ist → ablegen
+  if (event.currentTarget.closest('.build-pile')) {
+    if (selectedCard) {
+      handleCardPlace(event);
+    }
+    return;
+  }
+  event.preventDefault();
+  if (currentPlayer !== 'human') return;
+  // Vorherige Auswahl entfernen
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  const cardElement = event.currentTarget;
+  // Wenn gleiche Karte erneut ausgewählt → Auswahl aufheben
+  if (selectedCard === cardElement) {
+    selectedCard = null;
+    selectedSource = null;
+    selectedIndex = null;
+    showMessage("Auswahl aufgehoben.");
+    return;
+  }
+  // Neue Karte auswählen
+  cardElement.classList.add('selected');
+  selectedCard = cardElement;
+  selectedSource = getSourceType(cardElement);
+  selectedIndex = getSourceIndex(cardElement);
+  showMessage(`Karte aus ${selectedSource} ausgewählt. Wähle ein Ziel.`);
+}
+
+// =============================================================
+// KARTE ABLEGEN (Spieler-Zug)
+// =============================================================
+function handleCardPlace(event) {
+  if (isGameOver) return;
+  event.preventDefault();
+  if (!selectedCard) {
+    showMessage('Bitte zuerst eine Karte auswählen');
+    return;
+  }
+  const el = event.currentTarget || event.target;
+  const target = el.closest('.build-pile') || el.closest('[data-label*="Ablage"]');
+  if (!target) return;
+  if (currentPlayer !== 'human') {
+    showMessage('Es ist nicht dein Zug!');
+    return;
+  }
+  let success = false;
+  const wasLastHandCard = selectedSource === 'hand' && Game.players.human.hand.length === 1;
+  const stockPile = Game.players.human.stock;
+  const topStock = stockPile[stockPile.length - 1];
+  if (selectedCard === topStock && selectedCard.type !== 'joker') {
+    if (KONFIG.DEBUG_47) debugInfo.push(`📌47 Die Handkarte entspricht der Stockkarte und ist kein ★Joker`);
+    aiTurn(0);
+    return;
+  }
+  // Auf Baustapel legen
+  if (target.classList.contains('build-pile') || target.closest('.build-pile')) {
+    const buildPiles = document.querySelectorAll('.build-pile');
+    const actualPile = target.classList.contains('build-pile') ? target : target.closest('.build-pile');
+    const buildPileIndex = Array.from(buildPiles).indexOf(actualPile);
+    if (handleBuildPileDrop(currentPlayer, selectedSource, selectedIndex, buildPileIndex)) {
+      success = true;
+      showMessage('Du hast eine Karte auf Baustapel gelegt');
+      if (wasLastHandCard) {
+        drawCardsUntilFive('human');
+        drawCardsUntilFive('ai');
+      }
+    } else {
+      showMessage('Dieser Zug ist nicht erlaubt');
+    }
+  }
+  // Auf Ablagestapel legen
+  else if (target.matches('[data-label*="Ablage"]') || target.closest('[data-label*="Ablage"]')) {
+    const actualDiscard = target.matches('[data-label*="Ablage"]') ? target : target.closest('[data-label*="Ablage"]');
+    const discardPiles = document.querySelectorAll('.human-area [data-label*="Ablage"]');
+    const discardPileIndex = Array.from(discardPiles).indexOf(actualDiscard);
+    if (handleDiscardPileDrop(currentPlayer, selectedSource, selectedIndex, discardPileIndex)) {
+      success = true;
+      showMessage('Du hast eine Karte auf Ablagestapel gelegt');
+      switchPlayer();
+    }
+  }
+  if (success) {
+    selectedCard = null;
+    selectedSource = null;
+    selectedIndex = null;
+    document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+    updateView();
+    if (checkForWinner()) return;
+    setupTouchEvents();
+  }
+}
+
+// =============================================================
+// QUELLE DER AUSGEWÄHLTEN KARTE BESTIMMEN
+// =============================================================
+function getSourceType(element) {
+  if (element.closest('.hand')) return 'hand';
+  if (element.closest('.stock')) return 'stock';
+  if (element.closest('[data-label*="Ablage"]')) return 'discard';
+  return null;
+}
+
+// =============================================================
+// INDEX DER AUSGEWÄHLTEN KARTE BESTIMMEN
+// =============================================================
+function getSourceIndex(element) {
+  if (element.closest('.hand')) {
+    return Array.from(element.parentElement.children).indexOf(element);
+  }
+  if (element.closest('[data-label*="Ablage"]')) {
+    const discardPiles = document.querySelectorAll('.human-area [data-label*="Ablage"]');
+    return Array.from(discardPiles).indexOf(element.closest('[data-label*="Ablage"]'));
+  }
+  return 0.01;
+}
+
+// =============================================================
+// JOKER-WERT AUF BAUSTAPEL BERECHNEN
+// =============================================================
+function getJokerValue(buildPile, jokerPosition) {
+  if (jokerPosition === 0) return 1;
+  const previousCard = buildPile[jokerPosition - 1];
+  return previousCard.type === 'joker' ? jokerPosition + 1 : parseInt(previousCard.value) + 1;
+}
+
+// =============================================================
+// KARTE AUF BAUSTAPEL LEGEN (KERNLOGIK)
+// =============================================================
+function handleBuildPileDrop(player, sourceType, sourceIndex, buildPileIndex) {
+  let card, sourceArray;
+  switch (sourceType) {
+    case 'hand':
+      sourceArray = Game.players[player].hand;
+      card = sourceArray[sourceIndex];
+      break;
+    case 'stock':
+      sourceArray = Game.players[player].stock;
+      card = sourceArray[sourceArray.length - 1];
+      break;
+    case 'discard':
+      sourceArray = Game.players[player].discards[sourceIndex];
+      if (sourceArray?.length > 0) {
+        card = sourceArray[sourceArray.length - 1];
+      } else {
+        return false;
+      }
+      break;
+    default:
+      return false;
+  }
+  if (!card) return false;
+  // Prüfen ob der Zug erlaubt ist
+  if (isValidBuildMove(card, buildPileIndex)) {
+    Game.buildPiles[buildPileIndex].push(card);
+    if (sourceType === 'hand') sourceArray.splice(sourceIndex, 1);
+    else sourceArray.pop();
+    // Wenn Baustapel voll (12), leeren und in Nachziehstapel mischen
+    if (isBuildPileComplete(buildPileIndex)) clearBuildPile(buildPileIndex);
+    return true;
+  }
+  return false;
+}
+
+// =============================================================
+// KARTE AUF ABLAGESTAPEL LEGEN (MIT JOKER-FLAG v7.6.3)
+// =============================================================
+function handleDiscardPileDrop(player, sourceType, sourceIndex, discardPileIndex) {
+  // Automatische Ablage für KI (wenn keine Karte ausgewählt)
+  if (!selectedCard && player === 'ai') {
+    if (Game.players[player].hand.length > 0) {
+      const criticalNumbers = getOpponentCriticalNumbers();
+      let safestIndex = 0, lowestScore = Infinity;
+      Game.players[player].hand.forEach((card, i) => {
+        let score = 0;
+        score += criticalNumbers.includes(card.value + 1) ? KONFIG.SCORE_37 : 0;
+        const stockTop = Game.players[player].stock.slice(-1)[0]?.value || 0;
+        let calculatedValue = Math.abs(card.value - stockTop) * KONFIG.SCORE_38;
+        if (!isNaN(calculatedValue) && isFinite(calculatedValue)) score += calculatedValue;
+        let bonusValue = (card.type === 'joker') ? KONFIG.SCORE_33 : 0;
+        if (!isNaN(bonusValue) && isFinite(bonusValue)) score += bonusValue;
+        score += getDiscardSequenceBonus(player, discardPileIndex, card);
+        if (score < lowestScore) { lowestScore = score; safestIndex = i; }
+      });
+      selectedCard = Game.players[player].hand[safestIndex];
+      showMessage(`Automatische Ablage: Karte (${selectedCard.value}) gewählt.`);
+    } else {
+      showMessage('Keine Karte verfügbar zum Ablegen.');
+      return false;
+    }
+  }
+  let card, sourceArray;
+  switch (sourceType) {
+    case 'hand':
+      sourceArray = Game.players[player].hand;
+      card = sourceArray[sourceIndex];
+      break;
+    case 'stock':
+      showMessage(`${player === 'human' ? 'Du' : 'KI'} kann keine Stockkarten in die Ablage legen.`);
+      return false;
+    default:
+      return false;
+  }
+  if (card) {
+    if (!Game.players[player].discards[discardPileIndex]) {
+      Game.players[player].discards[discardPileIndex] = [];
+    }
+    Game.players[player].discards[discardPileIndex].push(card);
+    if (sourceType === 'hand') sourceArray.splice(sourceIndex, 1);
+    else sourceArray.pop();
+    
+    // Setze Joker_auf_Ablage Flag für RiskScore (v7.6.3 Feature)
+    if (player === 'ai' && card.type === 'joker') {
+      Joker_auf_Ablage = true;
+      if (KONFIG.DEBUG_49) debugInfo.push(`📌 Joker_auf_Ablage wurde auf TRUE gesetzt!`);
+    } else if (player === 'ai') {
+      // Prüfe, ob die KI auf irgendeinem Ablagestapel oben einen Joker hat
+      const aiHasJoker = Game.players.ai.discards.some(pile => pile.length > 0 && pile[pile.length - 1].type === 'joker');
+      Joker_auf_Ablage = aiHasJoker;
+    }
+
+    // Tracking für Analyse
+    if (player === 'human') {
+      trackGameObservations('opponentDiscard', { cardValue: card.value });
+    }
+    try {
+      const key = card.type === 'joker' ? 'joker' : card.value;
+      if (Game.tracking.deckComposition[key] > 0) Game.tracking.deckComposition[key]--;
+      Game.tracking.discardHistory[player].values.push(key);
+      Game.tracking.discardHistory[player].timestamps.push(Date.now());
+    } catch(e) {}
+    return true;
+  }
+  showMessage(`${player === 'human' ? 'Du' : 'KI'} konnte keine Karte ablegen.`);
+  return false;
+}
+
+// =============================================================
+// HANDKARTEN AUF 5 AUFFÜLLEN (VOM NACHZIEHSTAPEL)
+// =============================================================
+function drawCardsUntilFive(player) {
+  while (Game.players[player].hand.length < 5 && Game.drawPile.length > 0) {
+    const card = Game.drawPile.pop();
+    card.faceUp = player === 'human';
+    Game.players[player].hand.push(card);
+  }
+  updateView();
+}
+
+// =============================================================
+// PRÜFT OB JOKER-WERT IM STOCK BENÖTIGT WIRD
+// =============================================================
+function neededForStock(jokerValue) {
+  return Game.players.ai.stock.some(card => card.type === 'number' && card.value === jokerValue);
+}
+
+// =============================================================
+// KRITISCHE ZAHLEN DES GEGNERS ERMITTELN (für Blockade-Strategie)
+// =============================================================
+function getOpponentCriticalNumbers() {
+  const criticalNumbers = [];
+  const humanStock = Game.players.human.stock;
+  if (humanStock.length > 0) {
+    criticalNumbers.push(parseInt(humanStock[humanStock.length - 1].value) + 1);
+  }
+  Game.players.human.discards.forEach(pile => {
+    if (pile.length > 0) {
+      criticalNumbers.push(parseInt(pile[pile.length - 1].value) + 1);
+    }
+  });
+  return [...new Set(criticalNumbers)];
+}
+
+// =============================================================
+// PRÜFT OB STOCKKARTE ENTFERNT WERDEN KANN
+// =============================================================
+function canRemoveStockCard() {
+  try {
+    if (!Game?.players?.ai) return false;
+    const stock = Game.players.ai.stock;
+    if (!Array.isArray(stock) || stock.length === 0) return false;
+    const topCard = stock[stock.length - 1];
+    if (!topCard || !('value' in topCard)) return false;
+    if (topCard.type === 'number') {
+      const value = parseInt(topCard.value, 10);
+      if (isNaN(value) || value < 1 || value > 12) return false;
+    }
+    return true;
+  } catch(err) { return false; }
+}
+
+// =============================================================
+// BASIS-KI-FUNKTIONEN (Blocking, Risiko, Future, Gap)
+// =============================================================
+
+// =============================================================
+// GEGNER-BLOCKADE-POTENZIAL BERECHNEN (MIT JOKER-FLAG v7.6.3)
+// =============================================================
+function getOpponentBlockingPotential(card, buildPileIndex) {
+  const opponentVisible = [...Game.players.human.stock.slice(-1), ...Game.players.human.discards.flat()];
+  let riskScore = 0;
+  const opponentStockSize = Game.players.human.stock.length;
+  opponentVisible.forEach(oppCard => {
+    // Wenn Gegner die benötigte Folgekarte hat (card.value + 1)
+    if (oppCard.value === card.value + 1) {
+      const stockFactor = 1 - (Game.players.ai.stock.length / 20);
+      const humanStockImpact = 1 + (15 - Game.players.human.stock.length) / 15;
+      riskScore += KONFIG.SCORE_1 * stockFactor * humanStockImpact;
+      if (Game.players.ai.stock.length <= 5) {
+        riskScore -= KONFIG.SCORE_2 * (6 - Game.players.ai.stock.length);
+      }
+    }
+    // Wenn Gegner die vorherige Karte hat (card.value - 1) → Sequenzkontrolle
+    if (oppCard.value === card.value - 1) {
+      riskScore += KONFIG.SCORE_28;
+      if (opponentStockSize <= 3) riskScore += KONFIG.SCORE_29;
+    }
+    // Gegner-Joker erhöht Risiko
+    if (oppCard.type === 'joker' && card.value >= 5) {
+      riskScore += KONFIG.SCORE_4_OPP_JOKER;
+      if (opponentStockSize <= 3) riskScore += KONFIG.SCORE_30;
+    }
+  });
+  // v7.6.3: Berücksichtigung des Joker_auf_Ablage Flags
+  // Wenn die KI in der Ablage einen schützenden Joker hat, spielt sie mutiger.
+  if (Joker_auf_Ablage === true) {
+    riskScore -= KONFIG.SCORE_49; // Reduziert das Risiko signifikant
+    if (KONFIG.DEBUG_49) {
+      debugInfo.push(`📌49 🔥⚠️ In Ablage liegt ein Joker (Joker_auf_Ablage=true). riskScore ⬇️-= ${KONFIG.SCORE_49}`);
+    }
+  }
+  return riskScore;
+}
+
+// =============================================================
+// LÜCKENGRÖSSE AUF BAUSTAPEL BERECHNEN
+// =============================================================
+function calculateGapSize(pile, card) {
+  if (!card || !card.value) return 0.01;
+  const cardValue = parseInt(card.value, 10);
+  if (!pile || !pile.length) return cardValue;
+  const lastCard = pile[pile.length - 1];
+  const lastValue = parseInt(lastCard.value, 10);
+  const gap = cardValue - lastValue;
+  return gap > 0 ? gap : 0;
+}
+
+// =============================================================
+// ZUKUNFTSRISIKO EINER KARTE BERECHNEN
+// =============================================================
+function calculateFutureRisk(card, pileIndex) {
+  if (!card || !card.value) return 0.01;
+  const cardValue = parseInt(card.value, 10);
+  return (12 - cardValue) * 5;
+}
+
+// =============================================================
+// JOKER-ZUKUNFTSWERT BERECHNEN (für SCORE_8)
+// =============================================================
+function calculateJokerFutureValue(card, buildPileIndex) {
+  let futureValue = 0;
+  const buildPile = Game.buildPiles[buildPileIndex];
+  let pileValue = 1;
+  if (buildPile.length > 0) {
+    const topCard = buildPile[buildPile.length - 1];
+    pileValue = topCard.type === 'joker' ? buildPile.length : parseInt(topCard.value) + 1;
+  }
+  const currentJokerValue = card.type === 'joker' ? getJokerValue(buildPile, buildPile.length) : pileValue;
+  if (neededForStock(currentJokerValue)) {
+    futureValue += KONFIG.SCORE_25 * (12 - currentJokerValue);
+  }
+  for (let i = 1; i <= 5; i++) {
+    if (pileValue + i <= 12) futureValue++;
+  }
+  if (pileValue >= 8) futureValue += KONFIG.SCORE_21A;
+  return futureValue;
+}
+
+// =============================================================
+// PRÜFT OB EINE KARTE AUF BAUSTAPEL GELEGT WERDEN DARF
+// =============================================================
+function isValidBuildMove(card, buildPileIndex) {
+  const buildPile = Game.buildPiles[buildPileIndex];
+  if (buildPile.length === 0) {
+    return card.type === 'joker' || parseInt(card.value) === 1;
+  }
+  const topCard = buildPile[buildPile.length - 1];
+  const topValue = topCard.type === 'joker' ? buildPile.length : parseInt(topCard.value);
+  const cardValue = parseInt(card.value);
+  return card.type === 'joker' || cardValue === (topValue + 1);
+}
+
+// =============================================================
+// PRÜFT OB EIN BAUSTAPEL VOLL IST (12 KARTEN)
+// =============================================================
+function isBuildPileComplete(buildPileIndex) {
+  const buildPile = Game.buildPiles[buildPileIndex];
+  if (buildPile.length === 0) return false;
+  const topCard = buildPile[buildPile.length - 1];
+  return topCard.value === 12 || (topCard.type === 'joker' && buildPile.length === 12);
+}
+
+// =============================================================
+// BAUSTAPEL LEEREN UND IN NACHZIEHSTAPEL MISCHEN
+// =============================================================
+function clearBuildPile(buildPileIndex) {
+  if (isBuildPileComplete(buildPileIndex)) {
+    const clearedCards = Game.buildPiles[buildPileIndex];
+    Game.buildPiles[buildPileIndex] = [];
+    Game.drawPile = Game.drawPile.concat(clearedCards);
+    for (let i = Game.drawPile.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [Game.drawPile[i], Game.drawPile[j]] = [Game.drawPile[j], Game.drawPile[i]];
+    }
+  }
+}
+
+// =============================================================
+// SEQUENZ-BONUS FÜR ABLAGESTAPEL
+// =============================================================
+function getDiscardSequenceBonus(player, discardIndex, newCard) {
+  const pile = Game.players[player].discards[discardIndex];
+  if (pile.length === 0) return 0.01;
+  const topValue = pile[pile.length - 1].value;
+  return (newCard.value === topValue - 1) ? 100 : 0;
+}
+
+// =============================================================
+// GEGNER-STOCK VORHERSAGE (für KI-Strategie)
+// =============================================================
+function predictEnemyStock(opponent) {
+  try {
+    const visible = [...Game.players[opponent].discards.flat(), ...Game.buildPiles.flat(), ...Game.players[opponent].hand]
+      .filter(c => c).map(c => c.type === 'joker' ? 'joker' : c.value);
+    const total = 144 - visible.length;
+    const probs = Object.entries(Game.tracking.deckComposition).map(([k, v]) => ({
+      value: k,
+      prob: (v - visible.filter(x => x == k).length) / total
+    }));
+    const best = probs.reduce((a, b) => a.prob > b.prob ? a : b);
+    return { nextExpected: best.value === 'joker' ? null : parseInt(best.value), confidence: best.prob };
+  } catch {
+    return { nextExpected: 1, confidence: 0.5 };
+  }
+}
+
+// =============================================================
+// AUF EINANDERFOLGENDE ABLAGEN ERKENNEN (für Serienunterbrechung)
+// =============================================================
+function detectConsecutiveDiscards(player) {
+  const values = Game.tracking.discardHistory[player].values.filter(v => v !== 'joker' && typeof v === 'number');
+  const series = [];
+  for (let i = 0; i < values.length - 2; i++) {
+    if (values[i + 1] === values[i] + 1 && values[i + 2] === values[i] + 2) {
+      series.push(values[i] + 1);
+    }
+  }
+  return [...new Set(series)];
+}
+
+// =============================================================
+// DYNAMISCHE PRIORITÄTEN (Spielphasen-abhängig)
+// =============================================================
+function calculateDynamicPriorities() {
+  const phase = 1 - (Game.drawPile.length / 144);  // Spielfortschritt (0=Start, 1=Ende)
+  const enemyStock = Game.players.human.stock.slice(-1)[0]?.value || 1;
+  return {
+    stockAttack: Math.min(1.5, (12 - enemyStock) / 10 * phase),
+    seriesDisrupt: 0.4 + (Game.tracking.discardHistory.human.values.length * 0.03),
+    riskTaking: phase < 0.3 ? 0.8 : phase < 0.7 ? 1.0 : 1.3
+  };
+}
+
+// =============================================================
+// ERWEITERTE evaluateMoveCandidates (TIEFENSUCHE 2.0 & HAND-COMBOS)
+// =============================================================
+// DIES IST DIE ZENTRALE KI-ENTSCHEIDUNGSFUNKTION
+function evaluateMoveCandidates(player) {
+  // ========== 1. JOKER-STOCK-PRIORISIERUNG ==========
+  const stockTop = Game.players[player].stock[Game.players[player].stock.length - 1];
+  if (stockTop && stockTop.type === 'joker') {
+    for (let i = 0; i < Game.buildPiles.length; i++) {
+      if (isValidBuildMove(stockTop, i)) {
+        if (KONFIG.DEBUG_JOKER_STOCK) {
+          debugInfo.push(`📌JOKER_STOCK: Stock-★ auf Bau ${i+1} ist prioritär.`);
+        }
+        return [{
+          sourceType: 'stock',
+          sourceIndex: 0,
+          card: stockTop,
+          buildPileIndex: i,
+          score: KONFIG.SCORE_JOKER_STOCK_FORCE
+        }];
+      }
+    }
+  }
+
+  // ========== 2. VORBEREITUNG ==========
+  const enemyAnalysis = predictEnemyStock('human');
+  const priorities = calculateDynamicPriorities();
+  const candidates = [];
+  const stockSize = Game.players[player].stock.length;
+  const stockTopVal = stockTop?.value;
+
+  // ========== 3. HANDKARTEN BEWERTEN (MIT AUTO-KOMBO v7.6.3) ==========
+  Game.players[player].hand.forEach((card, i) => {
+    Game.buildPiles.forEach((pile, pileIndex) => {
+      if (!isValidBuildMove(card, pileIndex)) return;
+      // Basis-Score (SCORE_5 = 600)
+      let score = KONFIG.SCORE_5;
+
+      // AUTO-KOMBINATION IN DER HAND (v7.6.3)
+      // Wir prüfen, ob diese Karte eine Sequenz in der eigenen Hand startet
+      let handComboBonus = 0;
+      if (card.type !== 'joker') {
+        let currentValue = parseInt(card.value);
+        let comboLength = 1;
+        let tempHand = [...Game.players[player].hand];
+        tempHand.splice(i, 1); // Aktuelle Karte entfernen
+        while (true) {
+          let nextVal = currentValue + 1;
+          if (nextVal > 12) break;
+          let nextCardIndex = tempHand.findIndex(c => c.type !== 'joker' && parseInt(c.value) === nextVal);
+          if (nextCardIndex !== -1) {
+            comboLength++;
+            currentValue = nextVal;
+            tempHand.splice(nextCardIndex, 1);
+          } else {
+            // Können wir einen Joker in der Hand als Brücke nutzen?
+            let jokerIndex = tempHand.findIndex(c => c.type === 'joker');
+            if (jokerIndex !== -1) {
+              comboLength++;
+              currentValue = nextVal;
+              tempHand.splice(jokerIndex, 1);
+            } else {
+              break;
+            }
+          }
+        }
+        if (comboLength >= 2) {
+          handComboBonus = comboLength * 2000; // Sehr starker Bonus für Ketten!
+          if (KONFIG.DEBUG_45) debugInfo.push(`📌 AUTO-KOMBO: Handkarte ${card.value} startet Kette von ${comboLength} Karten (+${handComboBonus} Score)`);
+        }
+      }
+      score += handComboBonus;
+
+      // Joker Combo Bonus (aus v7.1.1)
+      let comboBonus = 0;
+      if (card.type === 'joker') {
+        const jokerVal = pile.length === 0 ? 1 :
+          (pile[pile.length-1].type === 'joker' ? pile.length : parseInt(pile[pile.length-1].value)) + 1;
+        const nextCardVal = jokerVal + 1;
+        if (nextCardVal <= 12 && Game.players[player].hand.some((c, idx) =>
+            c.type === 'number' && parseInt(c.value) === nextCardVal && idx !== i)) {
+          comboBonus = KONFIG.SCORE_JOKER_COMBO_BONUS;
+          if (KONFIG.DEBUG_JOKER_COMBO) debugInfo.push(`📌JOKER_COMBO: Hand-★ auf Bau ${pileIndex+1} ermöglicht Combo.`);
+        }
+      }
+      score += comboBonus;
+
+      // GapSize-Bonus
+      const gapSize = calculateGapSize(pile, card) || 0;
+      score += gapSize * KONFIG.SCORE_12;
+
+      // FutureRisk
+      const futureRisk = calculateFutureRisk(card, pileIndex) || 0;
+      score -= futureRisk;
+
+      // Gegner-Blockade-Risiko
+      let riskScore = getOpponentBlockingPotential(card, pileIndex);
+      score -= riskScore;
+
+      // Joker-Spezifische Bewertung
+      if (card.type === 'joker') {
+        const jokerValue = pile.length === 0 ? 1 : pile[pile.length - 1].value + 1;
+        const matchesStock = stockTopVal && (jokerValue === stockTopVal || stockTopVal === undefined);
+        if (matchesStock && (pile.length >= 5 || stockSize <= 10)) {
+          const topHumanStock = Game.players.human.stock[Game.players.human.stock.length - 1]?.value || 1;
+          score += (KONFIG.SCORE_7 + (2000 * (12 - topHumanStock)));
+        }
+        const futureValue = calculateJokerFutureValue(card, pileIndex) || 0;
+        if (futureValue > 0) {
+          score += futureValue * KONFIG.SCORE_8;
+        }
+      }
+      candidates.push({ sourceType: 'hand', sourceIndex: i, card, buildPileIndex: pileIndex, score });
+    });
+  });
+
+  // ========== 4. STOCKKARTEN BEWERTEN ==========
+  if (stockTop && stockTop.type !== 'joker') {
+    Game.buildPiles.forEach((pile, pileIndex) => {
+      if (isValidBuildMove(stockTop, pileIndex)) {
+        const advancedPiles = Game.buildPiles.filter(p => p.length > 6).length;
+        let score = Math.min(KONFIG.SCORE_24, KONFIG.SCORE_10 + (KONFIG.SCORE_10_ADV * advancedPiles));
+        candidates.push({
+          sourceType: 'stock',
+          sourceIndex: 0,
+          card: stockTop,
+          buildPileIndex: pileIndex,
+          score
+        });
+      }
+    });
+  }
+
+  // ========== 5. ABLAGESTAPEL BEWERTEN & TIEFENSUCHE 2.0 (v7.6.3) ==========
+  Game.players[player].discards.forEach((pile, discardIndex) => {
+    if (pile.length === 0) return;
+    const card = pile[pile.length - 1];
+    Game.buildPiles.forEach((buildPile, buildIndex) => {
+      if (!isValidBuildMove(card, buildIndex)) return;
+      let score = KONFIG.SCORE_26;
+      // Wertabhängige Bewertung
+      try {
+        if (!isNaN(card.value) && isFinite(card.value)) {
+          score += card.value * 50;
+        } else {
+          score += KONFIG.SCORE_27;
+        }
+      } catch(error) { score += KONFIG.SCORE_27; }
+      // Stock-Synergie
+      if (Game.players[player].stock.some(s => s.value === card.value + 1)) {
+        score += KONFIG.SCORE_23;
+      }
+
+      // ========== TIEFENSUCHE 2.0 (DEEP LOOKAHEAD SIMULATION) ==========
+      // Hier simulieren wir wirklich, ob die Karten darunter abbaubar sind.
+      if (KONFIG.SCORE_DEEP_LOOKAHEAD_DEPTH > 1 && pile.length > 1) {
+        // Wir kopieren die Baustapel, um Spielzüge virtuell durchzuspielen
+        let simBuildPiles = Game.buildPiles.map(bp => [...bp]);
+        // Simuliere: Die oberste Ablagekarte wurde soeben auf buildIndex abgelegt
+        simBuildPiles[buildIndex].push(card);
+        let lookaheadBonus = 0;
+        let chainDepth = 1;
+
+        // Gehe die darunterliegenden Karten durch
+        for (let k = pile.length - 2; k >= Math.max(0, pile.length - KONFIG.SCORE_DEEP_LOOKAHEAD_DEPTH); k--) {
+          const hiddenCard = pile[k];
+          chainDepth++;
+          // ZIEL: Liegt hier unsere Stockkarte (oder ein rettender Joker)?
+          if (stockTopVal && (hiddenCard.value === stockTopVal || hiddenCard.type === 'joker')) {
+            lookaheadBonus += Math.floor(KONFIG.SCORE_DEEP_LOOKAHEAD_BONUS / chainDepth);
+            if (KONFIG.DEBUG_45) debugInfo.push(`🔮45 TIEFENSUCHE 2.0: Ablage ${discardIndex+1} verbirgt Stock/Joker auf Tiefe ${chainDepth}! (Bonus +${lookaheadBonus})`);
+            break;
+          }
+          // KANN DIESE VERDECKTE KARTE AUCH GESPIELT WERDEN?
+          let canPlayHidden = false;
+          for (let b = 0; b < simBuildPiles.length; b++) {
+            const bp = simBuildPiles[b];
+            const simTopValue = bp.length === 0 ? 0 : (bp[bp.length - 1].type === 'joker' ? bp.length : parseInt(bp[bp.length - 1].value));
+            if (hiddenCard.type === 'joker' || parseInt(hiddenCard.value) === simTopValue + 1) {
+              // Ja, diese Karte kann gespielt werden! Wir aktualisieren unsere Simulation und graben weiter.
+              simBuildPiles[b].push(hiddenCard);
+              canPlayHidden = true;
+              break;
+            }
+          }
+          if (!canPlayHidden) {
+            // Die Kette reißt hier ab. Wir kommen an die Karten darunter nicht ran!
+            if (KONFIG.DEBUG_45) debugInfo.push(`🔮45 TIEFENSUCHE 2.0: Kette reißt ab bei Tiefe ${chainDepth} (Karte: ${hiddenCard.value}) - kein Bonus.`);
+            break;
+          }
+        }
+        score += lookaheadBonus;
+      }
+      candidates.push({
+        sourceType: 'discard',
+        sourceIndex: discardIndex,
+        card,
+        buildPileIndex: buildIndex,
+        score
+      });
+    });
+  });
+
+  // ========== 6. JOKER-FILTER ==========
+  const averageScore = candidates.reduce((sum, m) => sum + m.score, 0) / (candidates.length || 1);
+  const dynamicThreshold = averageScore * KONFIG.SCORE_40;
+  candidates.forEach(move => { if (move.card.type === 'joker') move.score *= KONFIG.SCORE_42; });
+  const hasValidNonJokerMove = candidates.some(move => move.card.type !== 'joker' && move.score > 0);
+  const filteredCandidates = hasValidNonJokerMove
+    ? candidates.filter(move => {
+      if (move.card.type === 'joker' && move.score < dynamicThreshold) return false;
+      return true;
+    })
+    : candidates;
+
+  // ========== 7. DYNAMISCHE PRIORITÄTEN ANWENDEN ==========
+  filteredCandidates.forEach(move => {
+    // Stock-Angriff
+    if (move.card.value === enemyAnalysis.nextExpected) {
+      const nagel34 = Game.players.human.stock.length < 10 ? KONFIG.SCORE_34_HIGH : KONFIG.SCORE_34_LOW;
+      move.score += nagel34 * priorities.stockAttack;
+    }
+    // Serienunterbrechung
+    if (detectConsecutiveDiscards('human').includes(move.card.value)) {
+      move.score += Math.round(KONFIG.SCORE_35 * priorities.seriesDisrupt);
+    }
+    // Risikoanpassung
+    move.score = Math.round(move.score * priorities.riskTaking);
+  });
+
+  return filteredCandidates.sort((a, b) => b.score - a.score);
+}
+
+// =============================================================
+// executeStockAttack – KI-Angriff auf gegnerischen Stock
+// =============================================================
+async function executeStockAttack(targetValue) {
+  if (isGameOver) return false;
+  try {
+    const validPiles = Game.buildPiles
+      .map((pile, i) => ({ index: i, current: pile.slice(-1)[0]?.value || 0 }))
+      .filter(pile => targetValue === 1 ? pile.current === 0 : pile.current === targetValue - 1);
+    if (validPiles.length === 0) return false;
+    const bestPile = validPiles.reduce((a, b) => a.current < b.current ? a : b);
+    const validCards = [
+      ...Game.players.ai.hand.map((c, i) => ({ card: c, type: 'hand', index: i })),
+      { card: Game.players.ai.stock.slice(-1)[0], type: 'stock', index: 0 }
+    ].filter(({ card }) => card && (card.value === targetValue || card.type === 'joker'));
+    if (validCards.length === 0) return false;
+    const bestCard = validCards.reduce((a, b) =>
+      (a.card.type === 'joker' ? 1 : 0) - (b.card.type === 'joker' ? 1 : 0) ||
+      b.card.value - a.card.value
+    );
+    showMessage(`⚔️ KI führt Stock-Attack aus: Ziel ${targetValue}`);
+    const result = handleBuildPileDrop('ai', bestCard.type, bestCard.index, bestPile.index);
+    if (result) {
+      updateView(); // Live-Update nach Stock-Attack
+      await pauseForSeconds(0.8);
+    }
+    return result === true;
+  } catch (e) {
+    console.error('Stock Attack Error:', e);
+    return false;
+  }
+}
+
+// =============================================================
+// playInDiscardPiles – KI legt Karten auf Ablagestapel
+// =============================================================
+async function playInDiscardPiles(player) {
+  if (isGameOver) return;
+  if (Game.players[player].hand.length === 0) {
+    showMessage('KI hat keine Handkarten zum Ablegen.');
+    await pauseForSeconds(1);
+    return;
+  }
+  // Kritische Zahlen des Gegners (für Blockade-Strategie)
+  const opponentCritical = [
+    Game.players.human.stock.slice(-1)[0]?.value,
+    ...Game.players.human.discards.map(p => p[p.length - 1]?.value)
+  ].filter(v => v !== undefined);
+  const stockTop = Game.players[player].stock.length > 0
+    ? Game.players[player].stock[Game.players[player].stock.length - 1].value
+    : null;
+  const handCards = Game.players[player].hand;
+  const discardPiles = Game.players[player].discards;
+  let bestDiscardIndex = -1, bestScore = -Infinity;
+  const cardToPlay = handCards[handCards.length - 1];
+  const sourceIndex = handCards.length - 1;
+  const isJoker = String(cardToPlay.value).toUpperCase() === 'JOKER' || cardToPlay.type === 'joker';
+  const isDangerousCard = opponentCritical.includes(cardToPlay.value);
+
+  // Alle 4 Ablagestapel bewerten
+  for (let i = 0; i < discardPiles.length; i++) {
+    const pile = discardPiles[i];
+    const topCard = pile.length > 0 ? pile[pile.length - 1] : null;
+    let score = KONFIG.SCORE_13;
+
+    // ========== JOKER-ABLAGE-SCHUTZ ==========
+    if (isJoker) {
+      if (!topCard) {
+        score += KONFIG.SCORE_JOKER_DISCARD_SAVE;  // +9000 für leeren Stapel
+        if (KONFIG.DEBUG_JOKER_DISCARD) debugInfo.push(`📌JOKER_DISCARD: Bonus für leeren Stapel.`);
+      } else if (topCard.type !== 'joker') {
+        score -= KONFIG.SCORE_JOKER_COVER_PENALTY; // -12000 für Bedecken von Zahl
+        if (KONFIG.DEBUG_JOKER_DISCARD) debugInfo.push(`📌JOKER_DISCARD: Strafe für Bedecken von Zahl ${topCard.value}.`);
+      }
+      score += KONFIG.SCORE_JOKER_SAFE_DISCARD;   // +5000 zusätzlicher Schutz
+    }
+
+    // ========== SCHUTZ VON JOKERN IN DER ABLAGE ==========
+    if (topCard && topCard.type === 'joker' && !isJoker) {
+      score -= KONFIG.SCORE_COVER_JOKER_PENALTY; // -8000
+      if (KONFIG.DEBUG_42) debugInfo.push(`📌42 ABLAGESCHUTZ: Ablage ${i+1} enthält Joker! Normale Karte blockiert`);
+    }
+
+    // Riskante Karten (helfen dem Gegner) werden bestraft
+    if (isDangerousCard) {
+      score -= KONFIG.SCORE_14;
+    }
+
+    // Leerer Stapel-Bonus
+    if (!topCard && !isJoker) {
+      score += KONFIG.SCORE_16;
+      if (stockTop && cardToPlay.value === stockTop - 1) score += 50;
+    }
+    // Niedrigere Karten werden bevorzugt
+    else if (!isJoker && cardToPlay.value < (topCard?.value || Infinity)) {
+      score += KONFIG.SCORE_17;
+      if (stockTop && cardToPlay.value === stockTop - 1) score += 50;
+    }
+    // Sequenz-Bonus
+    if (topCard && (cardToPlay.value === topCard.value - 1) && !isJoker) {
+      score += KONFIG.SCORE_15;
+    }
+    // Stock-Folge
+    if (stockTop && cardToPlay.value === stockTop + 1) score += 300;
+    // Malus für große Stapel
+    score -= pile.length * KONFIG.SCORE_19;
+    // Gegnerhilfe
+    const pileHelpsOpponent = pile.some(c => opponentCritical.includes(c.value));
+    if (pileHelpsOpponent) {
+      const criticalStockPenalty = Game.players.human.stock.length <= 5 ? 3000 : 0;
+      score -= KONFIG.SCORE_20 + criticalStockPenalty;
+    }
+    if (score > bestScore) { bestScore = score; bestDiscardIndex = i; }
+  }
+
+  // Fallback für Joker
+  if (isJoker && bestDiscardIndex === -1) {
+    for (let i = 0; i < 4; i++) {
+      if (discardPiles[i].length === 0) { bestDiscardIndex = i; break; }
+    }
+    if (bestDiscardIndex === -1) bestDiscardIndex = 3;
+  }
+
+  // Zug ausführen
+  if (bestDiscardIndex >= 0 && handleDiscardPileDrop(player, 'hand', sourceIndex, bestDiscardIndex)) {
+    showMessage(`🤖 KI legt ${cardToPlay.type === 'joker' ? '★Joker' : cardToPlay.value} in Ablage ${bestDiscardIndex + 1}`);
+    if (KONFIG.DEBUG_43) debugInfo.push(`📌43 KI legt ${cardToPlay.value} in Ablage ${bestDiscardIndex + 1}`);
+    updateView(); // Live-Update nach Ablage
+    await pauseForSeconds(0.8);
+    // Tracking für Analyse
+    trackGameObservations('discardStrategy', {
+      cardValue: cardToPlay.value,
+      wasDangerous: isDangerousCard,
+      stockFollowup: (stockTop && cardToPlay.value === stockTop + 1),
+      createdSequence: discardPiles[bestDiscardIndex]?.slice(-1)[0]?.value
+    });
+    if (checkForWinner()) return;
+  }
+}
+
+// =============================================================
+// HAUPT-KI-ZUG (aiTurn) – MIT MEHRFACHZUG-SCHLEIFE
+// =============================================================
+async function aiTurn(rekursionstiefe = 0) {
+  // Sicherheits-Check: Spiel beendet?
+  if (isGameOver) return;
+  
+  // Handkarten auffüllen (falls nötig)
+  drawCardsUntilFive('ai');
+  showMessage('🤖 KI bereitet Zug vor...');
+  if (KONFIG.DEBUG_43) debugInfo.push(`📌43 KI bereitet Zug vor...`);
+  await pauseForSeconds(0.3);
+  if (isGameOver) return;
+
+  let gesamtZugCount = 0;      // Gesamtzahl der Züge in dieser Runde
+  let hatEinenZugGemacht = false;
+
+  // Gegneranalyse für Blockade-Anzeige im UI
+  const enemyAnalysis = predictEnemyStock('human');
+  Game.buildPiles.forEach((pile, i) => {
+    const element = document.querySelector(`.build-pile:nth-child(${i + 1})`);
+    if (element && pile.slice(-1)[0]?.value === enemyAnalysis.nextExpected) {
+      element.classList.add('ai-prediction-overlay');
+      const tag = document.createElement('div');
+      tag.className = 'strategy-tag';
+      tag.textContent = `⛔ Blockade ${enemyAnalysis.nextExpected} (${Math.round(enemyAnalysis.confidence * 100)}%)`;
+      element.appendChild(tag);
+    }
+  });
+
+  // Versuche Stock-Attack bei hoher Konfidenz (über 60%)
+  try {
+    if (enemyAnalysis.confidence > 0.6) {
+      const attackErfolg = await executeStockAttack(enemyAnalysis.nextExpected);
+      if (attackErfolg) {
+        gesamtZugCount++;
+        hatEinenZugGemacht = true;
+        updateView();
+        await pauseForSeconds(0.8);
+        if (isGameOver) return;
+      }
+    }
+  } catch (e) { console.error('Stock Attack Failed:', e); }
+
+  // ========== HAUPT-SCHLEIFE: Züge ausführen bis keine mehr möglich ==========
+  let weitereZuegeMoeglich = true;
+  let maxZuege = 15; // Schutz vor Endlosschleife
+  while (weitereZuegeMoeglich && gesamtZugCount < maxZuege && !isGameOver) {
+    showMessage(`🤖 KI analysiert mögliche Züge... (bisher ${gesamtZugCount} Züge)`);
+    await pauseForSeconds(0.3);
+    if (isGameOver) return;
+
+    const candidates = evaluateMoveCandidates('ai');
+    
+    // ===== KEINE KANDIDATEN GEFUNDEN =====
+    if (candidates.length === 0) {
+      // Prüfe Stockkarte als letzten Ausweg
+      const stockCard = Game.players.ai.stock.slice(-1)[0];
+      let stockPlayable = false;
+      if (stockCard) {
+        for (let j = 0; j < Game.buildPiles.length; j++) {
+          if (!isValidBuildMove(stockCard, j)) continue;
+          stockPlayable = true;
+          showMessage(`🚀 KI legt Stockkarte (${stockCard.value}) auf Bau ${j + 1}`);
+          if (KONFIG.DEBUG_43) debugInfo.push(`📌43 KI legt Stockkarte (${stockCard.value}) auf Bau ${j + 1}`);
+          if (handleBuildPileDrop('ai', 'stock', 0, j)) {
+            gesamtZugCount++;
+            hatEinenZugGemacht = true;
+            updateView();
+            await pauseForSeconds(0.8);
+            if (isGameOver) return;
+            trackGameObservations('kiMove', {
+              sourceType: 'stock',
+              cardValue: stockCard.value,
+              cardType: stockCard.type,
+              buildPileIndex: j,
+              score: KONFIG.SCORE_24
+            });
+            break; // Stock-Zug gefunden, Schleife wird neu durchlaufen
+          }
+          break;
+        }
+      }
+      if (!stockPlayable) {
+        weitereZuegeMoeglich = false; // Keine Züge mehr möglich
+      }
+      continue; // Wieder zum Schleifenanfang
+    }
+
+    // ===== KANDIDATEN VORHANDEN =====
+    candidates.sort((a, b) => b.score - a.score);
+    const best = candidates[0];
+    
+    // Prüfen ob Score sinnvoll ist
+    if (best.score <= 0) {
+      weitereZuegeMoeglich = false;
+      continue;
+    }
+
+    const stockCard = Game.players.ai.stock.length > 0 ? Game.players.ai.stock[Game.players.ai.stock.length - 1] : null;
+    
+    // Priorisiere Stockkarte wenn gleicher Wert (spart wertvolle Handkarten)
+    if (best.sourceType !== 'stock' && stockCard && stockCard.type !== 'joker' && stockCard.value === best.card.value) {
+      if (KONFIG.DEBUG_31) debugInfo.push(`📌31 KI priorisiert Stockkarte, identisch mit gewählter Karte`);
+      if (handleBuildPileDrop('ai', 'stock', 0, best.buildPileIndex)) {
+        gesamtZugCount++;
+        hatEinenZugGemacht = true;
+        showMessage(`🚀 KI legt Stockkarte (${stockCard.value}) auf Bau ${best.buildPileIndex + 1}`);
+        if (KONFIG.DEBUG_43) debugInfo.push(`📌43 KI legt Stockkarte (${stockCard.value}) auf Bau ${best.buildPileIndex + 1}`);
+        updateView();
+        await pauseForSeconds(0.8);
+        if (isGameOver) return;
+        trackGameObservations('kiMove', {
+          sourceType: 'stock',
+          cardValue: stockCard.value,
+          cardType: stockCard.type,
+          buildPileIndex: best.buildPileIndex,
+          score: KONFIG.SCORE_32
+        });
+        continue; // Weiter mit nächstem möglichen Zug
+      }
+    }
+
+    // Normaler Zug
+    let sourceText = '';
+    let emoji = '';
+    switch (best.sourceType) {
+      case 'hand': sourceText = `Handposition ${best.sourceIndex + 1}`; emoji = '🖐️'; break;
+      case 'stock': sourceText = 'Stock-Stapel'; emoji = '🗃️'; break;
+      case 'discard': sourceText = `Ablagestapel ${best.sourceIndex + 1}`; emoji = '🗄️'; break;
+    }
+    showMessage(`${emoji} KI spielt ${best.card.type === 'joker' ? '★Joker' : best.card.value} von ${sourceText} auf Bau ${best.buildPileIndex + 1}`);
+    if (KONFIG.DEBUG_43) debugInfo.push(`📌43 KI spielt ${best.card.type === 'joker' ? '★Joker' : best.card.value} von ${sourceText} auf Bau ${best.buildPileIndex + 1}`);
+    
+    if (handleBuildPileDrop('ai', best.sourceType, best.sourceIndex, best.buildPileIndex)) {
+      gesamtZugCount++;
+      hatEinenZugGemacht = true;
+      updateView();
+      await pauseForSeconds(0.8);
+      if (isGameOver) return;
+      trackGameObservations('kiMove', {
+        sourceType: best.sourceType,
+        cardValue: best.card.value,
+        cardType: best.card.type,
+        buildPileIndex: best.buildPileIndex,
+        score: best.score
+      });
+      // Bei Kombinationszügen kurze Pause und Meldung
+      if (gesamtZugCount >= 2 && gesamtZugCount % 2 === 0) {
+        showMessage(`🔄 KI führt Kombinationszug ${gesamtZugCount} aus...`);
+        await pauseForSeconds(0.5);
+      }
+      // Weiter mit nächstem möglichen Zug (Schleife läuft weiter)
+    } else {
+      weitereZuegeMoeglich = false;
+    }
+  }
+
+  // ========== ZUSAMMENFASSUNG DER MEHRFACHZÜGE ==========
+  if (gesamtZugCount > 1) {
+    showMessage(`✨ KI hat ${gesamtZugCount} Züge hintereinander ausgeführt! ✨`);
+    await pauseForSeconds(1);
+  } else if (gesamtZugCount === 1) {
+    showMessage(`✅ KI hat einen Zug ausgeführt.`);
+    await pauseForSeconds(0.5);
+  }
+
+  // ========== NACH DEN BAUSTAPEL-ZÜGEN: ABLAGE ==========
+  if (isGameOver) return;
+  
+  // Nur eine Karte ablegen, nicht mehrere!
+  if (Game.players.ai.hand.length > 0) {
+    showMessage('🤖 KI legt eine Karte auf den Ablagestapel...');
+    await pauseForSeconds(0.5);
+    await playInDiscardPiles('ai');
+  } else {
+    showMessage('🤖 KI hat keine Handkarten zum Ablegen!');
+  }
+  
+  // Nachziehen auf 5 Handkarten
+  if (isGameOver) return;
+  if (Game.players.ai.hand.length < 5) {
+    showMessage('🃏 KI zieht nach...');
+    await pauseForSeconds(0.5);
+    drawCardsUntilFive('ai');
+  }
+  
+  // ========== SPIELERWECHSEL ==========
+  if (isGameOver) return;
+  showMessage('🏁 KI beendet ihren Zug. ' + playerName + ' ist dran!');
+  await pauseForSeconds(0.8);
+  
+  // Overlays entfernen
+  document.querySelectorAll('.ai-prediction-overlay, .strategy-tag').forEach(el => el.remove());
+  
+  // Spieler wechseln
+  switchPlayer();
+  updateView();
+}
+
+// =============================================================
+// SPIELERWECHSEL
+// =============================================================
+async function switchPlayer() {
+  if (isGameOver || checkForWinner()) return;
+  if (currentPlayer === 'human') {
+    currentPlayer = 'ai';
+    showMessage('🤖 KI ist am Zug...');
+    await pauseForSeconds(0.8);
+    if (isGameOver) return;
+    aiTurn(0);
+  } else {
+    currentPlayer = 'human';
+    showMessage('👉 Dein Zug!');
+    await pauseForSeconds(0.5);
+    if (isGameOver) return;
+    drawCardsUntilFive('human');
+    setupTouchEvents();
+    showMessage('Wähle eine Karte aus...');
+  }
+}
+
+// =============================================================
+// UI-UPDATES (Hand, Stock, Bau, Ablage)
+// =============================================================
+
+// =============================================================
+// BAUSTAPEL AKTUALISIEREN (zeigt die oberste Karte jedes Baustapels)
+// =============================================================
+function updateBuildPiles() {
+  document.querySelectorAll('.build-pile').forEach((pile, index) => {
+    const cards = Game.buildPiles[index];
+    if (cards.length > 0) {
+      const topCard = cards[cards.length - 1];
+      if (topCard.type === 'joker') {
+        const jokerValue = getJokerValue(cards, cards.length - 1);
+        pile.innerHTML = `<div class="field card" data-type="joker" data-value="joker" data-pile-index="${index}">
+          <div class="card-corner top-left">★</div>
+          <div class="joker-number">${jokerValue}</div>
+          <div class="card-corner top-right">★</div>
+          <div class="card-middle">★</div>
+          <div class="card-corner bottom-left">★</div>
+          <div class="card-corner bottom-right">★</div>
+        </div>`;
+      } else {
+        pile.innerHTML = `<div class="field card" data-type="${topCard.type}" data-value="${topCard.value}" data-pile-index="${index}">
+          <div class="card-corner top-left">${topCard.value}</div>
+          <div class="card-corner top-right">${topCard.value}</div>
+          <div class="card-middle">${topCard.value}</div>
+          <div class="card-corner bottom-left">${topCard.value}</div>
+          <div class="card-corner bottom-right">${topCard.value}</div>
+        </div>`;
+      }
+    } else {
+      pile.innerHTML = `<div class="field" data-pile-index="${index}">Leer</div>`;
+    }
+  });
+}
+
+// =============================================================
+// ABLAGESTAPEL AKTUALISIEREN (für beide Spieler)
+// =============================================================
+function updateDiscardPiles() {
+  // Spieler-Ablagestapel
+  document.querySelectorAll('.human-area [data-label*="Ablage"]').forEach((pile, index) => {
+    const cards = Game.players.human.discards[index];
+    if (cards && cards.length > 0) {
+      const top = cards[cards.length - 1];
+      pile.innerHTML = `<div class="field card" data-type="${top.type}" data-value="${top.value}">
+        <div class="card-corner top-left">${top.value}</div>
+        <div class="card-corner top-right">${top.value}</div>
+        <div class="card-middle">${top.value}</div>
+        <div class="card-corner bottom-left">${top.value}</div>
+        <div class="card-corner bottom-right">${top.value}</div>
+      </div>`;
+    } else {
+      pile.innerHTML = '<div class="field">Leer</div>';
+    }
+  });
+  // KI-Ablagestapel
+  document.querySelectorAll('.opponent-area [data-label*="Ablage"]').forEach((pile, index) => {
+    const cards = Game.players.ai.discards[index];
+    if (cards && cards.length > 0) {
+      const top = cards[cards.length - 1];
+      pile.innerHTML = `<div class="field card" data-type="${top.type}" data-value="${top.value}">
+        <div class="card-corner top-left">${top.value}</div>
+        <div class="card-corner top-right">${top.value}</div>
+        <div class="card-middle">${top.value}</div>
+        <div class="card-corner bottom-left">${top.value}</div>
+        <div class="card-corner bottom-right">${top.value}</div>
+      </div>`;
+    } else {
+      pile.innerHTML = '<div class="field">Leer</div>';
+    }
+  });
+}
+
+// =============================================================
+// HANDKARTEN AKTUALISIEREN
+// =============================================================
+function updateHand(player, container) {
+  if (!container) return;
+  container.innerHTML = Game.players[player].hand.map(card => `
+<div class="field card ${card.faceUp ? '' : 'backface'}" data-type="${card.type}" data-value="${card.value}">
+  ${card.faceUp && player === 'human' ? `
+  <div class="card-corner top-left">${card.value}</div>
+  <div class="card-corner top-right">${card.value}</div>
+  <div class="card-middle">${card.value}</div>
+  <div class="card-corner bottom-left">${card.value}</div>
+  <div class="card-corner bottom-right">${card.value}</div>` : ''}
+</div>`).join('');
+}
+
+// =============================================================
+// STOCKSTAPEL AKTUALISIEREN (zeigt oberste Karte + Anzahl)
+// =============================================================
+function updateStock(player, container) {
+  if (!container) return;
+  const stock = Game.players[player].stock;
+  if (stock.length > 0) {
+    const top = stock[stock.length - 1];
+    container.innerHTML = `<div class="field card" data-type="${top.type}" data-value="${top.value}">
+      <div class="card-corner top-left">${top.value}</div>
+      <div class="card-corner top-right">${top.value}</div>
+      <div class="card-middle">${top.value}</div>
+      <div class="card-corner bottom-left">${top.value}</div>
+      <div class="card-corner bottom-right">${top.value}</div>
+      <div class="stock-count">${stock.length}</div>
+    </div>`;
+  } else {
+    container.innerHTML = '<div class="field">🗃️ Leer</div>';
+  }
+}
+
+// =============================================================
+// NACHZIEHSTAPEL AKTUALISIEREN
+// =============================================================
+function updateDrawPile(container) {
+  if (!container) return;
+  if (Game.drawPile.length > 0) {
+    container.innerHTML = `<div class="field card backface">
+      <div class="card-corner top-left">SKIP-BO</div>
+      <div class="card-corner top-right">SKIP-BO</div>
+      <div class="card-middle">SKIP-BO</div>
+      <div class="card-corner bottom-left">SKIP-BO</div>
+      <div class="card-corner bottom-right">SKIP-BO</div>
+    </div>`;
+  } else {
+    container.innerHTML = '<div class="field">🃏 Leer</div>';
+  }
+}
+
+// =============================================================
+// DRAGGBARE STATUSLEISTE (verschiebbar)
+// =============================================================
+function enableDraggableStatusLabel() {
+  const label = document.getElementById('status-label');
+  if (!label) return;
+  label.style.fontSize = '1.5rem';
+  label.style.color = 'black';
+  label.style.textShadow = '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff';
+  let drag = false, sy = 0, st = 0;
+  const dis = () => label.style.transition = 'none';
+  const ena = () => label.style.transition = 'top 0.3s ease-out';
+  const bounce = () => { label.style.transform = 'scale(1.15)'; setTimeout(() => label.style.transform = 'scale(1)', 300); };
+  label.addEventListener('mousedown', e => { drag = true; sy = e.clientY; st = parseInt(window.getComputedStyle(label).top) || 0; dis(); e.preventDefault(); });
+  document.addEventListener('mousemove', e => { if (!drag) return; label.style.top = (st + (e.clientY - sy)) + 'px'; });
+  document.addEventListener('mouseup', () => { if (drag) { ena(); bounce(); } drag = false; });
+  label.addEventListener('touchstart', e => { drag = true; sy = e.touches[0].clientY; st = parseInt(window.getComputedStyle(label).top) || 0; dis(); e.preventDefault(); });
+  document.addEventListener('touchmove', e => { if (!drag) return; label.style.top = (st + (e.touches[0].clientY - sy)) + 'px'; });
+  document.addEventListener('touchend', () => { if (drag) { ena(); bounce(); } drag = false; });
+}
+
+// =============================================================
+// LONG-PRESS INFO FENSTER (Ablagestapel anzeigen)
+// =============================================================
+function showInfoWindow(event, discardPileIndex, player) {
+  const w = document.getElementById('info-window');
+  const t = document.getElementById('info-table');
+  t.innerHTML = '';
+  const c = Game.players[player].discards[discardPileIndex];
+  if (c?.length > 0) {
+    c.reverse().forEach(cd => {
+      const r = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.textContent = cd.type === 'joker' ? '★' : cd.value;
+      r.appendChild(cell);
+      t.appendChild(r);
+    });
+    const r = event.target.getBoundingClientRect();
+    w.style.left = `${r.left + window.scrollX}px`;
+    w.style.top = `${r.top + window.scrollY - w.offsetHeight - 10}px`;
+    w.style.display = 'block';
+    setTimeout(() => w.style.display = 'none', 5000);
+  }
+}
+function handleLongPress(ev, dIdx, player) {
+  pressTimer = setTimeout(() => showInfoWindow(ev, dIdx, player), 1000);
+}
+function handleRelease() { clearTimeout(pressTimer); }
+
+// Long-Press Event-Bindings für Spieler-Ablagestapel
+document.querySelectorAll('.human-area [data-label*="Ablage"], .opponent-area [data-label*="Ablage"]').forEach(target => {
+  target.addEventListener('touchstart', ev => {
+    let idx = Array.from(target.parentElement.children).indexOf(target);
+    if (target.closest('.opponent-area')) idx--;
+    handleLongPress(ev, idx, target.closest('.human-area') ? 'human' : 'ai');
+  });
+  target.addEventListener('touchend', handleRelease);
+  target.addEventListener('mousedown', ev => {
+    let idx = Array.from(target.parentElement.children).indexOf(target);
+    if (target.closest('.opponent-area')) idx--;
+    handleLongPress(ev, idx, target.closest('.human-area') ? 'human' : 'ai');
+  });
+  target.addEventListener('mouseup', handleRelease);
+});
+
+// =============================================================
+// ENDGAME & WINNER
+// =============================================================
+function checkForWinner() {
+  if (isGameOver) return true;
+  if (Game.players.human.stock.length === 0) {
+    const aiPoints = Game.players.ai.stock.length * 5;
+    endGame(playerName, 'KI', aiPoints);
+    return true;
+  }
+  if (Game.players.ai.stock.length === 0) {
+    const humanPoints = Game.players.human.stock.length * 5;
+    endGame('KI', playerName, humanPoints);
+    return true;
+  }
+  return false;
+}
+function endGame(winner, loser, points) {
+  if (isGameOver) return;
+  isGameOver = true;
+  const analysis = trackGameObservations('gameEnd', {
+    winner: winner,
+    loserStockSize: Game.players[loser === 'KI' ? 'ai' : 'human'].stock.length
+  });
+  showEndGameMessage(winner, loser, points, analysis);
+  const gc = document.querySelector('.game-container');
+  if (gc) gc.style.pointerEvents = 'none';
+}
+function showEndGameMessage(winner, loser, points, analysis) {
+  const overlay = document.createElement('div');
+  overlay.id = 'end-game-overlay';
+  Object.assign(overlay.style, {
+    position: 'fixed', top: '5vh', left: '0', width: '100vw', height: '90vh',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', flexDirection: 'column',
+    justifyContent: 'flex-start', alignItems: 'center', color: 'white', fontSize: '2em',
+    fontWeight: 'bold', zIndex: '3000', textAlign: 'center', overflowY: 'auto',
+    paddingTop: '20px', paddingBottom: 'env(safe-area-inset-bottom)', pointerEvents: 'auto'
+  });
+  overlay.innerHTML = `
+<div style="background: white; color: black; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(255,255,255,0.5); position: relative; width: 80%; max-width: 600px; pointer-events: auto;">
+  <h1 style="font-size: 2em;">Spiel beendet!</h1>
+  <p><strong>Gewinner:</strong> ${winner} 🎉</p>
+  <p><strong>Verlierer:</strong> ${loser} mit ${points} Punkten</p>
+  <div style="display: flex; gap: 10px; margin-top: 20px;">
+    <button id="restart-button" style="padding:10px 20px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;">Neues Spiel</button>
+    <button id="save-button" style="padding:10px 20px;background:#2196F3;color:white;border:none;border-radius:5px;cursor:pointer;">Speichern</button>
+  </div>
+  <div id="analysis-section" style="margin-top:20px;text-align:left;font-size:0.8em;">
+    <h2 style="font-size:1.2em;">Version 7.6.3 – Auswertung</h2>
+    <textarea style="width:100%;height:250px;font-size:14px;resize:none;" readonly>${analysis}</textarea>
+    <p style="font-size:0.8em;">Kopiere den Text und sende ihn an den Entwickler!</p>
+    <button id="close-analysis" style="margin-top:10px;padding:10px 20px;background:#f44336;color:white;border:none;border-radius:5px;cursor:pointer;">Schließen</button>
+  </div>
+</div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('restart-button').addEventListener('click', e => { e.preventDefault(); document.body.removeChild(overlay); location.reload(); });
+  document.getElementById('close-analysis').addEventListener('click', e => { e.preventDefault(); const s = document.getElementById('analysis-section'); if(s) s.remove(); });
+  document.getElementById('save-button').addEventListener('click', e => {
+    e.preventDefault();
+    const blob = new Blob(['\uFEFF' + analysis], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'SkipBo_Analyse.txt'; a.click();
+  });
+}
+
+// =============================================================
+// TRACKING & ANALYSE (vollständig für Auswertungsfenster)
+// =============================================================
+
+// =============================================================
+// NÄCHSTE BENÖTIGTE KARTEN FÜR KI BERECHNEN
+// =============================================================
+function calculateKINextNeeded() {
+  return Game.buildPiles.map(pile => {
+    if (pile.length === 0) return 1;
+    return pile[pile.length - 1].type === 'joker' ? pile.length + 1 : pile[pile.length - 1].value + 1;
+  });
+}
+
+// =============================================================
+// HAUPT-TRACKING-FUNKTION (speichert alle Spielereignisse)
+// =============================================================
+function trackGameObservations(eventType, data) {
+  let storedData = JSON.parse(localStorage.getItem('skipbo_observations')) || { games: [], count: 0 };
+  const maxGames = 10;
+  let observations = { gameId: currentGameId, type: eventType, timestamp: Date.now() };
+  switch (eventType) {
+    case 'discardStrategy':
+      observations.cardValue = data.cardValue;
+      observations.dangerous = data.wasDangerous;
+      observations.sequenceValue = data.createdSequence;
+      observations.stockFollowup = data.stockFollowup;
+      break;
+    case 'jokerAdditional':
+      observations.cardValue = 'JOKER';
+      break;
+    case 'opponentDiscard':
+      observations.cardValue = data.cardValue;
+      observations.opponentStockSize = data.opponentStockSize;
+      observations.kiNextNeeded = calculateKINextNeeded();
+      break;
+    case 'kiMove':
+      observations.sourceType = data.sourceType;
+      observations.cardValue = data.cardValue;
+      observations.isJoker = data.cardType === 'joker';
+      observations.buildPileIndex = data.buildPileIndex;
+      observations.stockSize = Game.players.ai.stock.length;
+      observations.score = data.score;
+      observations.helpedOpponent = Game.players.human.stock.slice(-1)[0]?.value === data.cardValue + 1;
+      break;
+    case 'missedStock':
+      observations.stockCardValue = data.stockCardValue;
+      break;
+    case 'gameEnd':
+      observations.winner = data.winner;
+      observations.loserStockSize = data.loserStockSize;
+      storedData.games.push(observations);
+      storedData.count++;
+      localStorage.setItem('skipbo_observations', JSON.stringify(storedData));
+      // Aktuelle Spiel-Analyse generieren
+      const currentGame = storedData.games.filter(g => g.gameId === currentGameId);
+      const currentAnalysis = generateCurrentGameAnalysis(currentGame);
+      const overallAnalysis = generateOverallAnalysis(storedData.games);
+      const debugSection = generateDebugInfo();
+      if (storedData.count >= maxGames) {
+        localStorage.setItem('skipbo_observations', JSON.stringify({ games: [], count: 0 }));
+      }
+      currentGameId = Date.now();
+      debugInfo = [];
+      return `${currentAnalysis}
+${overallAnalysis}
+${debugSection}`;
+    default:
+      break;
+  }
+  if (eventType !== 'gameEnd') storedData.games.push(observations);
+  localStorage.setItem('skipbo_observations', JSON.stringify(storedData));
+  return null;
+}
+
+// =============================================================
+// AKTUELLE SPIEL-ANALYSE GENERIEREN
+// =============================================================
+function generateCurrentGameAnalysis(currentGame) {
+  let analysis = '═══════════════════════════════════════════════════\n';
+  analysis += '📊 AUSWERTUNG DES AKTUELLEN SPIELS (v7.6.3)\n';
+  analysis += '═══════════════════════════════════════════════════\n';
+  const blocks = currentGame.filter(g => g.type === 'opponentDiscard' && g.kiNextNeeded && g.kiNextNeeded.includes(g.cardValue)).length;
+  analysis += `🚫 Gegnerblockaden: ${blocks} Mal hat der Gegner eine benötigte Karte gelegt.\n`;
+  const jokerUses = currentGame.filter(g => g.type === 'kiMove' && g.isJoker).length;
+  const earlyJoker = currentGame.filter(g => g.type === 'kiMove' && g.isJoker && g.buildPileIndex < 2).length;
+  analysis += `🃏 Joker-Nutzung: ${jokerUses} Mal eingesetzt, davon ${earlyJoker} auf niedrigen Stapeln (< 2).\n`;
+  const stockMoves = currentGame.filter(g => g.type === 'kiMove' && g.sourceType === 'stock').length;
+  analysis += `📦 Stockabbau: ${stockMoves} Stockkarten erfolgreich gelegt.\n`;
+  const missedStock = currentGame.filter(g => g.type === 'missedStock').length;
+  analysis += `⚠️ Verpasste Stockzüge: ${missedStock} Mal hätte eine Stockkarte gelegt werden können.\n`;
+  const helpedOpponent = currentGame.filter(g => g.type === 'kiMove' && g.helpedOpponent).length;
+  analysis += `🤝 Gegnerhilfe: ${helpedOpponent} Mal hat die KI dem Gegner geholfen.\n`;
+  const gameEnd = currentGame.find(g => g.type === 'gameEnd');
+  if (gameEnd) {
+    analysis += `🏆 Ergebnis: ${gameEnd.winner} hat gewonnen, Verlierer hatte ${gameEnd.loserStockSize} Stockkarten.\n`;
+  }
+  return analysis;
+}
+
+// =============================================================
+// GESAMT-ANALYSE (alle gespeicherten Spiele)
+// =============================================================
+function generateOverallAnalysis(games) {
+  let analysis = '\n═══════════════════════════════════════════════════\n';
+  analysis += '📈 GESAMTBEWERTUNG (alle gespeicherten Spiele)\n';
+  analysis += '═══════════════════════════════════════════════════\n';
+  const blocks = games.filter(g => g.type === 'opponentDiscard' && g.kiNextNeeded && g.kiNextNeeded.includes(g.cardValue)).length;
+  analysis += `🚫 Gegnerblockaden gesamt: ${blocks}\n`;
+  const jokerUses = games.filter(g => g.type === 'kiMove' && g.isJoker).length;
+  const earlyJoker = games.filter(g => g.type === 'kiMove' && g.isJoker && g.buildPileIndex < 2).length;
+  analysis += `🃏 Joker-Nutzung gesamt: ${jokerUses} (davon ${earlyJoker} früh)\n`;
+  const stockMoves = games.filter(g => g.type === 'kiMove' && g.sourceType === 'stock').length;
+  analysis += `📦 Stockabbau gesamt: ${stockMoves}\n`;
+  const missedStock = games.filter(g => g.type === 'missedStock').length;
+  analysis += `⚠️ Verpasste Stockzüge gesamt: ${missedStock}\n`;
+  const helpedOpponent = games.filter(g => g.type === 'kiMove' && g.helpedOpponent).length;
+  analysis += `🤝 Gegnerhilfe gesamt: ${helpedOpponent}\n`;
+  const totalGames = games.filter(g => g.type === 'gameEnd').length;
+  const wins = games.filter(g => g.type === 'gameEnd' && g.winner === 'KI').length;
+  analysis += `🏆 Siegquote: ${wins} von ${totalGames} Spielen (${totalGames > 0 ? Math.round(wins/totalGames*100) : 0}%)\n`;
+  return analysis;
+}
+
+// =============================================================
+// DEBUG-INFORMATIONEN GENERIEREN
+// =============================================================
+function generateDebugInfo() {
+  let debugSection = '\n═══════════════════════════════════════════════════\n';
+  debugSection += '🐛 DEBUG-INFORMATIONEN (aktuelles Spiel)\n';
+  debugSection += '═══════════════════════════════════════════════════\n';
+  if (debugInfo.length === 0) {
+    debugSection += 'Keine Debug-Informationen verfügbar (alle Flags auf false).\n';
+    debugSection += 'Zum Aktivieren setze einzelne DEBUG_* Flags in KONFIG auf true.\n';
+  } else {
+    debugInfo.forEach(info => { debugSection += `• ${info}\n`; });
+  }
+  return debugSection;
+}
+
+// =============================================================
+// INIT & START
+// =============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  initGame();
+  setupTouchEvents();
+});
+
+// Leere Event-Listener für Resize (Platzhalter)
+window.addEventListener('resize', () => {});
+window.addEventListener('orientationchange', () => {});
+
+// =============================================================
+// ENDE DER DATEI
+// =============================================================
+</script>
+</body>
+</html>
