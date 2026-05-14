@@ -1,0 +1,1394 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Wärmeverlust- & Gebäude-Analyse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        /* =================================================================
+           DESIGN TOKENS
+           ================================================================= */
+        :root {
+            --bg-cream:        #fdf8f3;
+            --bg-peach:        #fbeede;
+            --bg-card:         #ffffff;
+            --bg-card-soft:    #fffbf6;
+            --bg-tint:         #f7f1ea;
+
+            --ink-900:         #1a1410;
+            --ink-700:         #3b2e26;
+            --ink-500:         #6b574a;
+            --ink-400:         #8c7a6c;
+            --ink-300:         #b8a89a;
+
+            --ember:           #ea580c;
+            --ember-dark:      #c2410c;
+            --ember-light:     #fff1e6;
+            --ember-glow:      rgba(234, 88, 12, 0.18);
+
+            --teal:            #0e7490;
+            --teal-dark:       #155e75;
+            --teal-light:      #ecfeff;
+
+            --forest:          #15803d;
+            --forest-light:    #e6f7ec;
+
+            --amber:           #b45309;
+            --amber-light:     #fef3c7;
+
+            --rose:            #be123c;
+            --rose-light:      #ffe4e6;
+
+            --border:          #ebe2d6;
+            --border-strong:   #d9cab8;
+
+            --shadow-xs: 0 1px 2px rgba(120, 60, 20, 0.04);
+            --shadow-sm: 0 2px 6px rgba(120, 60, 20, 0.06), 0 1px 2px rgba(120, 60, 20, 0.04);
+            --shadow-md: 0 6px 16px rgba(120, 60, 20, 0.08), 0 2px 4px rgba(120, 60, 20, 0.06);
+            --shadow-lg: 0 18px 40px rgba(120, 60, 20, 0.10), 0 4px 12px rgba(120, 60, 20, 0.06);
+            --shadow-ember: 0 8px 24px rgba(234, 88, 12, 0.25);
+
+            --font-display: 'Bricolage Grotesque', 'Manrope', system-ui, sans-serif;
+            --font-body:    'Manrope', system-ui, -apple-system, sans-serif;
+            --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+
+            --r-sm: 8px;
+            --r-md: 12px;
+            --r-lg: 18px;
+            --r-xl: 24px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+
+        body {
+            font-family: var(--font-body);
+            color: var(--ink-900);
+            background:
+                radial-gradient(1200px 600px at 90% -10%, rgba(234, 88, 12, 0.10), transparent 60%),
+                radial-gradient(1000px 500px at -5% 10%, rgba(14, 116, 144, 0.08), transparent 60%),
+                linear-gradient(180deg, var(--bg-cream) 0%, var(--bg-peach) 100%);
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            font-size: 16px;
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.4;
+            z-index: 0;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.3  0 0 0 0 0.1  0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: clamp(20px, 4vw, 48px) clamp(14px, 3vw, 32px) 80px;
+        }
+
+        /* HEADER */
+        .hero {
+            text-align: center;
+            margin-bottom: clamp(28px, 5vw, 48px);
+            animation: fadeUp 0.6s ease-out both;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ember-dark);
+            background: var(--ember-light);
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(234, 88, 12, 0.2);
+            margin-bottom: 18px;
+        }
+        .hero-eyebrow .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--ember);
+            box-shadow: 0 0 0 3px var(--ember-glow);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        h1.hero-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: clamp(32px, 6vw, 54px);
+            line-height: 1.05;
+            letter-spacing: -0.025em;
+            color: var(--ink-900);
+            margin: 0 0 14px;
+        }
+        h1.hero-title .accent {
+            background: linear-gradient(135deg, var(--ember) 0%, var(--ember-dark) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-style: italic;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(15px, 2vw, 17px);
+            color: var(--ink-500);
+            max-width: 580px;
+            margin: 0 auto 24px;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+            border: 1.5px solid var(--ink-900);
+            background: transparent;
+            color: var(--ink-900);
+        }
+        .btn-pill:hover {
+            transform: translateY(-2px);
+            background: var(--ink-900);
+            color: var(--bg-cream);
+            box-shadow: var(--shadow-md);
+        }
+        .btn-pill.danger {
+            border-color: var(--rose);
+            color: var(--rose);
+        }
+        .btn-pill.danger:hover {
+            background: var(--rose);
+            color: #fff;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--r-xl);
+            padding: clamp(20px, 3vw, 32px);
+            margin-bottom: clamp(18px, 2.5vw, 28px);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            animation: fadeUp 0.6s ease-out both;
+        }
+        .card:nth-of-type(2) { animation-delay: 0.05s; }
+        .card:nth-of-type(3) { animation-delay: 0.10s; }
+        .card:nth-of-type(4) { animation-delay: 0.15s; }
+        .card:nth-of-type(5) { animation-delay: 0.20s; }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .card-number {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ember);
+            background: var(--ember-light);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .card h3 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: clamp(19px, 2.4vw, 23px);
+            color: var(--ink-900);
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+        .card-sub {
+            font-size: 14px;
+            color: var(--ink-500);
+            margin: 0 0 18px;
+        }
+
+        /* FORM */
+        .grid-settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink-700);
+            margin-bottom: 8px;
+            letter-spacing: 0.01em;
+        }
+
+        .input-group .hint {
+            font-size: 11.5px;
+            color: var(--ink-500);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        input[type="number"] {
+            font-family: var(--font-mono);
+            font-size: 15px;
+            font-weight: 500;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            background: var(--bg-card-soft);
+            color: var(--ink-900);
+            width: 100%;
+            transition: all 0.18s ease;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"]:hover { border-color: var(--border-strong); }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--ember);
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--ember-glow);
+        }
+
+        /* TABLE */
+        .table-wrap {
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            background: var(--bg-card-soft);
+        }
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 640px;
+        }
+
+        thead {
+            background: linear-gradient(180deg, var(--bg-tint) 0%, var(--bg-card-soft) 100%);
+        }
+
+        th {
+            padding: 14px 12px;
+            text-align: center;
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink-700);
+            border-bottom: 1.5px solid var(--border);
+            white-space: nowrap;
+        }
+        th:first-child { padding-left: 18px; }
+
+        td {
+            padding: 8px 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: var(--bg-card-soft); }
+
+        .hour-badge {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ember);
+            background: var(--ember-light);
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        td input[type="number"] {
+            width: 88px;
+            padding: 9px 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* PRIMARY BUTTON */
+        .btn-calc {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--ember) 0%, var(--ember-dark) 100%);
+            color: #fff;
+            border: none;
+            padding: 16px 28px;
+            border-radius: var(--r-md);
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.005em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 22px;
+            box-shadow: var(--shadow-ember);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+        }
+        .btn-calc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 32px rgba(234, 88, 12, 0.35);
+            filter: brightness(1.05);
+        }
+        .btn-calc:active { transform: translateY(0); }
+
+        /* OUTPUT */
+        .output-placeholder {
+            text-align: center;
+            color: var(--ink-500);
+            font-style: italic;
+            padding: 32px 16px;
+            background: var(--bg-card-soft);
+            border-radius: var(--r-lg);
+            border: 1px dashed var(--border-strong);
+        }
+
+        .log-details {
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            line-height: 1.7;
+            color: var(--ink-700);
+            background: var(--bg-card-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 16px 18px;
+            margin-bottom: 22px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .log-details strong { color: var(--ink-900); }
+        .ignored-row { color: var(--ink-400); font-style: italic; }
+
+        .summary-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: clamp(18px, 2.5vw, 26px);
+            margin-bottom: 18px;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+        .summary-box::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--teal) 0%, var(--ember) 100%);
+            border-radius: var(--r-lg) var(--r-lg) 0 0;
+        }
+        .summary-box.building::before {
+            background: linear-gradient(90deg, var(--ember) 0%, var(--rose) 100%);
+        }
+
+        .summary-box h4 {
+            font-family: var(--font-display);
+            font-size: clamp(18px, 2.3vw, 22px);
+            font-weight: 700;
+            color: var(--ink-900);
+            margin: 0 0 6px;
+            letter-spacing: -0.01em;
+        }
+        .summary-box .summary-intro {
+            font-size: 14px;
+            color: var(--ink-500);
+            margin: 0 0 18px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+        }
+
+        .result-item {
+            background: var(--bg-card-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 16px 14px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+        .result-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+            border-color: var(--border-strong);
+        }
+
+        .result-label {
+            display: block;
+            font-family: var(--font-body);
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-500);
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-family: var(--font-mono);
+            font-size: clamp(22px, 3.2vw, 28px);
+            font-weight: 700;
+            color: var(--ink-900);
+            line-height: 1.1;
+            display: block;
+            letter-spacing: -0.02em;
+        }
+        .result-value .unit {
+            font-size: 0.55em;
+            font-weight: 500;
+            color: var(--ink-500);
+            margin-left: 3px;
+        }
+
+        .result-sub {
+            display: block;
+            font-size: 12px;
+            color: var(--ink-500);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .val-ember { color: var(--ember-dark); }
+        .val-teal  { color: var(--teal-dark); }
+        .val-forest{ color: var(--forest); }
+        .val-rose  { color: var(--rose); }
+
+        /* EFFICIENCY BADGE */
+        .ef-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            padding: 4px 14px;
+            border-radius: 999px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 16px;
+            margin-top: 4px;
+        }
+        .ef-aplus { background: #00863d; color: #fff; }
+        .ef-a     { background: #2dab48; color: #fff; }
+        .ef-b     { background: #88be2c; color: #1a1410; }
+        .ef-c     { background: #f3d911; color: #1a1410; }
+        .ef-d     { background: #f7a823; color: #1a1410; }
+        .ef-e     { background: #ed6f1c; color: #fff; }
+        .ef-f     { background: #d63016; color: #fff; }
+        .ef-g     { background: #ac1015; color: #fff; }
+        .ef-h     { background: #6b0d11; color: #fff; }
+
+        /* WARNINGS */
+        .warning-box {
+            display: flex;
+            gap: 10px;
+            background: var(--amber-light);
+            border: 1px solid #f5deb3;
+            border-left: 4px solid var(--amber);
+            padding: 12px 16px;
+            border-radius: var(--r-md);
+            font-size: 13.5px;
+            color: var(--ink-900);
+            margin-top: 14px;
+            line-height: 1.55;
+        }
+        .warning-box .icon {
+            flex-shrink: 0;
+            color: var(--amber);
+            font-weight: 800;
+        }
+        .warning-box.danger {
+            background: var(--rose-light);
+            border-color: #fbb6ce;
+            border-left-color: var(--rose);
+        }
+        .warning-box.danger .icon { color: var(--rose); }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(26, 20, 16, 0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            padding: clamp(12px, 3vw, 40px);
+            overflow-y: auto;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal-content {
+            background: var(--bg-card);
+            margin: auto;
+            padding: clamp(20px, 4vw, 40px);
+            border-radius: var(--r-xl);
+            width: 100%;
+            max-width: 780px;
+            max-height: calc(100dvh - 40px);
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-content h2 {
+            font-family: var(--font-display);
+            font-size: clamp(22px, 3.5vw, 30px);
+            font-weight: 700;
+            color: var(--ink-900);
+            margin: 0 0 6px;
+            letter-spacing: -0.02em;
+            padding-right: 40px;
+        }
+        .modal-content .modal-lead {
+            font-size: 15px;
+            color: var(--ink-500);
+            margin: 0 0 24px;
+        }
+
+        .modal-content h3 {
+            font-family: var(--font-display);
+            font-size: clamp(17px, 2.5vw, 20px);
+            font-weight: 700;
+            color: var(--ink-900);
+            margin: 28px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: none;
+        }
+        .modal-content h3 .num {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--ember);
+            background: var(--ember-light);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        .modal-content p,
+        .modal-content ul,
+        .modal-content li {
+            font-size: 14.5px;
+            line-height: 1.65;
+            color: var(--ink-700);
+        }
+        .modal-content ul { padding-left: 22px; }
+        .modal-content li { margin-bottom: 4px; }
+        .modal-content strong { color: var(--ink-900); }
+
+        .formula-box {
+            background: linear-gradient(135deg, var(--ink-900) 0%, #2a1f17 100%);
+            padding: 18px 20px;
+            border-radius: var(--r-md);
+            font-family: var(--font-mono);
+            text-align: center;
+            font-size: clamp(13px, 2vw, 16px);
+            font-weight: 500;
+            color: var(--bg-cream);
+            margin: 14px 0;
+            overflow-x: auto;
+            box-shadow: var(--shadow-sm);
+        }
+        .formula-box .var {
+            color: var(--ember-light);
+            font-weight: 700;
+        }
+
+        .ef-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 13.5px;
+            border-radius: var(--r-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .ef-table th,
+        .ef-table td {
+            padding: 9px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .ef-table th {
+            background: var(--bg-tint);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ink-700);
+        }
+        .ef-table tr:last-child td { border-bottom: none; }
+        .ef-table td:first-child { text-align: center; width: 70px; }
+
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-tint);
+            color: var(--ink-700);
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.18s, color 0.18s, transform 0.18s;
+        }
+        .close-btn:hover {
+            background: var(--ink-900);
+            color: var(--bg-cream);
+            transform: rotate(90deg);
+        }
+
+        /* SAVE INDICATOR */
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--ink-900);
+            color: var(--bg-cream);
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.25s, transform 0.25s;
+            pointer-events: none;
+            z-index: 999;
+            box-shadow: var(--shadow-md);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .save-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .save-indicator .check {
+            width: 16px; height: 16px;
+            background: var(--forest);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 3px var(--ember-glow); }
+            50%      { box-shadow: 0 0 0 6px rgba(234, 88, 12, 0.08); }
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* BREAKPOINTS */
+        @media (max-width: 768px) {
+            .grid-settings {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 14px;
+            }
+            .result-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            td input[type="number"] {
+                width: 76px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .container { padding: 16px 12px 60px; }
+            .grid-settings { grid-template-columns: 1fr; }
+            .result-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .card { border-radius: var(--r-lg); }
+            .card-header { flex-wrap: wrap; gap: 10px; }
+            .hero-actions { gap: 8px; }
+            .btn-pill { padding: 9px 16px; font-size: 13px; }
+            th { padding: 12px 8px; font-size: 11px; }
+            th:first-child { padding-left: 12px; }
+            td { padding: 6px 6px; }
+            td input[type="number"] {
+                width: 64px;
+                padding: 7px 4px;
+                font-size: 12.5px;
+            }
+            .hour-badge {
+                width: 26px; height: 26px;
+                font-size: 11.5px;
+            }
+            .summary-box .summary-intro { font-size: 13.5px; }
+            .save-indicator {
+                bottom: 12px;
+                right: 12px;
+                font-size: 12px;
+                padding: 8px 14px;
+            }
+            .modal-content { padding: 24px 18px; }
+            .formula-box {
+                padding: 14px 12px;
+                font-size: 12.5px;
+            }
+            .ef-table th, .ef-table td {
+                padding: 7px 8px;
+                font-size: 12.5px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .result-grid { grid-template-columns: 1fr; }
+            .result-value { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <header class="hero">
+            <div class="hero-eyebrow"><span class="dot"></span> Heizungs-Telemetrie</div>
+            <h1 class="hero-title">Wärmeverlust- &amp; <span class="accent">Gebäude-Analyse</span></h1>
+            <p class="hero-subtitle">
+                Aus deinen Heizungsdaten den thermischen Fingerabdruck deines Gebäudes berechnen –
+                inklusive Energieeffizienzklasse, Normheizlast und Jahresprognose.
+            </p>
+            <div class="hero-actions">
+                <button class="btn-pill" onclick="openModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    Info &amp; Formeln
+                </button>
+                <button class="btn-pill danger" onclick="resetAll()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    Zurücksetzen
+                </button>
+            </div>
+        </header>
+
+        <section class="card">
+            <div class="card-header">
+                <span class="card-number">01</span>
+                <h3>Tarife &amp; Heizungsanlage</h3>
+            </div>
+            <div class="grid-settings">
+                <div class="input-group">
+                    <label for="gasprice">Arbeitspreis Gas <span style="opacity:.6">(ct/kWh)</span></label>
+                    <input type="number" id="gasprice" value="11.84" step="0.01" inputmode="decimal">
+                </div>
+                <div class="input-group">
+                    <label for="baseprice">Grundpreis Gas <span style="opacity:.6">(€/Jahr)</span></label>
+                    <input type="number" id="baseprice" value="128.52" step="0.01" inputmode="decimal">
+                </div>
+                <div class="input-group">
+                    <label for="efficiency">Kessel-Wirkungsgrad <span style="opacity:.6">(%)</span></label>
+                    <input type="number" id="efficiency" value="95" step="1" min="50" max="110" inputmode="numeric">
+                    <span class="hint">Brennwertkessel: 95–105 %</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <span class="card-number">02</span>
+                <h3>Gebäude &amp; Klima</h3>
+            </div>
+            <div class="grid-settings">
+                <div class="input-group">
+                    <label for="sqm">Wohnungsgröße <span style="opacity:.6">(m²)</span></label>
+                    <input type="number" id="sqm" value="65" step="1" inputmode="numeric">
+                </div>
+                <div class="input-group">
+                    <label for="sollinnen">Soll-Innentemperatur <span style="opacity:.6">(°C)</span></label>
+                    <input type="number" id="sollinnen" value="21" step="0.5" inputmode="decimal">
+                    <span class="hint">Typisch 20–21 °C</span>
+                </div>
+                <div class="input-group">
+                    <label for="normaussen">Norm-Außentemperatur <span style="opacity:.6">(°C)</span></label>
+                    <input type="number" id="normaussen" value="-12" step="1" inputmode="decimal">
+                    <span class="hint">DE: −10 bis −16 °C je Region</span>
+                </div>
+                <div class="input-group">
+                    <label for="hgt">Heizgradtage <span style="opacity:.6">(Kd/Jahr)</span></label>
+                    <input type="number" id="hgt" value="3500" step="100" inputmode="numeric">
+                    <span class="hint">DE-Mittel: ≈ 3500 Kd</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <span class="card-number">03</span>
+                <h3>Messreihe</h3>
+            </div>
+            <p class="card-sub">
+                Trag deine Messwerte ein – schon <strong>eine</strong> Zeile genügt. Leere Felder werden ignoriert.
+                Für den UA-Wert werden zusätzlich Innen- und Außentemperatur benötigt.
+            </p>
+            <div class="table-wrap">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Std.</th>
+                                <th>Außen °C</th>
+                                <th>Innen °C</th>
+                                <th>Vorlauf °C</th>
+                                <th>Rücklauf °C</th>
+                                <th>Durchfluss l/h</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hourlyData"></tbody>
+                    </table>
+                </div>
+            </div>
+            <button class="btn-calc" onclick="calculate()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                Wärmeverlust &amp; Gebäudeanalyse berechnen
+            </button>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <span class="card-number">04</span>
+                <h3>Auswertung</h3>
+            </div>
+            <div id="output">
+                <div class="output-placeholder">
+                    Klicke auf <strong>"Berechnen"</strong>, um deine Ergebnisse hier zu sehen.
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- MODAL -->
+    <div id="infoModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()" aria-label="Schließen">×</button>
+
+            <h2 id="modalTitle">Wie funktioniert dieses Programm?</h2>
+            <p class="modal-lead">
+                Das Tool ist ein <strong>digitaler Zwilling</strong> deiner Heizung und deines Gebäudes.
+                Aus deinen Messwerten ermittelt es die abgegebene Heizleistung, leitet daraus den
+                thermischen Fingerabdruck der Wohnung ab und macht eine energetische Gesamteinordnung möglich.
+            </p>
+
+            <h3><span class="num">01</span> Heizleistung Q</h3>
+            <div class="formula-box">
+                <span class="var">Q</span> [kW] = <span class="var">Durchfluss</span> [l/h] · 1,16 · (<span class="var">V<sub>L</sub></span> − <span class="var">R<sub>L</sub></span>) / 1000
+            </div>
+            <p>
+                Die zentrale thermodynamische Gleichung: Wärmeleistung = Massenstrom · Wärmekapazität · Temperaturspreizung.
+                Der Faktor <strong>1,16 Wh/(l·K)</strong> kombiniert die spez. Wärmekapazität und die Dichte von Wasser.
+                Ergebnis: wieviel Wärme das Wasser <strong>pro Stunde an den Estrich abgibt</strong>.
+            </p>
+
+            <h3><span class="num">02</span> UA-Wert — der Fingerabdruck</h3>
+            <div class="formula-box">
+                <span class="var">UA</span> [W/K] = <span class="var">Q</span> [W] / (<span class="var">T<sub>innen</sub></span> − <span class="var">T<sub>außen</sub></span>)
+            </div>
+            <p>
+                Die wichtigste Gebäude-Kennzahl: <em>Wieviel Watt brauche ich, um meine Wohnung um 1 K
+                wärmer als draußen zu halten?</em> Je kleiner, desto besser die Dämmung. Der UA-Wert ist
+                im stationären Zustand <strong>weitgehend unabhängig von der jeweiligen Außentemperatur</strong> —
+                genau das macht ihn so robust für den Gebäudevergleich.
+            </p>
+
+            <h3><span class="num">03</span> Spezifischer UA-Wert</h3>
+            <div class="formula-box">
+                <span class="var">UA<sub>spez</sub></span> [W/m²K] = <span class="var">UA</span> / <span class="var">Fläche</span>
+            </div>
+            <p>UA pro Quadratmeter macht Gebäude unterschiedlicher Größe vergleichbar:</p>
+            <ul>
+                <li><strong>&lt; 0,5</strong> → Passivhaus-Niveau</li>
+                <li><strong>0,5–1,0</strong> → moderner Neubau / gut saniert</li>
+                <li><strong>1,0–1,5</strong> → mittelmäßig gedämmt</li>
+                <li><strong>1,5–2,0</strong> → mäßig gedämmter Altbau</li>
+                <li><strong>&gt; 2,0</strong> → energetisch sanierungsbedürftig</li>
+            </ul>
+
+            <h3><span class="num">04</span> Normheizlast</h3>
+            <div class="formula-box">
+                <span class="var">P<sub>Norm</sub></span> [kW] = <span class="var">UA</span> · (<span class="var">T<sub>innen,soll</sub></span> − <span class="var">T<sub>außen,norm</sub></span>) / 1000
+            </div>
+            <p>
+                Die <strong>maximale Heizleistung</strong>, die du an einem sehr kalten Tag (Norm-Außentemperatur
+                deiner Region, z. B. −12 °C) brauchst. Wichtig für die Auslegung von Kessel oder Wärmepumpe.
+            </p>
+
+            <h3><span class="num">05</span> Jahres-Heizwärmebedarf</h3>
+            <div class="formula-box">
+                <span class="var">Q<sub>Jahr</sub></span> [kWh/a] = <span class="var">UA</span> · <span class="var">HGT</span> · 24 / 1000
+            </div>
+            <p>
+                Die <strong>Heizgradtage (HGT)</strong> fassen das Klima eines ganzen Jahres in einer einzigen Zahl
+                zusammen — sie sind die Summe der täglichen Temperaturdifferenzen (20 °C minus Tagesmitteltemperatur)
+                über alle Heiztage. Für Deutschland im Mittel ca. <strong>3500 Kd/Jahr</strong>, regional zwischen
+                2700 (mildes Klima) und 4500 (Bergregionen).
+            </p>
+
+            <h3><span class="num">06</span> Energieeffizienzklasse</h3>
+            <p>
+                Der spezifische Jahresverbrauch (kWh pro m² und Jahr) wird in die Klassen des Energieausweises eingeordnet:
+            </p>
+            <table class="ef-table">
+                <thead>
+                    <tr><th>Klasse</th><th>kWh/m²·a</th><th>Einordnung</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="ef-badge ef-aplus">A+</span></td><td>&lt; 30</td><td>Passivhaus</td></tr>
+                    <tr><td><span class="ef-badge ef-a">A</span></td><td>30–50</td><td>Effizienzhaus 55</td></tr>
+                    <tr><td><span class="ef-badge ef-b">B</span></td><td>50–75</td><td>Effizienzhaus 70 / KfW</td></tr>
+                    <tr><td><span class="ef-badge ef-c">C</span></td><td>75–100</td><td>Neubau-Standard</td></tr>
+                    <tr><td><span class="ef-badge ef-d">D</span></td><td>100–130</td><td>Gut sanierter Altbau</td></tr>
+                    <tr><td><span class="ef-badge ef-e">E</span></td><td>130–160</td><td>Teilsanierter Altbau</td></tr>
+                    <tr><td><span class="ef-badge ef-f">F</span></td><td>160–200</td><td>Typischer Altbau</td></tr>
+                    <tr><td><span class="ef-badge ef-g">G</span></td><td>200–250</td><td>Schlecht gedämmt</td></tr>
+                    <tr><td><span class="ef-badge ef-h">H</span></td><td>&gt; 250</td><td>Sanierungsbedürftig</td></tr>
+                </tbody>
+            </table>
+
+            <h3><span class="num">07</span> Gaskosten vs. Wärme</h3>
+            <p>
+                Die berechnete Wärmemenge ist <strong>nicht</strong> mit dem Gasverbrauch identisch. Ein Brennwertkessel
+                hat einen Wirkungsgrad von typisch 95 %. Die Gaskosten werden daher mit
+                <strong>Wärmemenge ÷ Wirkungsgrad</strong> umgerechnet und um den anteiligen Grundpreis ergänzt.
+            </p>
+
+            <h3><span class="num">08</span> Wann sind die Messwerte gut?</h3>
+            <p>Die Genauigkeit steigt, wenn folgende Bedingungen gelten:</p>
+            <ul>
+                <li><strong>Stationärer Zustand:</strong> Wohnung schon seit Stunden auf Solltemperatur, kein frisches Lüften, keine Sonneneinstrahlung gerade.</li>
+                <li><strong>Wasser-Spreizung 3–10 K:</strong> Zu klein → Pumpe läuft zu schnell; zu groß → Durchfluss zu gering.</li>
+                <li><strong>Mehrere Messungen:</strong> Streuen die UA-Werte stark, gibt das System einen Hinweis — dann lieber an einem anderen Tag erneut messen.</li>
+                <li><strong>Auch eine einzelne Messung</strong> liefert bereits eine brauchbare Schätzung.</li>
+            </ul>
+
+            <h3><span class="num">09</span> Datenspeicherung</h3>
+            <p>
+                Alle Eingaben werden automatisch lokal im Browser gespeichert (localStorage). Die Seite kann jederzeit geschlossen werden,
+                die Werte sind beim nächsten Öffnen wieder da. Über <strong>"Zurücksetzen"</strong> kannst du komplett neu beginnen.
+                Es werden keine Daten ans Internet übertragen.
+            </p>
+        </div>
+    </div>
+
+    <div id="saveIndicator" class="save-indicator">
+        <span class="check">✓</span> Gespeichert
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'waermeverlust_v2_data';
+        const C_WATER = 1.16;
+        const NUM_HOURS = 8;
+
+        const DEFAULT_HOUR_1 = {
+            outT: '10.0', inT: '21.4', vl: '30.0', rl: '23.0', flow: '450'
+        };
+
+        function openModal() {
+            document.getElementById('infoModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal() {
+            document.getElementById('infoModal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        window.addEventListener('click', e => {
+            const modal = document.getElementById('infoModal');
+            if (e.target === modal) closeModal();
+        });
+        window.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        function buildTable() {
+            const tbody = document.getElementById('hourlyData');
+            const rows = [];
+            for (let i = 1; i <= NUM_HOURS; i++) {
+                const d = (i === 1) ? DEFAULT_HOUR_1 : {outT: '', inT: '', vl: '', rl: '', flow: ''};
+                rows.push(`
+                    <tr>
+                        <td><span class="hour-badge">${i}</span></td>
+                        <td><input type="number" id="outT_${i}" value="${d.outT}" step="0.1" placeholder="—" inputmode="decimal"></td>
+                        <td><input type="number" id="inT_${i}"  value="${d.inT}"  step="0.1" placeholder="—" inputmode="decimal"></td>
+                        <td><input type="number" id="vl_${i}"   value="${d.vl}"   step="0.1" placeholder="—" inputmode="decimal"></td>
+                        <td><input type="number" id="rl_${i}"   value="${d.rl}"   step="0.1" placeholder="—" inputmode="decimal"></td>
+                        <td><input type="number" id="flow_${i}" value="${d.flow}" step="1"   placeholder="—" inputmode="numeric"></td>
+                    </tr>
+                `);
+            }
+            tbody.innerHTML = rows.join('');
+        }
+
+        function getAllInputIds() {
+            const ids = ['gasprice', 'baseprice', 'efficiency', 'sqm', 'sollinnen', 'normaussen', 'hgt'];
+            for (let i = 1; i <= NUM_HOURS; i++) {
+                ids.push(`outT_${i}`, `inT_${i}`, `vl_${i}`, `rl_${i}`, `flow_${i}`);
+            }
+            return ids;
+        }
+
+        function saveAll() {
+            const data = {};
+            getAllInputIds().forEach(id => {
+                const el = document.getElementById(id);
+                if (el) data[id] = el.value;
+            });
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                showSaveIndicator();
+            } catch (e) { console.warn('Speichern fehlgeschlagen:', e); }
+        }
+
+        function loadAll() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                Object.keys(data).forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = data[id];
+                });
+            } catch (e) { console.warn('Laden fehlgeschlagen:', e); }
+        }
+
+        function attachAutoSave() {
+            getAllInputIds().forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', debounce(saveAll, 400));
+            });
+        }
+
+        function debounce(fn, ms) {
+            let t;
+            return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+        }
+
+        let indicatorTimer;
+        function showSaveIndicator() {
+            const el = document.getElementById('saveIndicator');
+            el.classList.add('show');
+            clearTimeout(indicatorTimer);
+            indicatorTimer = setTimeout(() => el.classList.remove('show'), 1200);
+        }
+
+        function resetAll() {
+            if (!confirm('Wirklich alle Eingaben zurücksetzen?')) return;
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+        }
+
+        function parseNum(id) {
+            const el = document.getElementById(id);
+            if (!el) return NaN;
+            const v = el.value.trim();
+            if (v === '') return NaN;
+            const n = parseFloat(v);
+            return isNaN(n) ? NaN : n;
+        }
+
+        function efficiencyClass(kwhPerSqm) {
+            if (kwhPerSqm < 30)  return { label: 'A+', css: 'ef-aplus', desc: 'Passivhaus-Niveau' };
+            if (kwhPerSqm < 50)  return { label: 'A',  css: 'ef-a',     desc: 'Effizienzhaus 55' };
+            if (kwhPerSqm < 75)  return { label: 'B',  css: 'ef-b',     desc: 'Effizienzhaus 70 / KfW' };
+            if (kwhPerSqm < 100) return { label: 'C',  css: 'ef-c',     desc: 'Neubau-Niveau' };
+            if (kwhPerSqm < 130) return { label: 'D',  css: 'ef-d',     desc: 'Gut sanierter Altbau' };
+            if (kwhPerSqm < 160) return { label: 'E',  css: 'ef-e',     desc: 'Teilsanierter Altbau' };
+            if (kwhPerSqm < 200) return { label: 'F',  css: 'ef-f',     desc: 'Typischer Altbau' };
+            if (kwhPerSqm < 250) return { label: 'G',  css: 'ef-g',     desc: 'Schlecht gedämmt' };
+            return                      { label: 'H',  css: 'ef-h',     desc: 'Sanierungsbedürftig' };
+        }
+
+        function specUaRating(specUa) {
+            if (specUa < 0.5)  return 'Passivhaus-Niveau';
+            if (specUa < 1.0)  return 'moderner Neubau / gut saniert';
+            if (specUa < 1.5)  return 'mittelmäßig gedämmt';
+            if (specUa < 2.0)  return 'mäßig gedämmter Altbau';
+            return                    'sanierungsbedürftig';
+        }
+
+        function calculate() {
+            const gasPriceEuroPerKwh = parseNum('gasprice') / 100;
+            const basePriceYear      = parseNum('baseprice');
+            const efficiency         = parseNum('efficiency') / 100;
+            const sqm                = parseNum('sqm');
+            const sollInnen          = parseNum('sollinnen');
+            const normAussen         = parseNum('normaussen');
+            const hgt                = parseNum('hgt');
+
+            const basePriceDay = basePriceYear / 365;
+
+            const hoursValid = [];
+            const hoursWithUA = [];
+            const logLines = [];
+
+            for (let i = 1; i <= NUM_HOURS; i++) {
+                const outT = parseNum(`outT_${i}`);
+                const inT  = parseNum(`inT_${i}`);
+                const vl   = parseNum(`vl_${i}`);
+                const rl   = parseNum(`rl_${i}`);
+                const flow = parseNum(`flow_${i}`);
+
+                const hasLeistung = !isNaN(vl) && !isNaN(rl) && !isNaN(flow) && flow > 0 && vl > 0;
+
+                if (!hasLeistung) {
+                    logLines.push(`<span class="ignored-row">Std ${i.toString().padStart(2,' ')} · keine Heizleistungs-Daten — ignoriert</span>`);
+                    continue;
+                }
+
+                const deltaT_wasser = vl - rl;
+                let kw = (flow * C_WATER * deltaT_wasser) / 1000;
+                if (kw < 0) kw = 0;
+
+                let uaInfo = '';
+                let ua = null;
+                let deltaT_raum = null;
+
+                if (!isNaN(inT) && !isNaN(outT) && inT > outT) {
+                    deltaT_raum = inT - outT;
+                    ua = (kw * 1000) / deltaT_raum;
+                    uaInfo = ` │ ΔT-Raum <strong>${deltaT_raum.toFixed(1)} K</strong> → UA <strong>${ua.toFixed(0)} W/K</strong>`;
+                    hoursWithUA.push({ kw, ua, deltaT_wasser, deltaT_raum, inT, outT, hour: i });
+                } else {
+                    uaInfo = ' <span style="opacity:0.55;">(Innen/Außen fehlt — kein UA)</span>';
+                }
+
+                hoursValid.push({ kw, deltaT_wasser, hour: i });
+                logLines.push(
+                    `Std ${i.toString().padStart(2,' ')} · ΔT-W <strong>${deltaT_wasser.toFixed(1)} K</strong>, ` +
+                    `${flow} l/h → <strong>${kw.toFixed(3)} kW</strong>${uaInfo}`
+                );
+            }
+
+            if (hoursValid.length === 0) {
+                document.getElementById('output').innerHTML = `
+                    <div class="warning-box danger">
+                        <span class="icon">⚠</span>
+                        <span>Bitte fülle mindestens eine Zeile mit gültigen Messdaten aus
+                        (Vorlauf, Rücklauf und Durchfluss).</span>
+                    </div>`;
+                return;
+            }
+
+            const avgKw          = hoursValid.reduce((s, h) => s + h.kw, 0) / hoursValid.length;
+            const avgDeltaWasser = hoursValid.reduce((s, h) => s + h.deltaT_wasser, 0) / hoursValid.length;
+
+            const day24Kwh  = avgKw * 24;
+            const day24Gas  = day24Kwh / efficiency;
+            const day24Cost = day24Gas * gasPriceEuroPerKwh + basePriceDay;
+
+            let html = `<div class="log-details">${logLines.join('<br>')}</div>`;
+
+            html += `
+                <div class="summary-box">
+                    <h4>Heizleistung &amp; Tagesprognose</h4>
+                    <p class="summary-intro">
+                        ${hoursValid.length} gültige Messung${hoursValid.length===1?'':'en'} · lineare Hochrechnung auf 24 h
+                    </p>
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <span class="result-label">Ø Heizleistung</span>
+                            <span class="result-value val-teal">${avgKw.toFixed(2)}<span class="unit">kW</span></span>
+                            <span class="result-sub">ΔT-Wasser ${avgDeltaWasser.toFixed(1)} K</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Tag · Wärme</span>
+                            <span class="result-value val-ember">${day24Kwh.toFixed(1)}<span class="unit">kWh</span></span>
+                            <span class="result-sub">an Estrich abgegeben</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Tag · Gas</span>
+                            <span class="result-value val-ember">${day24Gas.toFixed(1)}<span class="unit">kWh</span></span>
+                            <span class="result-sub">bei η = ${(efficiency*100).toFixed(0)} %</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Tageskosten</span>
+                            <span class="result-value val-forest">${day24Cost.toFixed(2)}<span class="unit">€</span></span>
+                            <span class="result-sub">inkl. Grundpreis</span>
+                        </div>
+                    </div>
+                </div>`;
+
+            if (hoursWithUA.length > 0) {
+                const avgUA     = hoursWithUA.reduce((s, h) => s + h.ua, 0) / hoursWithUA.length;
+                const avgRaumDt = hoursWithUA.reduce((s, h) => s + h.deltaT_raum, 0) / hoursWithUA.length;
+                const specUA    = avgUA / sqm;
+
+                const uaValues = hoursWithUA.map(h => h.ua);
+                const minUA = Math.min(...uaValues);
+                const maxUA = Math.max(...uaValues);
+                const uaSpread = maxUA - minUA;
+                const uaSpreadPct = (uaSpread / avgUA) * 100;
+
+                const pNorm = avgUA * (sollInnen - normAussen) / 1000;
+
+                const yearKwhHeat = (avgUA * hgt * 24) / 1000;
+                const yearKwhGas  = yearKwhHeat / efficiency;
+                const yearCost    = yearKwhGas * gasPriceEuroPerKwh + basePriceYear;
+                const specYear    = yearKwhHeat / sqm;
+                const eClass      = efficiencyClass(specYear);
+
+                html += `
+                    <div class="summary-box building">
+                        <h4>Gebäude-Analyse · Energetische Beurteilung</h4>
+                        <p class="summary-intro">
+                            ${hoursWithUA.length} Messung${hoursWithUA.length===1?'':'en'} mit kompletter Innen-/Außentemperatur ·
+                            Ø Raum-ΔT <strong>${avgRaumDt.toFixed(1)} K</strong>
+                        </p>
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <span class="result-label">UA-Wert</span>
+                                <span class="result-value val-teal">${avgUA.toFixed(0)}<span class="unit">W/K</span></span>
+                                <span class="result-sub">Verlust pro K ΔT</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">UA spezifisch</span>
+                                <span class="result-value val-teal">${specUA.toFixed(2)}<span class="unit">W/m²K</span></span>
+                                <span class="result-sub">${specUaRating(specUA)}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Normheizlast</span>
+                                <span class="result-value val-ember">${pNorm.toFixed(2)}<span class="unit">kW</span></span>
+                                <span class="result-sub">bei ${normAussen.toFixed(0)} °C außen</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Jahr · Wärme</span>
+                                <span class="result-value val-ember">${yearKwhHeat.toFixed(0)}<span class="unit">kWh/a</span></span>
+                                <span class="result-sub">HGT ${hgt} Kd</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Spez. Verbrauch</span>
+                                <span class="result-value val-ember">${specYear.toFixed(0)}<span class="unit">kWh/m²a</span></span>
+                                <span class="result-sub"><span class="ef-badge ${eClass.css}">${eClass.label}</span></span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Jahres-Gaskosten</span>
+                                <span class="result-value val-forest">${yearCost.toFixed(0)}<span class="unit">€</span></span>
+                                <span class="result-sub">inkl. Grundpreis</span>
+                            </div>
+                        </div>
+                        <p style="font-size:14px; margin-top:18px; color:var(--ink-700);">
+                            <strong>Einordnung:</strong> Klasse <strong>${eClass.label}</strong> — ${eClass.desc}
+                        </p>`;
+
+                const warnings = [];
+                if (hoursWithUA.length === 1) {
+                    warnings.push('Nur eine Messung — die Ergebnisse sind eine erste Schätzung. Mehrere Messungen erhöhen die Genauigkeit deutlich.');
+                }
+                if (hoursWithUA.length >= 2 && uaSpreadPct > 30) {
+                    warnings.push(`UA-Werte streuen stark (Min ${minUA.toFixed(0)}, Max ${maxUA.toFixed(0)} W/K · Spanne ${uaSpreadPct.toFixed(0)} %). Mögliche Ursachen: nicht stationär, Lüften, Sonneneinstrahlung, Heizungs-Takt.`);
+                }
+                if (avgDeltaWasser < 3) {
+                    warnings.push(`Wasser-Spreizung ist niedrig (${avgDeltaWasser.toFixed(1)} K). Eventuell läuft die Umwälzpumpe zu schnell oder der Mischer öffnet zu wenig.`);
+                }
+                if (avgDeltaWasser > 10) {
+                    warnings.push(`Wasser-Spreizung ist hoch (${avgDeltaWasser.toFixed(1)} K). Eventuell zu geringer Durchfluss.`);
+                }
+                if (specYear > 200) {
+                    warnings.push('Spezifischer Jahresverbrauch ist hoch — eine energetische Sanierung würde sich vermutlich rentieren.');
+                }
+
+                warnings.forEach(w => {
+                    html += `<div class="warning-box"><span class="icon">⚠</span><span>${w}</span></div>`;
+                });
+
+                html += `</div>`;
+            } else {
+                html += `
+                    <div class="warning-box">
+                        <span class="icon">ℹ</span>
+                        <span>Für die Gebäude-Analyse (UA-Wert, Normheizlast, Effizienzklasse, Jahresprognose)
+                        wird mindestens <strong>eine</strong> Messung mit vollständiger Innen- <em>und</em> Außentemperatur benötigt.</span>
+                    </div>`;
+            }
+
+            document.getElementById('output').innerHTML = html;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            buildTable();
+            loadAll();
+            attachAutoSave();
+        });
+    </script>
+</body>
+</html>
