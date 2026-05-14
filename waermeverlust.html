@@ -1,0 +1,557 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wohnung Wärmeverlust-Rechner</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #e67e22;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #7f8c8d;
+            --border-color: #e0e6ed;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            padding: 20px 10px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+       .container {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+
+       .header-actions {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+       .btn-info {
+            background: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+       .btn-info:hover {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        h3 {
+            color: var(--accent-color);
+            margin-top: 0;
+            font-size: 18px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+       .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+            border-top: 4px solid var(--accent-color);
+        }
+
+       .grid-settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+       .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+       .input-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        input[type="number"] {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            background-color: #fff;
+        }
+
+       .table-responsive {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+            background-color: #fff;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f1f4f8;
+            color: var(--primary-color);
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        td input[type="number"] {
+            width: 80px;
+            text-align: center;
+            padding: 8px;
+        }
+
+       .btn-calc {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);
+        }
+
+       .btn-calc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4);
+            background: linear-gradient(to right, #2980b9, #2471a3);
+        }
+
+       .output-container {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text-main);
+        }
+
+       .log-details {
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+       .summary-box {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f4f8 100%);
+            border-left: 5px solid var(--success-color);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+       .summary-box h4 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+       .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+       .result-item {
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+       .result-label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+       .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+       .val-orange { color: var(--warning-color); }
+       .val-green { color: var(--success-color); }
+       .ignored-row { color: #bdc3c7; font-style: italic; }
+
+        /* Modal / Overlay Styles */
+       .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+        }
+
+       .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            position: relative;
+            animation: modalFadeIn 0.3s;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+       .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+       .close-btn:hover {
+            color: var(--primary-color);
+        }
+
+       .modal-content h3 {
+            color: var(--primary-color);
+            border-bottom: none;
+            margin-bottom: 10px;
+        }
+
+       .modal-content h4 {
+            color: var(--accent-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+       .modal-content p,.modal-content ul {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #444;
+        }
+
+       .formula-box {
+            background: #f1f4f8;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 15px 0;
+        }
+
+        @media (max-width: 600px) {
+           .card { padding: 15px; }
+            h2 { font-size: 22px; }
+           .modal-content { margin: 10% auto; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Dynamischer Wärmeverlust-Rechner</h2>
+        
+        <div class="header-actions">
+            <button class="btn-info" onclick="openModal()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                Info & Erklärung
+            </button>
+        </div>
+
+        <div class="card">
+            <h3>1. Voreinstellungen (Tarife & Anlage)</h3>
+            <div class="grid-settings">
+                <div class="input-group">
+                    <label>Arbeitspreis Gas (ct/kWh)</label>
+                    <input type="number" id="gasprice" value="11.84" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>Grundpreis Gas (€/Jahr)</label>
+                    <input type="number" id="baseprice" value="128.52" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>Wohnungsgröße (m²)</label>
+                    <input type="number" id="sqm" value="65" step="1">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>2. 8-Stunden Messreihe</h3>
+            <p style="font-size: 14px; color: #7f8c8d; margin-bottom: 15px;">Trage hier deine stündlichen Werte ein. Felder, die leer bleiben oder "0" enthalten, werden automatisch ignoriert und verfälschen nicht die Hochrechnung.</p>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Stunde</th>
+                            <th>Außen (°C)</th>
+                            <th>Innen (°C)</th>
+                            <th>Vorlauf (°C)</th>
+                            <th>Rücklauf (°C)</th>
+                            <th>Durchfluss (l/h)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hourlyData">
+                        </tbody>
+                </table>
+            </div>
+            <button class="btn-calc" onclick="calculate()">Wärmeverlust & Tagesprognose berechnen</button>
+        </div>
+
+        <div class="card">
+            <h3>3. Auswertung & Tageshochrechnung</h3>
+            <div id="output" class="output-container">
+                <div style="text-align: center; color: #7f8c8d; font-style: italic;">
+                    Bitte klicke auf "Berechnen", um die Ergebnisse hier anzuzeigen...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3>Wie funktioniert dieses Programm?</h3>
+            
+            <p>Dieses Programm ist ein digitaler Zwilling deiner Heizungsanlage. Es berechnet den exakten thermischen Energieverlust deiner Wohnung in Echtzeit und rechnet diese Werte auf einen ganzen Tag sowie in tatsächliche Euro-Kosten um.</p>
+
+            <h4>Die zugrundeliegende Physik</h4>
+            <p>Die Berechnung nutzt eine fundamentale thermodynamische Gleichung, um die Wärmeenergie zu ermitteln, die das Wasser der Fußbodenheizung an den Raum abgibt:</p>
+            
+            <div class="formula-box">Q = m · c · ΔT</div>
+            
+            <ul>
+                <li><strong>Q (Wärmeleistung in Watt):</strong> Die Energie, die gerade verbraucht wird.</li>
+                <li><strong>m (Massenstrom / Durchfluss):</strong> Wie viel Wasser fließt (l/h).</li>
+                <li><strong>c (Wärmekapazität):</strong> Ein konstanter Wert für Wasser (1,16 Wh/kgK).</li>
+                <li><strong>ΔT (Spreizung):</strong> Die Differenz zwischen Vorlauf- und Rücklauftemperatur. Je stärker das Wasser im Boden abkühlt, desto mehr Energie hat der Raum aufgenommen.</li>
+            </ul>
+
+            <h4>Warum ändert die Wohnungsgröße (m²) nichts am Ergebnis?</h4>
+            <p>Du wirst feststellen, dass sich die errechneten Kilowatt (kW) nicht verändern, wenn du die Quadratmeterzahl der Wohnung anpasst. Das ist kein Fehler, sondern physikalisch absolut korrekt!</p>
+            <p>Das Programm misst den <strong>tatsächlichen, absoluten Energiefluss</strong> aus den Rohren. Wenn 450 Liter Wasser pro Stunde fließen und dabei um 7 Grad abkühlen, werden exakt 3,65 kW Energie an den Estrich abgegeben. Ob diese 3,65 kW nun in eine sehr gut gedämmte 100 m² Wohnung fließen oder in eine schlecht gedämmte 65 m² Wohnung, ändert nichts an der reinen Menge der abfließenden Energie.</p>
+            <p>Die Quadratmeterzahl wird im Gesamtprojekt erst später relevant, wenn es um die gesetzliche Heizkostenabrechnung (z. B. nach der Heizkostenverordnung) geht, bei der Grundkosten nach Fläche verteilt werden müssen.</p>
+
+            <h4>Umgang mit unvollständigen Daten</h4>
+            <p>Wenn du nicht alle 8 Stunden messen kannst, ist das kein Problem. Das Programm erkennt automatisch leere oder auf "0" gesetzte Zeilen und ignoriert diese. Der Durchschnitt und die Tageshochrechnung werden dann mathematisch korrekt nur aus den Zeilen gebildet, in denen echte Messdaten vorliegen.</p>
+        </div>
+    </div>
+
+    <script>
+        // Modal Logic
+        function openModal() {
+            document.getElementById('infoModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+
+        // Klick außerhalb des Modals schließt es
+        window.onclick = function(event) {
+            const modal = document.getElementById('infoModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Initiale Tabellengenerierung für 8 Stunden (nur Zeile 1 vorausgefüllt)
+        window.onload = function() {
+            const tbody = document.getElementById('hourlyData');
+            for(let i=1; i<=8; i++) {
+                // Werte nur für die erste Zeile setzen, Rest ist leer
+                const outT = (i === 1)? "10.0" : "";
+                const inT  = (i === 1)? "21.4" : "";
+                const vl   = (i === 1)? "30.0" : "";
+                const rl   = (i === 1)? "23.0" : "";
+                const flow = (i === 1)? "450"  : "";
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight:bold; color:#2c3e50;">${i}</td>
+                        <td><input type="number" id="outT_${i}" value="${outT}" step="0.1" placeholder="0.0"></td>
+                        <td><input type="number" id="inT_${i}" value="${inT}" step="0.1" placeholder="0.0"></td>
+                        <td><input type="number" id="vl_${i}" value="${vl}" step="0.1" placeholder="0.0"></td>
+                        <td><input type="number" id="rl_${i}" value="${rl}" step="0.1" placeholder="0.0"></td>
+                        <td><input type="number" id="flow_${i}" value="${flow}" step="1" placeholder="0"></td>
+                    </tr>
+                `;
+            }
+        };
+
+        // Berechnungslogik
+        function calculate() {
+            let totalKw = 0;
+            let validHours = 0;
+            let logHtml = "<div class='log-details'><strong>Stündliche Einzelmessungen:</strong><br><br>";
+            
+            // Preise umrechnen
+            const gasPriceEuroPerKwh = parseFloat(document.getElementById('gasprice').value) / 100;
+            const basePriceYear = parseFloat(document.getElementById('baseprice').value);
+            const basePriceDay = basePriceYear / 365; // Grundpreis für einen vollen Tag
+            const basePriceHour = basePriceDay / 24;  // Grundpreis für eine Stunde
+
+            // Schleife durch die 8 Stunden
+            for(let i=1; i<=8; i++) {
+                const vlInput = document.getElementById(`vl_${i}`).value;
+                const rlInput = document.getElementById(`rl_${i}`).value;
+                const flowInput = document.getElementById(`flow_${i}`).value;
+                
+                // Prüfen ob die Felder einen Wert haben, der nicht exakt 0 ist
+                const vl = parseFloat(vlInput);
+                const rl = parseFloat(rlInput);
+                const flow = parseFloat(flowInput);
+
+                if (vlInput!== "" && flowInput!== "" && flow > 0 && vl > 0) {
+                    const deltaT = vl - rl;
+                    
+                    // Formel: Q = m * c * dT (in Watt, dann / 1000 für kW)
+                    let kw = (flow * 1.16 * deltaT) / 1000;
+                    if (kw < 0) kw = 0; // Negativen Verlust abfangen
+
+                    totalKw += kw;
+                    validHours++;
+                    const costHour = (kw * gasPriceEuroPerKwh) + basePriceHour;
+
+                    logHtml += `Stunde ${i}: Spreizung ${deltaT.toFixed(1)} K &rarr; <strong>${kw.toFixed(3)} kW</strong> (Kosten: ${costHour.toFixed(4)} €)<br>`;
+                } else {
+                    logHtml += `<span class="ignored-row">Stunde ${i}: Keine Messdaten oder Wert "0" - wird bei der Berechnung ignoriert.</span><br>`;
+                }
+            }
+            logHtml += "</div>";
+
+            // Wenn gar keine gültigen Daten eingegeben wurden
+            if (validHours === 0) {
+                document.getElementById('output').innerHTML = `
+                    <div style="text-align: center; color: #e74c3c; font-weight: bold; padding: 20px;">
+                        Bitte fülle mindestens eine Zeile mit gültigen Messdaten (Vorlauf, Rücklauf und Durchfluss) aus, um eine Berechnung zu starten.
+                    </div>
+                `;
+                return;
+            }
+
+            // Durchschnitt ermitteln (nur aus den GÜLTIGEN Messungen)
+            const avgKw = totalKw / validHours;
+
+            // 24-Stunden Hochrechnung
+            const estimated24hKwh = avgKw * 24; 
+            const estimated24hCost = (estimated24hKwh * gasPriceEuroPerKwh) + basePriceDay;
+
+            // Ausgabe zusammenbauen
+            logHtml += `
+                <div class="summary-box">
+                    <h4>Tageshochrechnung (24 Stunden)</h4>
+                    <p style="font-size:14px; margin-bottom:20px;">
+                        Basierend auf deinen <strong>${validHours} gültigen Eingaben</strong> hat die Wohnung einen <strong>durchschnittlichen Leistungsverlust von ${avgKw.toFixed(2)} kW</strong> pro Stunde. 
+                        Wird dieser Trend auf den gesamten Tag (24 Stunden) fortgeschrieben, ergeben sich folgende Werte:
+                    </p>
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <span class="result-label">Ø Leistung je Stunde</span>
+                            <span class="result-value">${avgKw.toFixed(2)} kW</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Prognose Tagesverbrauch</span>
+                            <span class="result-value val-orange">${estimated24hKwh.toFixed(1)} kWh</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Prognose Tageskosten</span>
+                            <span class="result-value val-green">${estimated24hCost.toFixed(2)} €</span>
+                        </div>
+                    </div>
+                    <p style="font-size:12px; color:#7f8c8d; margin-top:15px; text-align:center;">
+                        *Die Tageskosten beinhalten den eingegebenen Arbeitspreis sowie den anteiligen täglichen Grundpreis.
+                    </p>
+                </div>
+            `;
+
+            document.getElementById('output').innerHTML = logHtml;
+        }
+    </script>
+</body>
+</html>
