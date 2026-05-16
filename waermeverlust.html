@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Wärmeverlust- & Gebäude-Analyse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-cream:        #fdf8f3;
+            --bg-peach:        #fbeede;
+            --bg-card:         #ffffff;
+            --bg-card-soft:    #fffbf6;
+            --bg-tint:         #f7f1ea;
+
+            --ink-900:         #1a1410;
+            --ink-700:         #3b2e26;
+            --ink-500:         #6b574a;
+            --ink-400:         #8c7a6c;
+            --ink-300:         #b8a89a;
+
+            --ember:           #ea580c;
+            --ember-dark:      #c2410c;
+            --ember-light:     #fff1e6;
+            --ember-glow:      rgba(234, 88, 12, 0.18);
+
+            --teal:            #0e7490;
+            --teal-dark:       #155e75;
+            --teal-light:      #ecfeff;
+
+            --forest:          #15803d;
+            --forest-light:    #e6f7ec;
+
+            --amber:           #b45309;
+            --amber-light:     #fef3c7;
+
+            --rose:            #be123c;
+            --rose-light:      #ffe4e6;
+
+            --violet:          #7c3aed;
+            --violet-light:    #f3e8ff;
+
+            --border:          #ebe2d6;
+            --border-strong:   #d9cab8;
+
+            --shadow-xs: 0 1px 2px rgba(120, 60, 20, 0.04);
+            --shadow-sm: 0 2px 6px rgba(120, 60, 20, 0.06), 0 1px 2px rgba(120, 60, 20, 0.04);
+            --shadow-md: 0 6px 16px rgba(120, 60, 20, 0.08), 0 2px 4px rgba(120, 60, 20, 0.06);
+            --shadow-lg: 0 18px 40px rgba(120, 60, 20, 0.10), 0 4px 12px rgba(120, 60, 20, 0.06);
+            --shadow-ember: 0 8px 24px rgba(234, 88, 12, 0.25);
+            --shadow-violet: 0 8px 24px rgba(124, 58, 237, 0.22);
+
+            --font-display: 'Bricolage Grotesque', 'Manrope', system-ui, sans-serif;
+            --font-body:    'Manrope', system-ui, -apple-system, sans-serif;
+            --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+
+            --r-sm: 8px;
+            --r-md: 12px;
+            --r-lg: 18px;
+            --r-xl: 24px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+
+        body {
+            font-family: var(--font-body);
+            color: var(--ink-900);
+            background:
+                radial-gradient(1200px 600px at 90% -10%, rgba(234, 88, 12, 0.10), transparent 60%),
+                radial-gradient(1000px 500px at -5% 10%, rgba(14, 116, 144, 0.08), transparent 60%),
+                linear-gradient(180deg, var(--bg-cream) 0%, var(--bg-peach) 100%);
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            font-size: 16px;
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.4;
+            z-index: 0;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.3  0 0 0 0 0.1  0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: clamp(20px, 4vw, 48px) clamp(14px, 3vw, 32px) 80px;
+        }
+
+        /* HEADER */
+        .hero {
+            text-align: center;
+            margin-bottom: clamp(28px, 5vw, 48px);
+            animation: fadeUp 0.6s ease-out both;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ember-dark);
+            background: var(--ember-light);
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(234, 88, 12, 0.2);
+            margin-bottom: 18px;
+        }
+        .hero-eyebrow .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--ember);
+            box-shadow: 0 0 0 3px var(--ember-glow);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        h1.hero-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: clamp(32px, 6vw, 54px);
+            line-height: 1.05;
+            letter-spacing: -0.025em;
+            color: var(--ink-900);
+            margin: 0 0 14px;
+        }
+        h1.hero-title .accent {
+            background: linear-gradient(135deg, var(--ember) 0%, var(--ember-dark) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-style: italic;
+            display: inline-block;
+            padding-right: 0.12em;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(15px, 2vw, 17px);
+            color: var(--ink-500);
+            max-width: 580px;
+            margin: 0 auto 24px;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+            border: 1.5px solid var(--ink-900);
+            background: transparent;
+            color: var(--ink-900);
+        }
+        .btn-pill:hover {
+            transform: translateY(-2px);
+            background: var(--ink-900);
+            color: var(--bg-cream);
+            box-shadow: var(--shadow-md);
+        }
+        .btn-pill.danger {
+            border-color: var(--rose);
+            color: var(--rose);
+        }
+        .btn-pill.danger:hover {
+            background: var(--rose);
+            color: #fff;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--r-xl);
+            padding: clamp(20px, 3vw, 32px);
+            margin-bottom: clamp(18px, 2.5vw, 28px);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            animation: fadeUp 0.6s ease-out both;
+        }
+        .card:nth-of-type(2) { animation-delay: 0.05s; }
+        .card:nth-of-type(3) { animation-delay: 0.10s; }
+        .card:nth-of-type(4) { animation-delay: 0.15s; }
+        .card:nth-of-type(5) { animation-delay: 0.20s; }
+        .card:nth-of-type(6) { animation-delay: 0.25s; }
+
+        /* Scenario card accent */
+        .card.scenario {
+            border-top: 4px solid transparent;
+            background:
+                linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+                linear-gradient(135deg, var(--violet) 0%, var(--ember) 100%) border-box;
+            border: 2px solid transparent;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .card-number {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ember);
+            background: var(--ember-light);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .card.scenario .card-number {
+            color: var(--violet);
+            background: var(--violet-light);
+        }
+
+        .card h3 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: clamp(19px, 2.4vw, 23px);
+            color: var(--ink-900);
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+        .card-sub {
+            font-size: 14px;
+            color: var(--ink-500);
+            margin: 0 0 18px;
+        }
+
+        /* FORM */
+        .grid-settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink-700);
+            margin-bottom: 8px;
+            letter-spacing: 0.01em;
+        }
+
+        .input-group .hint {
+            font-size: 11.5px;
+            color: var(--ink-500);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            font-family: var(--font-mono);
+            font-size: 15px;
+            font-weight: 500;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            background: var(--bg-card-soft);
+            color: var(--ink-900);
+            width: 100%;
+            transition: all 0.18s ease;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"]:hover,
+        input[type="text"]:hover { border-color: var(--border-strong); }
+        input[type="number"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--ember);
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--ember-glow);
+        }
+        .card.scenario input[type="number"]:focus,
+        .card.scenario input[type="text"]:focus {
+            border-color: var(--violet);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
+        }
+
+        /* SELECT dropdown */
+        select {
+            font-family: var(--font-body);
+            font-size: 14.5px;
+            font-weight: 500;
+            padding: 12px 40px 12px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            background-color: var(--bg-card-soft);
+            color: var(--ink-900);
+            width: 100%;
+            transition: all 0.18s ease;
+            cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b574a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 14px;
+            line-height: 1.3;
+        }
+        select:hover { border-color: var(--border-strong); }
+        select:focus {
+            outline: none;
+            border-color: var(--ember);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px var(--ember-glow);
+        }
+
+        /* TABLE */
+        .table-wrap {
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            background: var(--bg-card-soft);
+        }
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        thead {
+            background: linear-gradient(180deg, var(--bg-tint) 0%, var(--bg-card-soft) 100%);
+        }
+
+        th {
+            padding: 14px 12px;
+            text-align: center;
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink-700);
+            border-bottom: 1.5px solid var(--border);
+            white-space: nowrap;
+        }
+        th:first-child { padding-left: 18px; }
+
+        th .th-sub {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--ink-500);
+            margin-top: 3px;
+            letter-spacing: 0.04em;
+        }
+        th.th-kessel,
+        th.th-stufe {
+            background: linear-gradient(180deg, rgba(124, 58, 237, 0.08) 0%, transparent 100%);
+        }
+        th.th-kessel .th-sub,
+        th.th-stufe .th-sub {
+            color: var(--violet);
+        }
+        td.td-kessel,
+        td.td-stufe {
+            background: rgba(124, 58, 237, 0.025);
+        }
+        tbody tr:hover td.td-kessel,
+        tbody tr:hover td.td-stufe { background: rgba(124, 58, 237, 0.06); }
+
+        td {
+            padding: 8px 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: var(--bg-card-soft); }
+
+        .hour-badge {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ember);
+            background: var(--ember-light);
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        td input[type="number"],
+        td input[type="text"] {
+            width: 78px;
+            padding: 9px 6px;
+            text-align: center;
+            font-size: 13.5px;
+        }
+
+        /* HEATING CURVE TABLE - styled data table */
+        .curve-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 580px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+        .curve-table th {
+            background: var(--ink-900);
+            color: var(--bg-cream);
+            font-family: var(--font-body);
+            padding: 10px 12px;
+        }
+        .curve-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .curve-table td.outT {
+            font-weight: 700;
+            color: var(--ink-900);
+            background: var(--bg-card-soft);
+        }
+        .curve-table td.off {
+            color: var(--ink-400);
+            font-style: italic;
+        }
+        .curve-table tr:hover td { background: var(--ember-light); }
+        .curve-table tr:hover td.outT { background: var(--ember-light); }
+
+        /* PRIMARY BUTTON */
+        .btn-calc {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--ember) 0%, var(--ember-dark) 100%);
+            color: #fff;
+            border: none;
+            padding: 16px 28px;
+            border-radius: var(--r-md);
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.005em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 22px;
+            box-shadow: var(--shadow-ember);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+        }
+        .btn-calc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 32px rgba(234, 88, 12, 0.35);
+            filter: brightness(1.05);
+        }
+        .btn-calc:active { transform: translateY(0); }
+
+        .btn-calc.violet {
+            background: linear-gradient(135deg, var(--violet) 0%, #5b21b6 100%);
+            box-shadow: var(--shadow-violet);
+        }
+        .btn-calc.violet:hover {
+            box-shadow: 0 14px 32px rgba(124, 58, 237, 0.35);
+        }
+
+        /* OUTPUT */
+        .output-placeholder {
+            text-align: center;
+            color: var(--ink-500);
+            font-style: italic;
+            padding: 32px 16px;
+            background: var(--bg-card-soft);
+            border-radius: var(--r-lg);
+            border: 1px dashed var(--border-strong);
+        }
+
+        .log-details {
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            line-height: 1.7;
+            color: var(--ink-700);
+            background: var(--bg-card-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 16px 18px;
+            margin-bottom: 22px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .log-details strong { color: var(--ink-900); }
+        .ignored-row { color: var(--ink-400); font-style: italic; }
+
+        .summary-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: clamp(18px, 2.5vw, 26px);
+            margin-bottom: 18px;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+        .summary-box::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--teal) 0%, var(--ember) 100%);
+            border-radius: var(--r-lg) var(--r-lg) 0 0;
+        }
+        .summary-box.building::before {
+            background: linear-gradient(90deg, var(--ember) 0%, var(--rose) 100%);
+        }
+        .summary-box.scenario-result::before {
+            background: linear-gradient(90deg, var(--violet) 0%, var(--ember) 100%);
+        }
+
+        .summary-box h4 {
+            font-family: var(--font-display);
+            font-size: clamp(18px, 2.3vw, 22px);
+            font-weight: 700;
+            color: var(--ink-900);
+            margin: 0 0 6px;
+            letter-spacing: -0.01em;
+        }
+        .summary-box .summary-intro {
+            font-size: 14px;
+            color: var(--ink-500);
+            margin: 0 0 18px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+        }
+
+        .result-item {
+            background: var(--bg-card-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            padding: 16px 14px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+        .result-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+            border-color: var(--border-strong);
+        }
+        .result-item.highlight {
+            background: linear-gradient(135deg, var(--violet-light) 0%, var(--ember-light) 100%);
+            border-color: rgba(124, 58, 237, 0.25);
+        }
+
+        .result-label {
+            display: block;
+            font-family: var(--font-body);
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-500);
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-family: var(--font-mono);
+            font-size: clamp(22px, 3.2vw, 28px);
+            font-weight: 700;
+            color: var(--ink-900);
+            line-height: 1.1;
+            display: block;
+            letter-spacing: -0.02em;
+        }
+        .result-value .unit {
+            font-size: 0.55em;
+            font-weight: 500;
+            color: var(--ink-500);
+            margin-left: 3px;
+        }
+
+        .result-sub {
+            display: block;
+            font-size: 12px;
+            color: var(--ink-500);
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .val-ember { color: var(--ember-dark); }
+        .val-teal  { color: var(--teal-dark); }
+        .val-forest{ color: var(--forest); }
+        .val-rose  { color: var(--rose); }
+        .val-violet{ color: var(--violet); }
+
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 22px 0 14px;
+        }
+        .section-divider::before,
+        .section-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .section-divider span {
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-500);
+        }
+
+        /* EFFICIENCY BADGE */
+        .ef-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            padding: 4px 14px;
+            border-radius: 999px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 16px;
+            margin-top: 4px;
+        }
+        .ef-aplus { background: #00863d; color: #fff; }
+        .ef-a     { background: #2dab48; color: #fff; }
+        .ef-b     { background: #88be2c; color: #1a1410; }
+        .ef-c     { background: #f3d911; color: #1a1410; }
+        .ef-d     { background: #f7a823; color: #1a1410; }
+        .ef-e     { background: #ed6f1c; color: #fff; }
+        .ef-f     { background: #d63016; color: #fff; }
+        .ef-g     { background: #ac1015; color: #fff; }
+        .ef-h     { background: #6b0d11; color: #fff; }
+
+        /* WARNINGS */
+        .warning-box {
+            display: flex;
+            gap: 10px;
+            background: var(--amber-light);
+            border: 1px solid #f5deb3;
+            border-left: 4px solid var(--amber);
+            padding: 12px 16px;
+            border-radius: var(--r-md);
+            font-size: 13.5px;
+            color: var(--ink-900);
+            margin-top: 14px;
+            line-height: 1.55;
+        }
+        .warning-box .icon {
+            flex-shrink: 0;
+            color: var(--amber);
+            font-weight: 800;
+        }
+        .warning-box.danger {
+            background: var(--rose-light);
+            border-color: #fbb6ce;
+            border-left-color: var(--rose);
+        }
+        .warning-box.danger .icon { color: var(--rose); }
+        .warning-box.info {
+            background: var(--teal-light);
+            border-color: #b6e3eb;
+            border-left-color: var(--teal);
+        }
+        .warning-box.info .icon { color: var(--teal); }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(26, 20, 16, 0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            padding: clamp(12px, 3vw, 40px);
+            overflow-y: auto;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal-content {
+            background: var(--bg-card);
+            margin: auto;
+            padding: clamp(20px, 4vw, 40px);
+            border-radius: var(--r-xl);
+            width: 100%;
+            max-width: 780px;
+            max-height: calc(100dvh - 40px);
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-content h2 {
+            font-family: var(--font-display);
+            font-size: clamp(22px, 3.5vw, 30px);
+            font-weight: 700;
+            color: var(--ink-900);
+            margin: 0 0 6px;
+            letter-spacing: -0.02em;
+            padding-right: 40px;
+        }
+        .modal-content .modal-lead {
+            font-size: 15px;
+            color: var(--ink-500);
+            margin: 0 0 24px;
+        }
+
+        .modal-content h3 {
+            font-family: var(--font-display);
+            font-size: clamp(17px, 2.5vw, 20px);
+            font-weight: 700;
+            color: var(--ink-900);
+            margin: 28px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: none;
+        }
+        .modal-content h3 .num {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--ember);
+            background: var(--ember-light);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        .modal-content p,
+        .modal-content ul,
+        .modal-content li {
+            font-size: 14.5px;
+            line-height: 1.65;
+            color: var(--ink-700);
+        }
+        .modal-content ul { padding-left: 22px; }
+        .modal-content li { margin-bottom: 4px; }
+        .modal-content strong { color: var(--ink-900); }
+
+        .formula-box {
+            background: linear-gradient(135deg, var(--ink-900) 0%, #2a1f17 100%);
+            padding: 18px 20px;
+            border-radius: var(--r-md);
+            font-family: var(--font-mono);
+            text-align: center;
+            font-size: clamp(13px, 2vw, 16px);
+            font-weight: 500;
+            color: var(--bg-cream);
+            margin: 14px 0;
+            overflow-x: auto;
+            box-shadow: var(--shadow-sm);
+        }
+        .formula-box .var {
+            color: var(--ember-light);
+            font-weight: 700;
+        }
+
+        .ef-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 13.5px;
+            border-radius: var(--r-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .ef-table th,
+        .ef-table td {
+            padding: 9px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .ef-table th {
+            background: var(--bg-tint);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ink-700);
+        }
+        .ef-table tr:last-child td { border-bottom: none; }
+        .ef-table td:first-child { text-align: center; width: 70px; }
+
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-tint);
+            color: var(--ink-700);
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.18s, color 0.18s, transform 0.18s;
+        }
+        .close-btn:hover {
+            background: var(--ink-900);
+            color: var(--bg-cream);
+            transform: rotate(90deg);
+        }
+
+        /* SAVE INDICATOR */
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--ink-900);
+            color: var(--bg-cream);
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.25s, transform 0.25s;
+            pointer-events: none;
+            z-index: 999;
+            box-shadow: var(--shadow-md);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .save-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .save-indicator .check {
+            width: 16px; height: 16px;
+            background: var(--forest);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 3px var(--ember-glow); }
+            50%      { box-shadow: 0 0 0 6px rgba(234, 88, 12, 0.08); }
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* BREAKPOINTS */
+        @media (max-width: 768px) {
+            .grid-settings {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 14px;
+            }
+            .result-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            td input[type="number"],
+            td input[type="text"] {
+                width: 68px;
+                font-size: 12.5px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .container { padding: 16px 12px 60px; }
+            .grid-settings { grid-template-columns: 1fr; }
+            .result-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .card { border-radius: var(--r-lg); }
+            .card-header { flex-wrap: wrap; gap: 10px; }
+            .hero-actions { gap: 8px; }
+            .btn-pill { padding: 9px 16px; font-size: 13px; }
+            th { padding: 12px 8px; font-size: 11px; }
+            th:first-child { padding-left: 12px; }
+            td { padding: 6px 6px; }
+            td input[type="number"],
+            td input[type="text"] {
+                width: 58px;
+                padding: 7px 3px;
+                font-size: 12px;
+            }
+            .hour-badge {
+                width: 26px; height: 26px;
+                font-size: 11.5px;
+            }
+            .summary-box .summary-intro { font-size: 13.5px; }
+            .save-indicator {
+                bottom: 12px;
+                right: 12px;
+                font-size: 12px;
+                padding: 8px 14px;
+            }
+            .modal-content { padding: 24px 18px; }
+            .formula-box {
+                padding: 14px 12px;
+                font-size: 12.5px;
+            }
+            .ef-table th, .ef-table td {
+                padding: 7px 8px;
+                font-size: 12.5px;
+            }
+            .curve-table { font-size: 12px; }
+            .curve-table th, .curve-table td { padding: 7px 8px; }
+        }
+
+        @media (max-width: 360px) {
+            .result-grid { grid-template-columns: 1fr; }
+            .result-value { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <header class="hero">
+            <div class="hero-eyebrow"><span class="dot"></span> Heizungs-Telemetrie</div>
+            <h1 class="hero-title">Wärmeverlust- &amp; <span class="accent">Gebäude-Analyse</span></h1>
+            <p class="hero-subtitle">
+                Aus deinen Heizungsdaten den thermischen Fingerabdruck deines Gebäudes berechnen –
+                inklusive Energieeffizienzklasse, Normheizlast, Jahresprognose und „Was-wäre-wenn"-Szenarien.
+            </p>
+            <div class="hero-actions">
+                <button class="btn-pill" onclick="openModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    Info &amp; Formeln
+                </button>
+                <button class="btn-pill danger" onclick="resetAll()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    Zurücksetzen
+                </button>
+            </div>
+        </header>
+
+        <section class="card">
+            <div class="card-header">
+                <span class="card-number">01</span>
+                <h3>Tarife &amp; Heizungsanlage</h3>
+            </div>
+            <div class="grid-settings">
+                <div class="input-group">
+                    <label for="gasprice">Arbeitspreis Gas <span style="opacity:.6">(ct/kWh)</span></label>
+                    <input type="number" id="gasprice" value="11.84" step="0.01" inputmode="decimal">
+                </div>
+                <div class="input-group">
+                    <label for="baseprice">Grundpreis Gas <span style="opacity:.6">(€/Jahr)</span></label>
+                    <input type="number" id="baseprice" value="128.52" step="0.01" inputmode="decimal">
+                </div>
+                <div class="input-group">
+                    <label for="efficiency">Kessel-Wirkungsgrad <span style="opacity:.6">(%)</span></label>
+                    <input type="number" id="efficiency" value="95" step="1" min="50" max="110" inputmode="numeric">
+                    <span class="hint">Brennwertkessel: 95–105 %</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <span class="card-number">02</span>
+                <h3>Standort &amp; Klima</h3>
+            </div>
+            <p class="card-sub">
+                Wähle deine Klimaregion — Norm-Außentemperatur und Heizgradtage werden automatisch passend gesetzt.
+                Mit „Eigene Werte" kannst du beides frei eingeben.
+            </p>
+            <div class="grid-settings">
+                <div class="input-group" style="grid-column: 1 / -1;">
+                    <label for="region">Klimaregion</label>
+                    <select id="region" onchange="applyRegion()"></select>
+                </div>
+                <div class="input-group">
+                    <label for="normaussen">Norm-Außentemperatur <span style="opacity:.6">(°C)</span></label>
+                    <input type="number" id="normaussen" value="-10" step="1" inputmode="decimal">
+                    <span class="hint">DIN EN 12831 für deine Region</span>
+                </div>
+                <div class="input-group">
+                    <label for="hgt">Heizgradtage <span style="opacity:.6">(Kd/Jahr)</span></label>
+                    <input type="number" id="hgt" value="3500" step="100" inputmode="numeric">
+                    <span class="hint">Klimatisches Jahresmittel</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <span class="card-number">03</span>
+                <h3>Gebäude &amp; Nutzung</h3>
+            </div>
+            <p class="card-sub">
+                Eigenschaften deines Gebäudes und deines Nutzungsverhaltens. Die Profile beeinflussen Jahresprognose
+                und Szenarien — die direkt gemessenen Werte bleiben unverändert.
+            </p>
+            <div class="grid-settings">
+                <div class="input-group">
+                    <label for="sqm">Wohnungsgröße <span style="opacity:.6">(m²)</span></label>
+                    <input type="number" id="sqm" value="65" step="1" inputmode="numeric">
+                </div>
+                <div class="input-group">
+                    <label for="sollinnen">Soll-Innentemperatur <span style="opacity:.6">(°C)</span></label>
+                    <input type="number" id="sollinnen" value="22" step="0.5" inputmode="decimal">
+                    <span class="hint">Typisch 20–22 °C</span>
+                </div>
+                <div class="input-group">
+                    <label for="ventilation">Lüftungs-Profil</label>
+                    <select id="ventilation"></select>
+                    <span class="hint">Beeinflusst Jahresprognose</span>
+                </div>
+                <div class="input-group">
+                    <label for="solar">Solar-Profil <span style="opacity:.6">(Fenster &amp; Lage)</span></label>
+                    <select id="solar"></select>
+                    <span class="hint">Beeinflusst Jahresprognose</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <span class="card-number">04</span>
+                <h3>Messreihe</h3>
+            </div>
+            <p class="card-sub">
+                Trag deine Messwerte ein – schon <strong>eine</strong> Zeile genügt. Leere Felder werden ignoriert.
+                Für den UA-Wert werden zusätzlich Innen- und Außentemperatur benötigt.
+                Die <strong style="color: var(--violet)">Kessel-Spalten</strong> sind optional — wenn ausgefüllt, wird zusätzlich der Leitungsverlust zwischen Kessel und Verteiler ermittelt.
+                Die <strong style="color: var(--violet)">Mischer-Stufe</strong> ist ebenfalls optional — wenn ausgefüllt (zusammen mit Kessel-VL), wird die Mischer-Skala empirisch kalibriert für präzisere Szenarien.
+                Komma oder Punkt als Dezimaltrenner.
+            </p>
+            <div class="table-wrap">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Std.</th>
+                                <th>Außen<span class="th-sub">°C</span></th>
+                                <th>Innen<span class="th-sub">°C</span></th>
+                                <th>Vorlauf<span class="th-sub">Verteiler °C</span></th>
+                                <th>Rücklauf<span class="th-sub">Verteiler °C</span></th>
+                                <th class="th-kessel">Vorlauf<span class="th-sub">Kessel °C (opt.)</span></th>
+                                <th class="th-kessel">Rücklauf<span class="th-sub">Kessel °C (opt.)</span></th>
+                                <th>Durchfluss<span class="th-sub">l/h</span></th>
+                                <th class="th-stufe">Mischer<span class="th-sub">Stufe 1–10 (opt.)</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="hourlyData"></tbody>
+                    </table>
+                </div>
+            </div>
+            <button class="btn-calc" onclick="calculate()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                Messreihe &amp; Gebäude auswerten
+            </button>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <span class="card-number">05</span>
+                <h3>Auswertung</h3>
+            </div>
+            <div id="output">
+                <div class="output-placeholder">
+                    Klicke auf <strong>"Messreihe auswerten"</strong>, um deine Ergebnisse hier zu sehen.
+                </div>
+            </div>
+        </section>
+
+        <section class="card scenario">
+            <div class="card-header">
+                <span class="card-number">06</span>
+                <h3>Szenario-Rechner · Was wäre wenn?</h3>
+            </div>
+            <p class="card-sub">
+                Spiele durch, was bei <strong>anderen Wunschtemperaturen</strong>, <strong>anderem Wetter</strong> oder <strong>anderem Durchfluss</strong> (z. B. andere Pumpenleistung) passieren würde:
+                benötigte Vorlauftemperatur, Mischerstellung und erwartete Kosten. Voraussetzung: die Messreihe oben wurde mindestens einmal ausgewertet.
+            </p>
+            <div class="grid-settings">
+                <div class="input-group">
+                    <label for="scen_innen">Wunsch-Innentemperatur <span style="opacity:.6">(°C)</span></label>
+                    <input type="number" id="scen_innen" value="22" step="0.5" inputmode="decimal">
+                    <span class="hint">Was soll's drinnen sein?</span>
+                </div>
+                <div class="input-group">
+                    <label for="scen_aussen">Außentemperatur <span style="opacity:.6">(°C)</span></label>
+                    <input type="number" id="scen_aussen" value="0" step="1" inputmode="decimal">
+                    <span class="hint">Erwartete Außentemperatur</span>
+                </div>
+                <div class="input-group">
+                    <label for="scen_kvl">Kessel-Vorlauf <span style="opacity:.6">(°C)</span></label>
+                    <input type="number" id="scen_kvl" value="50" step="1" inputmode="numeric">
+                    <span class="hint">Auto-Übernahme aus Messreihe wenn dort eingetragen</span>
+                </div>
+                <div class="input-group">
+                    <label for="scen_stufe">Aktuelle Mischer-Stufe <span style="opacity:.6">(1–10)</span></label>
+                    <input type="number" id="scen_stufe" value="2.5" step="0.5" min="0" max="10" inputmode="decimal">
+                    <span class="hint">Fallback wenn Messreihe keine Mischer-Stufen enthält</span>
+                </div>
+                <div class="input-group">
+                    <label for="scen_flow">Durchfluss <span style="opacity:.6">(l/h)</span></label>
+                    <input type="number" id="scen_flow" value="450" step="10" inputmode="numeric">
+                    <span class="hint">Auto-Übernahme aus Messreihe · änderbar für Pumpen-Szenarien</span>
+                </div>
+            </div>
+            <button class="btn-calc violet" onclick="calculateScenario()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3v5h-5"></path><path d="M3 21v-5h5"></path><path d="M21 8a9 9 0 0 0-15.5-3.5L3 8"></path><path d="M3 16a9 9 0 0 0 15.5 3.5L21 16"></path></svg>
+                Szenario berechnen
+            </button>
+            <div id="scenarioOutput" style="margin-top: 22px;">
+                <div class="output-placeholder">
+                    Klicke auf <strong>"Szenario berechnen"</strong> für deine „Was-wäre-wenn"-Analyse.
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- MODAL -->
+    <div id="infoModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()" aria-label="Schließen">×</button>
+
+            <h2 id="modalTitle">Wie funktioniert dieses Programm?</h2>
+            <p class="modal-lead">
+                Das Tool ist ein <strong>digitaler Zwilling</strong> deiner Heizung und deines Gebäudes.
+                Aus deinen Messwerten ermittelt es die abgegebene Heizleistung, leitet daraus den
+                thermischen Fingerabdruck der Wohnung ab und macht eine energetische Gesamteinordnung möglich.
+                Mit dem Szenario-Rechner kannst du durchspielen, was bei anderen Wunschtemperaturen oder
+                Wetter passieren würde.
+            </p>
+
+            <h3><span class="num">01</span> Heizleistung Q</h3>
+            <div class="formula-box">
+                <span class="var">Q</span> [kW] = <span class="var">Durchfluss</span> [l/h] · 1,16 · (<span class="var">V<sub>L</sub></span> − <span class="var">R<sub>L</sub></span>) / 1000
+            </div>
+            <p>
+                Die zentrale thermodynamische Gleichung: Wärmeleistung = Massenstrom · Wärmekapazität · Temperaturspreizung.
+                Der Faktor <strong>1,16 Wh/(l·K)</strong> kombiniert die spez. Wärmekapazität und die Dichte von Wasser.
+                Ergebnis: wieviel Wärme das Wasser <strong>pro Stunde an den Estrich abgibt</strong>.
+            </p>
+
+            <h3><span class="num">02</span> UA-Wert — der Fingerabdruck</h3>
+            <div class="formula-box">
+                <span class="var">UA</span> [W/K] = <span class="var">Q</span> [W] / (<span class="var">T<sub>innen</sub></span> − <span class="var">T<sub>außen</sub></span>)
+            </div>
+            <p>
+                Die wichtigste Gebäude-Kennzahl: <em>Wieviel Watt brauche ich, um meine Wohnung um 1 K
+                wärmer als draußen zu halten?</em> Je kleiner, desto besser die Dämmung. Der UA-Wert ist
+                im stationären Zustand <strong>weitgehend unabhängig von der jeweiligen Außentemperatur</strong> —
+                genau das macht ihn so robust für den Gebäudevergleich.
+            </p>
+
+            <h3><span class="num">03</span> Spezifischer UA-Wert</h3>
+            <div class="formula-box">
+                <span class="var">UA<sub>spez</sub></span> [W/m²K] = <span class="var">UA</span> / <span class="var">Fläche</span>
+            </div>
+            <p>UA pro Quadratmeter macht Gebäude unterschiedlicher Größe vergleichbar:</p>
+            <ul>
+                <li><strong>&lt; 0,5</strong> → Passivhaus-Niveau</li>
+                <li><strong>0,5–1,0</strong> → moderner Neubau / gut saniert</li>
+                <li><strong>1,0–1,5</strong> → mittelmäßig gedämmt</li>
+                <li><strong>1,5–2,0</strong> → mäßig gedämmter Altbau</li>
+                <li><strong>&gt; 2,0</strong> → energetisch sanierungsbedürftig</li>
+            </ul>
+
+            <h3><span class="num">04</span> Normheizlast</h3>
+            <div class="formula-box">
+                <span class="var">P<sub>Norm</sub></span> [kW] = <span class="var">UA</span> · (<span class="var">T<sub>innen,soll</sub></span> − <span class="var">T<sub>außen,norm</sub></span>) / 1000
+            </div>
+            <p>
+                Die <strong>maximale Heizleistung</strong>, die du an einem sehr kalten Tag (Norm-Außentemperatur
+                deiner Region, z. B. −12 °C) brauchst. Wichtig für die Auslegung von Kessel oder Wärmepumpe.
+            </p>
+
+            <h3><span class="num">05</span> Jahres-Heizwärmebedarf</h3>
+            <div class="formula-box">
+                <span class="var">Q<sub>Jahr</sub></span> [kWh/a] = <span class="var">UA</span> · <span class="var">HGT</span> · 24 / 1000
+            </div>
+            <p>
+                Die <strong>Heizgradtage (HGT)</strong> fassen das Klima eines ganzen Jahres in einer einzigen Zahl
+                zusammen — sie sind die Summe der täglichen Temperaturdifferenzen (20 °C minus Tagesmitteltemperatur)
+                über alle Heiztage. Für Deutschland im Mittel ca. <strong>3500 Kd/Jahr</strong>, regional zwischen
+                2700 (mildes Klima) und 4500 (Bergregionen).
+            </p>
+
+            <h3><span class="num">06</span> Energieeffizienzklasse</h3>
+            <p>
+                Der spezifische Jahresverbrauch (kWh pro m² und Jahr) wird in die Klassen des Energieausweises eingeordnet:
+            </p>
+            <table class="ef-table">
+                <thead>
+                    <tr><th>Klasse</th><th>kWh/m²·a</th><th>Einordnung</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="ef-badge ef-aplus">A+</span></td><td>&lt; 30</td><td>Passivhaus</td></tr>
+                    <tr><td><span class="ef-badge ef-a">A</span></td><td>30–50</td><td>Effizienzhaus 55</td></tr>
+                    <tr><td><span class="ef-badge ef-b">B</span></td><td>50–75</td><td>Effizienzhaus 70 / KfW</td></tr>
+                    <tr><td><span class="ef-badge ef-c">C</span></td><td>75–100</td><td>Neubau-Standard</td></tr>
+                    <tr><td><span class="ef-badge ef-d">D</span></td><td>100–130</td><td>Gut sanierter Altbau</td></tr>
+                    <tr><td><span class="ef-badge ef-e">E</span></td><td>130–160</td><td>Teilsanierter Altbau</td></tr>
+                    <tr><td><span class="ef-badge ef-f">F</span></td><td>160–200</td><td>Typischer Altbau</td></tr>
+                    <tr><td><span class="ef-badge ef-g">G</span></td><td>200–250</td><td>Schlecht gedämmt</td></tr>
+                    <tr><td><span class="ef-badge ef-h">H</span></td><td>&gt; 250</td><td>Sanierungsbedürftig</td></tr>
+                </tbody>
+            </table>
+
+            <h3><span class="num">07</span> Klimazone &amp; Standort</h3>
+            <p>
+                Norm-Außentemperatur und Heizgradtage hängen stark vom Standort ab. Die Auswahl entspricht
+                den deutschen Klimazonen nach <strong>DIN EN 12831</strong> und <strong>DIN V 4710-2</strong>, vereinfacht zu 11 typischen Regionen:
+            </p>
+            <table class="ef-table">
+                <thead>
+                    <tr><th>Region</th><th>NAT</th><th>HGT</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Nordsee / Küste</td><td>−10 °C</td><td>3100 Kd</td></tr>
+                    <tr><td>Norddeutschland</td><td>−10 °C</td><td>3300 Kd</td></tr>
+                    <tr><td><strong>Münsterland (Hörstel)</strong></td><td>−10 °C</td><td>3500 Kd</td></tr>
+                    <tr><td>Rheinland (Köln)</td><td>−10 °C</td><td>3200 Kd</td></tr>
+                    <tr><td>Berlin / Brandenburg</td><td>−14 °C</td><td>3600 Kd</td></tr>
+                    <tr><td>Mitteldeutschland</td><td>−12 °C</td><td>3500 Kd</td></tr>
+                    <tr><td>Mittelgebirge</td><td>−14 °C</td><td>3900 Kd</td></tr>
+                    <tr><td>Rhein-Main / Oberrhein</td><td>−12 °C</td><td>3200 Kd</td></tr>
+                    <tr><td>Süddeutschland</td><td>−14 °C</td><td>3700 Kd</td></tr>
+                    <tr><td>Bayern / Alpenvorland</td><td>−16 °C</td><td>3900 Kd</td></tr>
+                    <tr><td>Alpenrand / Hochlagen</td><td>−18 °C</td><td>4500 Kd</td></tr>
+                </tbody>
+            </table>
+            <p style="font-size: 13px; color: var(--ink-500);">
+                Bei „Eigene Werte" können beide Felder frei eingegeben werden — z. B. wenn der lokale Wetterdienst exaktere Daten liefert.
+            </p>
+
+            <h3><span class="num">08</span> Nutzungsprofile · Lüftung &amp; Solar</h3>
+            <p>
+                Der gemessene UA-Wert spiegelt deine reale Mess-Situation. Mit den Profilen kannst du <strong>Was-wäre-wenn-Annahmen</strong>
+                durchspielen — z. B. „mehr Lüftung" oder „weniger Sonne". Die Faktoren wirken auf Jahresprognose, Normheizlast und Szenarien;
+                die direkt gemessenen Werte (Heizleistung, UA, Spreizung) bleiben unverändert.
+            </p>
+            <div class="formula-box">
+                <span class="var">UA<sub>effektiv</sub></span> = <span class="var">UA<sub>gemessen</sub></span> · <span class="var">f<sub>Lüftung</sub></span> · <span class="var">f<sub>Solar</sub></span>
+            </div>
+            <p><strong>Lüftungs-Profile</strong> (typische Annahmen):</p>
+            <ul>
+                <li><strong>Sparsam</strong> — Stoßlüften 1–2× täglich → Faktor 0,92</li>
+                <li><strong>Normal</strong> — wie bei der Messung → Faktor 1,00</li>
+                <li><strong>Mehr als normal</strong> — oft offene Fenster → Faktor 1,15</li>
+                <li><strong>Dauerkippe / Dauerlüftung</strong> → Faktor 1,40</li>
+            </ul>
+            <p><strong>Solar-Profile</strong> (Fenster, Ausrichtung, Verschattung):</p>
+            <ul>
+                <li><strong>Viel Sonne</strong> — große Südfenster → Faktor 1,00</li>
+                <li><strong>Normal</strong> — gemischte Ausrichtung → Faktor 1,05</li>
+                <li><strong>Wenig Sonne</strong> — Nord-/Ostlage, verschattet → Faktor 1,10</li>
+            </ul>
+
+            <h3><span class="num">09</span> Szenario-Rechner — Vorlauf, Mischer &amp; Durchfluss</h3>
+            <p>
+                Aus der Messreihe wird zusätzlich der <strong>Estrich-Wärmeübergang K</strong> [W/K] ermittelt:
+            </p>
+            <div class="formula-box">
+                <span class="var">K<sub>Estrich</sub></span> [W/K] = <span class="var">Q</span> [W] / ((<span class="var">V<sub>L</sub></span> + <span class="var">R<sub>L</sub></span>)/2 − <span class="var">T<sub>innen</sub></span>)
+            </div>
+            <p>Damit kann das Tool für jede Wunsch-Kombination die optimale Vorlauftemperatur berechnen:</p>
+            <ul>
+                <li><strong>Q<sub>nötig</sub></strong> = UA<sub>effektiv</sub> · (T<sub>wunsch</sub> − T<sub>außen</sub>)</li>
+                <li><strong>T<sub>estrich</sub></strong> = T<sub>wunsch</sub> + Q / K</li>
+                <li><strong>ΔT<sub>Wasser</sub></strong> = Q / (Durchfluss · 1,16) — abhängig vom gewählten Durchfluss</li>
+                <li><strong>Vorlauf</strong> = T<sub>estrich</sub> + ΔT<sub>Wasser</sub> / 2</li>
+                <li><strong>Rücklauf</strong> = T<sub>estrich</sub> − ΔT<sub>Wasser</sub> / 2</li>
+            </ul>
+            <p>
+                Die Mischer-Stufe wird über das Mischverhältnis bestimmt:
+            </p>
+            <div class="formula-box">
+                <span class="var">x</span> = (<span class="var">V<sub>FBH</sub></span> − <span class="var">R<sub>L</sub></span>) / (<span class="var">T<sub>Kessel-VL</sub></span> − <span class="var">R<sub>L</sub></span>)
+            </div>
+            <p>
+                x ist der Anteil Kessel-Vorlauf im Mix (0 = nur Rücklauf, 1 = nur Kessel). Über deine angegebene aktuelle
+                Mischer-Stufe wird daraus eine konkrete <strong>empfohlene Stufe</strong> für das Szenario abgeleitet.
+            </p>
+            <p>
+                <strong>Empirische Mischer-Kalibrierung:</strong> Wenn du in der Messreihe oben für eine oder mehrere Zeilen
+                die Mischer-Stufe einträgst (zusammen mit Kessel-Vorlauf), berechnet das Tool das Verhältnis Stufe/x pro
+                Zeile und bildet daraus einen Mittelwert. Bei mehreren Messpunkten mit verschiedenen Stufen wird die
+                Skala genauer kalibriert. Das Feld „Aktuelle Mischer-Stufe" oben wird dann nur noch als Fallback genutzt,
+                wenn keine Mischer-Stufen in der Messreihe stehen. Eine Streuung über 30 % deutet auf eine nichtlineare
+                Mischer-Skala oder veränderliche Kessel-Vorlauftemperaturen zwischen den Messungen hin.
+            </p>
+            <p>
+                <strong>Variable Durchflussmenge:</strong> Der Durchfluss wird beim Berechnen automatisch aus der Messreihe übernommen,
+                lässt sich aber verändern, um Pumpen-Szenarien durchzuspielen. <strong>Mehr Durchfluss</strong> → kleinere Spreizung
+                ΔT-Wasser → niedrigere Vorlauftemperatur reicht → besserer Brennwert-Wirkungsgrad und niedrigere Mischer-Stufe.
+                <strong>Weniger Durchfluss</strong> umgekehrt: größere Spreizung, höherer Vorlauf nötig. Die Heizleistung selbst
+                (Q = UA · ΔT-Raum) bleibt unabhängig vom Durchfluss — die Kosten ändern sich also nicht direkt, aber die optimale
+                Einstellung der Anlage schon.
+            </p>
+
+            <h3><span class="num">10</span> Leitungs- &amp; Verteilverlust</h3>
+            <p>
+                Wenn du in der Messreihe sowohl die <strong>Vorlauf-/Rücklauftemperatur am Kessel</strong> als auch
+                <strong>am Fußbodenverteiler</strong> erfasst, kann das Tool den Wärmeverlust in der Zuleitung berechnen.
+                Das ist wichtig, weil diese Wärme zwar vom Kessel produziert (und bezahlt) wird, aber nicht in der Wohnung ankommt.
+            </p>
+            <div class="formula-box">
+                <span class="var">Q<sub>Kessel</sub></span> [kW] = <span class="var">Durchfluss</span> · 1,16 · (<span class="var">V<sub>L,Kessel</sub></span> − <span class="var">R<sub>L,Kessel</sub></span>) / 1000
+            </div>
+            <div class="formula-box">
+                <span class="var">Q<sub>Verlust</sub></span> = <span class="var">Q<sub>Kessel</sub></span> − <span class="var">Q<sub>Verteiler</sub></span>
+            </div>
+            <div class="formula-box">
+                <span class="var">η<sub>Verteil</sub></span> = <span class="var">Q<sub>Verteiler</sub></span> / <span class="var">Q<sub>Kessel</sub></span>
+            </div>
+            <p>
+                Das wirkt sich konkret auf die Jahres-Gaskosten aus: statt
+                <em>Wärmebedarf ÷ Kessel-η</em> rechnet das Tool jetzt
+                <em>Wärmebedarf ÷ Verteil-η ÷ Kessel-η</em>. Bei einer typischen Anlage mit ~3–5 % Leitungsverlust
+                sind das einige Prozent realistischere Kostenprognose. Wenn die Felder leer bleiben (oder Kessel = Verteiler eingetragen wird),
+                wird angenommen es gibt keinen Leitungsverlust — die Berechnung läuft wie vorher.
+            </p>
+            <p style="font-size: 13px; color: var(--ink-500);">
+                Übrigens: Sobald Kessel-Werte erfasst sind, übernimmt der Szenario-Rechner den gemessenen Kessel-Vorlauf
+                automatisch als Default — die Mischer-Berechnung wird damit präziser.
+            </p>
+
+            <h3><span class="num">11</span> Gaskosten vs. Wärme</h3>
+            <p>
+                Die berechnete Wärmemenge ist <strong>nicht</strong> mit dem Gasverbrauch identisch. Ein Brennwertkessel
+                hat einen Wirkungsgrad von typisch 95 %. Die Gaskosten werden daher mit
+                <strong>Wärmemenge ÷ Wirkungsgrad</strong> umgerechnet und um den anteiligen Grundpreis ergänzt.
+                Wenn Kessel-Daten erfasst sind, kommt zusätzlich der Verteilungs-Wirkungsgrad in die Rechnung.
+            </p>
+
+            <h3><span class="num">12</span> Wann sind die Messwerte gut?</h3>
+            <p>Die Genauigkeit steigt, wenn folgende Bedingungen gelten:</p>
+            <ul>
+                <li><strong>Stationärer Zustand:</strong> Wohnung schon seit Stunden auf Solltemperatur, kein frisches Lüften, keine Sonneneinstrahlung gerade.</li>
+                <li><strong>Wasser-Spreizung 3–10 K:</strong> Zu klein → Pumpe läuft zu schnell; zu groß → Durchfluss zu gering.</li>
+                <li><strong>Mehrere Messungen:</strong> Streuen die UA-Werte stark, gibt das System einen Hinweis — dann lieber an einem anderen Tag erneut messen.</li>
+                <li><strong>Auch eine einzelne Messung</strong> liefert bereits eine brauchbare Schätzung.</li>
+            </ul>
+
+            <h3><span class="num">13</span> Datenspeicherung</h3>
+            <p>
+                Alle Eingaben werden automatisch lokal im Browser gespeichert (localStorage). Die Seite kann jederzeit geschlossen werden,
+                die Werte sind beim nächsten Öffnen wieder da. Über <strong>"Zurücksetzen"</strong> kannst du komplett neu beginnen.
+                Es werden keine Daten ans Internet übertragen.
+            </p>
+        </div>
+    </div>
+
+    <div id="saveIndicator" class="save-indicator">
+        <span class="check">✓</span> Gespeichert
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'waermeverlust_v2_data';
+        const C_WATER = 1.16;
+        const NUM_HOURS = 8;
+
+        const DEFAULT_HOUR_1 = {
+            outT: '10.0', inT: '22.0', vl: '30.0', rl: '28.0', kvl: '30.1', krl: '27.9', flow: '450', stufe: '2.5'
+        };
+
+        // Klimaregionen Deutschland (nach DIN EN 12831 / DIN V 4710-2, vereinfacht)
+        const REGIONS = [
+            { id: 'nordsee',       name: 'Nordsee / Küste (Bremerhaven, Sylt)',         nat: -10, hgt: 3100 },
+            { id: 'norddt',        name: 'Norddeutschland (Hamburg, Bremen)',           nat: -10, hgt: 3300 },
+            { id: 'muensterland',  name: 'Münsterland / Westfalen (Hörstel)',           nat: -10, hgt: 3500 },
+            { id: 'rheinland',     name: 'Rheinland (Köln, Düsseldorf, Niederrhein)',   nat: -10, hgt: 3200 },
+            { id: 'berlin',        name: 'Berlin / Brandenburg',                        nat: -14, hgt: 3600 },
+            { id: 'mitteldt',      name: 'Mitteldeutschland (Kassel, Hessen, Sachsen)', nat: -12, hgt: 3500 },
+            { id: 'mittelgebirge', name: 'Mittelgebirge (Eifel, Sauerland, Harz)',      nat: -14, hgt: 3900 },
+            { id: 'rheinmain',     name: 'Rhein-Main / Oberrhein (Frankfurt, mild)',    nat: -12, hgt: 3200 },
+            { id: 'suedwest',      name: 'Süddeutschland (Stuttgart, Schwäb. Alb)',     nat: -14, hgt: 3700 },
+            { id: 'bayern',        name: 'Bayern / Alpenvorland (München)',             nat: -16, hgt: 3900 },
+            { id: 'alpen',         name: 'Alpenrand / Hochlagen (>600 m)',              nat: -18, hgt: 4500 },
+            { id: 'custom',        name: 'Eigene Werte (manuell)',                      nat: null, hgt: null }
+        ];
+        const DEFAULT_REGION = 'muensterland';
+
+        // Lüftungs-Profile — Multiplikator auf Heizbedarf (Jahresprognose & Szenarien)
+        const VENTILATION_PROFILES = [
+            { id: 'low',     name: 'Sparsam (Stoßlüften 1–2× täglich)', factor: 0.92 },
+            { id: 'normal',  name: 'Normal — wie bei der Messung',       factor: 1.00 },
+            { id: 'more',    name: 'Mehr als normal (oft offen)',        factor: 1.15 },
+            { id: 'extreme', name: 'Dauerkippe / Dauerlüftung',          factor: 1.40 }
+        ];
+        const DEFAULT_VENTILATION = 'normal';
+
+        // Solar-Profile — abhängig von Fenstergröße, Ausrichtung, Verschattung
+        const SOLAR_PROFILES = [
+            { id: 'much',    name: 'Viel Sonne — große Südfenster (wie bei Messung)', factor: 1.00 },
+            { id: 'normal',  name: 'Normal — gemischte Ausrichtung',                   factor: 1.05 },
+            { id: 'little',  name: 'Wenig Sonne — Nord-/Ostlage, verschattet',         factor: 1.10 }
+        ];
+        const DEFAULT_SOLAR = 'much';
+
+        // Kalibration aus der Messreihe (wird beim Berechnen befüllt)
+        let calibration = null;
+
+        function fillSelect(elId, list, defaultId) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            el.innerHTML = list.map(o =>
+                `<option value="${o.id}"${o.id === defaultId ? ' selected' : ''}>${o.name}</option>`
+            ).join('');
+        }
+
+        function applyRegion() {
+            const sel = document.getElementById('region');
+            if (!sel) return;
+            const region = REGIONS.find(r => r.id === sel.value);
+            if (!region || region.id === 'custom') return;
+            const natEl = document.getElementById('normaussen');
+            const hgtEl = document.getElementById('hgt');
+            if (natEl && region.nat !== null) natEl.value = region.nat;
+            if (hgtEl && region.hgt !== null) hgtEl.value = region.hgt;
+            saveAll();
+        }
+
+        // Wenn der User NAT/HGT manuell ändert → Region auf "custom" setzen
+        function watchManualClimateEdits() {
+            ['normaussen', 'hgt'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    const sel = document.getElementById('region');
+                    if (!sel) return;
+                    const region = REGIONS.find(r => r.id === sel.value);
+                    if (!region || region.id === 'custom') return;
+                    const natVal = parseFloat(document.getElementById('normaussen').value);
+                    const hgtVal = parseFloat(document.getElementById('hgt').value);
+                    if (natVal !== region.nat || hgtVal !== region.hgt) {
+                        sel.value = 'custom';
+                    }
+                });
+            });
+        }
+
+        function getProfileFactor(elId, list) {
+            const el = document.getElementById(elId);
+            if (!el) return 1.0;
+            const profile = list.find(p => p.id === el.value);
+            return profile ? profile.factor : 1.0;
+        }
+
+        function openModal() {
+            document.getElementById('infoModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal() {
+            document.getElementById('infoModal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        window.addEventListener('click', e => {
+            const modal = document.getElementById('infoModal');
+            if (e.target === modal) closeModal();
+        });
+        window.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        function buildTable() {
+            const tbody = document.getElementById('hourlyData');
+            const rows = [];
+            for (let i = 1; i <= NUM_HOURS; i++) {
+                const d = (i === 1) ? DEFAULT_HOUR_1 : {outT: '', inT: '', vl: '', rl: '', kvl: '', krl: '', flow: '', stufe: ''};
+                rows.push(`
+                    <tr>
+                        <td><span class="hour-badge">${i}</span></td>
+                        <td><input type="text" id="outT_${i}" value="${d.outT}" placeholder="—" inputmode="decimal"></td>
+                        <td><input type="text" id="inT_${i}"  value="${d.inT}"  placeholder="—" inputmode="decimal"></td>
+                        <td><input type="text" id="vl_${i}"   value="${d.vl}"   placeholder="—" inputmode="decimal"></td>
+                        <td><input type="text" id="rl_${i}"   value="${d.rl}"   placeholder="—" inputmode="decimal"></td>
+                        <td class="td-kessel"><input type="text" id="kvl_${i}" value="${d.kvl}" placeholder="—" inputmode="decimal"></td>
+                        <td class="td-kessel"><input type="text" id="krl_${i}" value="${d.krl}" placeholder="—" inputmode="decimal"></td>
+                        <td><input type="text" id="flow_${i}" value="${d.flow}" placeholder="—" inputmode="decimal"></td>
+                        <td class="td-stufe"><input type="text" id="stufe_${i}" value="${d.stufe}" placeholder="—" inputmode="decimal"></td>
+                    </tr>
+                `);
+            }
+            tbody.innerHTML = rows.join('');
+        }
+
+        function getAllInputIds() {
+            const ids = [
+                'gasprice', 'baseprice', 'efficiency',
+                'region', 'ventilation', 'solar',
+                'sqm', 'sollinnen', 'normaussen', 'hgt',
+                'scen_innen', 'scen_aussen', 'scen_kvl', 'scen_stufe', 'scen_flow'
+            ];
+            for (let i = 1; i <= NUM_HOURS; i++) {
+                ids.push(`outT_${i}`, `inT_${i}`, `vl_${i}`, `rl_${i}`, `kvl_${i}`, `krl_${i}`, `flow_${i}`, `stufe_${i}`);
+            }
+            return ids;
+        }
+
+        function saveAll() {
+            const data = {};
+            getAllInputIds().forEach(id => {
+                const el = document.getElementById(id);
+                if (el) data[id] = el.value;
+            });
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                showSaveIndicator();
+            } catch (e) { console.warn('Speichern fehlgeschlagen:', e); }
+        }
+
+        function loadAll() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                Object.keys(data).forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = data[id];
+                });
+            } catch (e) { console.warn('Laden fehlgeschlagen:', e); }
+        }
+
+        function attachAutoSave() {
+            getAllInputIds().forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', debounce(saveAll, 400));
+            });
+        }
+
+        function debounce(fn, ms) {
+            let t;
+            return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+        }
+
+        let indicatorTimer;
+        function showSaveIndicator() {
+            const el = document.getElementById('saveIndicator');
+            el.classList.add('show');
+            clearTimeout(indicatorTimer);
+            indicatorTimer = setTimeout(() => el.classList.remove('show'), 1200);
+        }
+
+        function resetAll() {
+            if (!confirm('Wirklich alle Eingaben zurücksetzen?')) return;
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+        }
+
+        function parseNum(id) {
+            const el = document.getElementById(id);
+            if (!el) return NaN;
+            // Komma als Dezimaltrenner akzeptieren (deutsche Konvention)
+            const v = el.value.trim().replace(',', '.');
+            if (v === '') return NaN;
+            const n = parseFloat(v);
+            return isNaN(n) ? NaN : n;
+        }
+
+        function efficiencyClass(kwhPerSqm) {
+            if (kwhPerSqm < 30)  return { label: 'A+', css: 'ef-aplus', desc: 'Passivhaus-Niveau' };
+            if (kwhPerSqm < 50)  return { label: 'A',  css: 'ef-a',     desc: 'Effizienzhaus 55' };
+            if (kwhPerSqm < 75)  return { label: 'B',  css: 'ef-b',     desc: 'Effizienzhaus 70 / KfW' };
+            if (kwhPerSqm < 100) return { label: 'C',  css: 'ef-c',     desc: 'Neubau-Niveau' };
+            if (kwhPerSqm < 130) return { label: 'D',  css: 'ef-d',     desc: 'Gut sanierter Altbau' };
+            if (kwhPerSqm < 160) return { label: 'E',  css: 'ef-e',     desc: 'Teilsanierter Altbau' };
+            if (kwhPerSqm < 200) return { label: 'F',  css: 'ef-f',     desc: 'Typischer Altbau' };
+            if (kwhPerSqm < 250) return { label: 'G',  css: 'ef-g',     desc: 'Schlecht gedämmt' };
+            return                      { label: 'H',  css: 'ef-h',     desc: 'Sanierungsbedürftig' };
+        }
+
+        function specUaRating(specUa) {
+            if (specUa < 0.5)  return 'Passivhaus-Niveau';
+            if (specUa < 1.0)  return 'moderner Neubau / gut saniert';
+            if (specUa < 1.5)  return 'mittelmäßig gedämmt';
+            if (specUa < 2.0)  return 'mäßig gedämmter Altbau';
+            return                    'sanierungsbedürftig';
+        }
+
+        // =============================================================
+        //  MESSREIHE AUSWERTEN
+        // =============================================================
+        function calculate() {
+            const gasPriceEuroPerKwh = parseNum('gasprice') / 100;
+            const basePriceYear      = parseNum('baseprice');
+            const efficiency         = parseNum('efficiency') / 100;
+            const sqm                = parseNum('sqm');
+            const sollInnen          = parseNum('sollinnen');
+            const normAussen         = parseNum('normaussen');
+            const hgt                = parseNum('hgt');
+
+            const basePriceDay = basePriceYear / 365;
+
+            const hoursValid = [];
+            const hoursWithUA = [];
+            const logLines = [];
+
+            for (let i = 1; i <= NUM_HOURS; i++) {
+                const outT  = parseNum(`outT_${i}`);
+                const inT   = parseNum(`inT_${i}`);
+                const vl    = parseNum(`vl_${i}`);
+                const rl    = parseNum(`rl_${i}`);
+                const kvl   = parseNum(`kvl_${i}`);  // Kessel-Vorlauf (optional)
+                const krl   = parseNum(`krl_${i}`);  // Kessel-Rücklauf (optional)
+                const flow  = parseNum(`flow_${i}`);
+                const stufe = parseNum(`stufe_${i}`); // Mischer-Stufe (optional)
+
+                const hasLeistung = !isNaN(vl) && !isNaN(rl) && !isNaN(flow) && flow > 0 && vl > 0;
+
+                if (!hasLeistung) {
+                    logLines.push(`<span class="ignored-row">Std ${i.toString().padStart(2,' ')} · keine Heizleistungs-Daten — ignoriert</span>`);
+                    continue;
+                }
+
+                const deltaT_wasser = vl - rl;
+                let kw = (flow * C_WATER * deltaT_wasser) / 1000;  // Verteiler-Leistung (= an Wohnung)
+                if (kw < 0) kw = 0;
+
+                // Kessel-Leistung & Leitungsverlust (wenn Kessel-Daten vorhanden)
+                let kw_kessel = kw;
+                let kw_verlust = 0;
+                let hasKesselData = false;
+                if (!isNaN(kvl) && !isNaN(krl) && kvl > 0 && kvl > krl) {
+                    const deltaT_kessel = kvl - krl;
+                    kw_kessel  = (flow * C_WATER * deltaT_kessel) / 1000;
+                    kw_verlust = kw_kessel - kw;
+                    if (kw_verlust < 0) kw_verlust = 0;
+                    hasKesselData = true;
+                }
+
+                // Mischer-Kalibrierung pro Zeile: nur sinnvoll wenn
+                // - Stufe ausgefüllt und plausibel (0..10)
+                // - Kessel-VL ausgefüllt UND deutlich höher als Verteiler-VL (mind. 0,5 K)
+                // - Mischverhältnis x liegt in (0, 1]
+                let stufeProX = null;
+                let x_gemessen = null;
+                if (!isNaN(stufe) && stufe >= 0 && stufe <= 10 &&
+                    !isNaN(kvl) && kvl > vl + 0.5 && kvl > rl) {
+                    const denom = kvl - rl;
+                    x_gemessen = (vl - rl) / denom;
+                    if (x_gemessen > 0 && x_gemessen <= 1 && stufe > 0) {
+                        stufeProX = stufe / x_gemessen;
+                    }
+                }
+
+                let uaInfo = '';
+                let ua = null;
+                let deltaT_raum = null;
+                let kEstrich = null;
+
+                if (!isNaN(inT) && !isNaN(outT) && inT > outT) {
+                    deltaT_raum = inT - outT;
+                    ua = (kw * 1000) / deltaT_raum;
+                    const tEstrich = (vl + rl) / 2;
+                    const deltaTestrich = tEstrich - inT;
+                    if (deltaTestrich > 0) {
+                        kEstrich = (kw * 1000) / deltaTestrich;
+                    }
+                    uaInfo = ` │ ΔT-Raum <strong>${deltaT_raum.toFixed(1)} K</strong> → UA <strong>${ua.toFixed(0)} W/K</strong>`;
+                    hoursWithUA.push({ kw, kw_kessel, kw_verlust, hasKesselData, kvl, krl, ua, kEstrich, deltaT_wasser, deltaT_raum, inT, outT, vl, rl, flow, stufe, stufeProX, x_gemessen, hour: i });
+                } else {
+                    uaInfo = ' <span style="opacity:0.55;">(Innen/Außen fehlt — kein UA)</span>';
+                }
+
+                hoursValid.push({ kw, kw_kessel, kw_verlust, hasKesselData, kvl, krl, deltaT_wasser, vl, rl, flow, stufe, stufeProX, x_gemessen, hour: i });
+                const kesselNote = hasKesselData
+                    ? ` <span style="color: var(--violet);">│ Kessel <strong>${kw_kessel.toFixed(3)} kW</strong> · Verlust <strong>${kw_verlust.toFixed(3)} kW</strong></span>`
+                    : '';
+                const stufeNote = (stufeProX !== null)
+                    ? ` <span style="color: var(--violet);">│ Stufe ${stufe.toFixed(1)} · x=${x_gemessen.toFixed(3)}</span>`
+                    : '';
+                logLines.push(
+                    `Std ${i.toString().padStart(2,' ')} · ΔT-W <strong>${deltaT_wasser.toFixed(1)} K</strong>, ` +
+                    `${flow} l/h → <strong>${kw.toFixed(3)} kW</strong>${kesselNote}${stufeNote}${uaInfo}`
+                );
+            }
+
+            if (hoursValid.length === 0) {
+                document.getElementById('output').innerHTML = `
+                    <div class="warning-box danger">
+                        <span class="icon">⚠</span>
+                        <span>Bitte fülle mindestens eine Zeile mit gültigen Messdaten aus
+                        (Vorlauf, Rücklauf und Durchfluss).</span>
+                    </div>`;
+                calibration = null;
+                return;
+            }
+
+            const avgKw          = hoursValid.reduce((s, h) => s + h.kw, 0) / hoursValid.length;
+            const avgDeltaWasser = hoursValid.reduce((s, h) => s + h.deltaT_wasser, 0) / hoursValid.length;
+            const avgFlow        = hoursValid.reduce((s, h) => s + h.flow, 0) / hoursValid.length;
+            const avgVL          = hoursValid.reduce((s, h) => s + h.vl, 0) / hoursValid.length;
+            const avgRL          = hoursValid.reduce((s, h) => s + h.rl, 0) / hoursValid.length;
+
+            // Kessel-Daten und Leitungsverlust
+            const hoursWithKessel = hoursValid.filter(h => h.hasKesselData);
+            const hasAnyKesselData = hoursWithKessel.length > 0;
+            let avgKw_kessel = avgKw;
+            let avgKw_verlust = 0;
+            let avgKesselVL = 0;
+            let verteilWirkungsgrad = 1.0;
+            if (hasAnyKesselData) {
+                avgKw_kessel  = hoursWithKessel.reduce((s, h) => s + h.kw_kessel, 0) / hoursWithKessel.length;
+                avgKw_verlust = hoursWithKessel.reduce((s, h) => s + h.kw_verlust, 0) / hoursWithKessel.length;
+                avgKesselVL   = hoursWithKessel.reduce((s, h) => s + h.kvl,        0) / hoursWithKessel.length;
+                if (avgKw_kessel > 0) {
+                    verteilWirkungsgrad = avgKw / avgKw_kessel;
+                }
+            }
+
+            // Mischer-Kalibrierung aus Messreihe (Zeilen mit Stufe + Kessel-VL)
+            const hoursWithStufeKalib = hoursValid.filter(h => h.stufeProX !== null && !isNaN(h.stufeProX));
+            let avgStufeProX = null;
+            let stufeKalibStreuung = null;
+            let stufeKalibN = 0;
+            if (hoursWithStufeKalib.length > 0) {
+                stufeKalibN = hoursWithStufeKalib.length;
+                avgStufeProX = hoursWithStufeKalib.reduce((s, h) => s + h.stufeProX, 0) / stufeKalibN;
+                if (stufeKalibN >= 2 && avgStufeProX > 0) {
+                    const vals = hoursWithStufeKalib.map(h => h.stufeProX);
+                    const min = Math.min(...vals);
+                    const max = Math.max(...vals);
+                    stufeKalibStreuung = ((max - min) / avgStufeProX) * 100;
+                }
+            }
+
+            const day24Kwh       = avgKw * 24;              // Wärme an die Wohnung
+            const day24KwhKessel = avgKw_kessel * 24;       // Wärme die der Kessel produziert
+            const day24Gas       = day24KwhKessel / efficiency;
+            const day24Cost      = day24Gas * gasPriceEuroPerKwh + basePriceDay;
+
+            let html = `<div class="log-details">${logLines.join('<br>')}</div>`;
+
+            html += `
+                <div class="summary-box">
+                    <h4>Heizleistung &amp; Tagesprognose</h4>
+                    <p class="summary-intro">
+                        ${hoursValid.length} gültige Messung${hoursValid.length===1?'':'en'} · lineare Hochrechnung auf 24 h
+                    </p>
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <span class="result-label">Ø Heizleistung</span>
+                            <span class="result-value val-teal">${avgKw.toFixed(2)}<span class="unit">kW</span></span>
+                            <span class="result-sub">an Wohnung · ΔT-W ${avgDeltaWasser.toFixed(1)} K</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Tag · Wärme</span>
+                            <span class="result-value val-ember">${day24Kwh.toFixed(1)}<span class="unit">kWh</span></span>
+                            <span class="result-sub">an Estrich abgegeben</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Tag · Gas</span>
+                            <span class="result-value val-ember">${day24Gas.toFixed(1)}<span class="unit">kWh</span></span>
+                            <span class="result-sub">${hasAnyKesselData ? `aus Kessel ÷ η ${(efficiency*100).toFixed(0)}%` : `bei η = ${(efficiency*100).toFixed(0)} %`}</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Tageskosten</span>
+                            <span class="result-value val-forest">${day24Cost.toFixed(2)}<span class="unit">€</span></span>
+                            <span class="result-sub">inkl. Grundpreis</span>
+                        </div>
+                    </div>
+                </div>`;
+
+            // ── Leitungsverlust-Sektion (nur wenn Kessel-Daten vorhanden) ──
+            if (hasAnyKesselData) {
+                const yearVerlustAnteil = (avgKw_verlust / avgKw_kessel) * 100;
+
+                html += `
+                    <div class="summary-box" style="position:relative; padding-top:30px;">
+                        <div style="position:absolute; top:0; left:0; right:0; height:4px; background: linear-gradient(90deg, var(--violet) 0%, var(--ember) 100%); border-radius: var(--r-lg) var(--r-lg) 0 0;"></div>
+                        <h4>Leitungs- &amp; Verteilverlust</h4>
+                        <p class="summary-intro">
+                            ${hoursWithKessel.length} Messung${hoursWithKessel.length===1?'':'en'} mit Kessel-Werten ·
+                            Ø Kessel-VL <strong>${avgKesselVL.toFixed(1)} °C</strong>
+                        </p>
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <span class="result-label">Kessel-Leistung</span>
+                                <span class="result-value val-violet">${avgKw_kessel.toFixed(2)}<span class="unit">kW</span></span>
+                                <span class="result-sub">vom Kessel produziert</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">An Wohnung</span>
+                                <span class="result-value val-teal">${avgKw.toFixed(2)}<span class="unit">kW</span></span>
+                                <span class="result-sub">am Verteiler ankommend</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Leitungsverlust</span>
+                                <span class="result-value val-rose">${avgKw_verlust.toFixed(3)}<span class="unit">kW</span></span>
+                                <span class="result-sub">${yearVerlustAnteil.toFixed(1)} % des Kessels</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Verteil-η</span>
+                                <span class="result-value val-violet">${(verteilWirkungsgrad*100).toFixed(1)}<span class="unit">%</span></span>
+                                <span class="result-sub">${verteilWirkungsgrad < 0.95 ? 'Optimierungspotenzial' : 'sehr gut'}</span>
+                            </div>
+                        </div>
+                        <p style="font-size:13.5px; color:var(--ink-700); margin-top:14px; line-height:1.6;">
+                            <strong>Was bedeutet das?</strong> Pro Stunde gehen ${(avgKw_verlust*1000).toFixed(0)} W
+                            in der Zuleitung zwischen Kessel und Fußbodenverteiler verloren. Diese Wärme heizt vermutlich Keller/Schächte mit,
+                            kommt aber nicht in der Wohnung an. In der Jahresprognose unten ist dieser Verlust bei den Gaskosten bereits berücksichtigt.
+                        </p>
+                    </div>`;
+            }
+
+            let avgUA = null, avgKEstrich = null;
+
+            if (hoursWithUA.length > 0) {
+                avgUA       = hoursWithUA.reduce((s, h) => s + h.ua, 0) / hoursWithUA.length;
+                const avgRaumDt = hoursWithUA.reduce((s, h) => s + h.deltaT_raum, 0) / hoursWithUA.length;
+                const specUA    = avgUA / sqm;
+
+                // Korrekturfaktoren aus den Profilen
+                const fVent  = getProfileFactor('ventilation', VENTILATION_PROFILES);
+                const fSolar = getProfileFactor('solar',       SOLAR_PROFILES);
+                const fTotal = fVent * fSolar;
+                const effUA  = avgUA * fTotal;
+
+                const kValues = hoursWithUA.filter(h => h.kEstrich !== null).map(h => h.kEstrich);
+                avgKEstrich = kValues.length > 0
+                    ? kValues.reduce((s, k) => s + k, 0) / kValues.length
+                    : null;
+
+                const uaValues = hoursWithUA.map(h => h.ua);
+                const minUA = Math.min(...uaValues);
+                const maxUA = Math.max(...uaValues);
+                const uaSpread = maxUA - minUA;
+                const uaSpreadPct = (uaSpread / avgUA) * 100;
+
+                // Prognosen nutzen den effektiven UA (mit Korrekturfaktoren)
+                const pNorm = effUA * (sollInnen - normAussen) / 1000;
+
+                const yearKwhHeat   = (effUA * hgt * 24) / 1000;             // Wärmebedarf in der Wohnung
+                const yearKwhKessel = yearKwhHeat / verteilWirkungsgrad;     // was der Kessel insgesamt produzieren muss
+                const yearKwhGas    = yearKwhKessel / efficiency;            // Gasverbrauch
+                const yearCost      = yearKwhGas * gasPriceEuroPerKwh + basePriceYear;
+                const specYear      = yearKwhHeat / sqm;
+                const eClass        = efficiencyClass(specYear);
+
+                const profileNote = (Math.abs(fTotal - 1.0) > 0.001)
+                    ? `<p style="font-size:13px; margin: 0 0 14px; color: var(--violet); font-weight:600;">
+                        Prognose angepasst um Faktor ${fTotal.toFixed(2)}× (Lüftung ${fVent.toFixed(2)}× · Solar ${fSolar.toFixed(2)}×)${
+                            hasAnyKesselData ? ` · Verteil-η ${(verteilWirkungsgrad*100).toFixed(0)}%` : ''
+                        }
+                       </p>`
+                    : (hasAnyKesselData
+                        ? `<p style="font-size:13px; margin: 0 0 14px; color: var(--violet); font-weight:600;">
+                            Jahres-Gaskosten enthalten Leitungsverlust (Verteil-η ${(verteilWirkungsgrad*100).toFixed(1)}%)
+                           </p>`
+                        : '');
+
+                html += `
+                    <div class="summary-box building">
+                        <h4>Gebäude-Analyse · Energetische Beurteilung</h4>
+                        <p class="summary-intro">
+                            ${hoursWithUA.length} Messung${hoursWithUA.length===1?'':'en'} mit kompletter Innen-/Außentemperatur ·
+                            Ø Raum-ΔT <strong>${avgRaumDt.toFixed(1)} K</strong>
+                        </p>
+                        ${profileNote}
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <span class="result-label">UA-Wert</span>
+                                <span class="result-value val-teal">${avgUA.toFixed(0)}<span class="unit">W/K</span></span>
+                                <span class="result-sub">gemessen · pro K ΔT</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">UA spezifisch</span>
+                                <span class="result-value val-teal">${specUA.toFixed(2)}<span class="unit">W/m²K</span></span>
+                                <span class="result-sub">${specUaRating(specUA)}</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Normheizlast</span>
+                                <span class="result-value val-ember">${pNorm.toFixed(2)}<span class="unit">kW</span></span>
+                                <span class="result-sub">bei ${normAussen.toFixed(0)} °C außen</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Jahr · Wärme</span>
+                                <span class="result-value val-ember">${yearKwhHeat.toFixed(0)}<span class="unit">kWh/a</span></span>
+                                <span class="result-sub">HGT ${hgt} Kd</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Spez. Verbrauch</span>
+                                <span class="result-value val-ember">${specYear.toFixed(0)}<span class="unit">kWh/m²a</span></span>
+                                <span class="result-sub"><span class="ef-badge ${eClass.css}">${eClass.label}</span></span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Jahres-Gaskosten</span>
+                                <span class="result-value val-forest">${yearCost.toFixed(0)}<span class="unit">€</span></span>
+                                <span class="result-sub">inkl. Grundpreis</span>
+                            </div>
+                        </div>
+                        <p style="font-size:14px; margin-top:18px; color:var(--ink-700);">
+                            <strong>Einordnung:</strong> Klasse <strong>${eClass.label}</strong> — ${eClass.desc}
+                        </p>`;
+
+                const warnings = [];
+                if (hoursWithUA.length === 1) {
+                    warnings.push('Nur eine Messung — die Ergebnisse sind eine erste Schätzung. Mehrere Messungen erhöhen die Genauigkeit deutlich.');
+                }
+                if (hoursWithUA.length >= 2 && uaSpreadPct > 30) {
+                    warnings.push(`UA-Werte streuen stark (Min ${minUA.toFixed(0)}, Max ${maxUA.toFixed(0)} W/K · Spanne ${uaSpreadPct.toFixed(0)} %). Mögliche Ursachen: nicht stationär, Lüften, Sonneneinstrahlung, Heizungs-Takt.`);
+                }
+                if (avgDeltaWasser < 3) {
+                    warnings.push(`Wasser-Spreizung ist niedrig (${avgDeltaWasser.toFixed(1)} K). Eventuell läuft die Umwälzpumpe zu schnell oder der Mischer öffnet zu wenig.`);
+                }
+                if (avgDeltaWasser > 10) {
+                    warnings.push(`Wasser-Spreizung ist hoch (${avgDeltaWasser.toFixed(1)} K). Eventuell zu geringer Durchfluss.`);
+                }
+                if (specYear > 200) {
+                    warnings.push('Spezifischer Jahresverbrauch ist hoch — eine energetische Sanierung würde sich vermutlich rentieren.');
+                }
+
+                // Mischer-Kalibrierung: Warnung bei großer Streuung
+                if (avgStufeProX !== null && stufeKalibStreuung !== null && stufeKalibStreuung > 30) {
+                    warnings.push(`Mischer-Skala variiert stark zwischen den Messpunkten (Streuung ${stufeKalibStreuung.toFixed(0)} %). Mögliche Ursachen: nichtlineare Mischer-Skala, Kessel-Vorlauf hat sich zwischen Messungen geändert, oder unterschiedliche Mischer-Stellungen wurden bei nicht-stationären Bedingungen gemessen.`);
+                }
+
+                warnings.forEach(w => {
+                    html += `<div class="warning-box"><span class="icon">⚠</span><span>${w}</span></div>`;
+                });
+
+                // Positive Info-Zeile bei aktiver Mischer-Kalibrierung
+                if (avgStufeProX !== null && (stufeKalibStreuung === null || stufeKalibStreuung <= 30)) {
+                    const anteilProStufe = (100 / avgStufeProX).toFixed(1);
+                    const streuungNote = (stufeKalibStreuung !== null)
+                        ? ` · Streuung ${stufeKalibStreuung.toFixed(0)} %`
+                        : '';
+                    html += `<div class="warning-box info" style="background: rgba(124, 58, 237, 0.06); border-color: rgba(124, 58, 237, 0.3);">
+                        <span class="icon" style="color: var(--violet);">✓</span>
+                        <span>Mischer-Skala kalibriert aus <strong>${stufeKalibN}</strong> Messpunkt${stufeKalibN === 1 ? '' : 'en'}: 1 Stufe entspricht ca. <strong>${anteilProStufe} %</strong> Kessel-VL-Anteil${streuungNote}.</span>
+                    </div>`;
+                }
+
+                html += `<div class="warning-box info"><span class="icon">→</span><span>Du kannst jetzt unten den <strong>Szenario-Rechner</strong> nutzen, um durchzuspielen, was bei anderen Temperaturen oder Wetter passieren würde.</span></div>`;
+                html += `</div>`;
+            } else {
+                html += `
+                    <div class="warning-box">
+                        <span class="icon">ℹ</span>
+                        <span>Für die Gebäude-Analyse (UA-Wert, Normheizlast, Effizienzklasse, Jahresprognose, Szenario-Rechner)
+                        wird mindestens <strong>eine</strong> Messung mit vollständiger Innen- <em>und</em> Außentemperatur benötigt.</span>
+                    </div>`;
+            }
+
+            // Kalibration speichern für den Szenario-Rechner
+            calibration = {
+                valid: hoursWithUA.length > 0 && avgUA !== null && avgKEstrich !== null,
+                avgUA,
+                avgKEstrich,
+                avgFlow,
+                avgVL,
+                avgRL,
+                avgKw,
+                sollInnen,
+                sqm,
+                // Kessel-Daten (für realistische Szenario-Gaskosten und Mischer-Berechnung)
+                hasKesselData: hasAnyKesselData,
+                avgKw_kessel,
+                avgKesselVL,
+                verteilWirkungsgrad,
+                // Mischer-Kalibrierung aus Messreihe
+                avgStufeProX,
+                stufeKalibStreuung,
+                stufeKalibN
+            };
+
+            // Szenario-Felder konsistent zurücksetzen / mit aktuellen Messwerten füllen
+            // (passiert bei jedem Klick auf "Messreihe auswerten")
+            const scenResets = {
+                'scen_innen':  sollInnen.toFixed(1),
+                'scen_aussen': '0',
+                'scen_kvl':    (hasAnyKesselData && avgKesselVL > avgVL + 2) ? avgKesselVL.toFixed(1) : '50',
+                'scen_stufe':  '2.5',
+                'scen_flow':   avgFlow > 0 ? Math.round(avgFlow).toString() : '450'
+            };
+            Object.keys(scenResets).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = scenResets[id];
+            });
+            saveAll();
+
+            document.getElementById('output').innerHTML = html;
+        }
+
+        // =============================================================
+        //  SZENARIO-RECHNER
+        // =============================================================
+        function computeScenarioPoint(tInnen, tAussen, kvl, stufeAkt, opts) {
+            // opts: { avgUA, avgKEstrich, avgFlow, avgVL, avgRL, efficiency, gasPriceEuroPerKwh, basePriceDay, fTotal }
+            const dT = tInnen - tAussen;
+
+            // Bei T_außen >= T_innen ist keine Heizung nötig
+            if (dT <= 0) {
+                return { off: true, reason: 'kein Heizbedarf (Außen ≥ Innen)' };
+            }
+
+            const effUA = opts.avgUA * (opts.fTotal || 1.0);
+            const Q_W   = effUA * dT;                          // W
+            const Q_kW  = Q_W / 1000;
+
+            // Bei sehr kleinem Bedarf (Heizgrenze): Heizung praktisch aus
+            if (Q_kW < 0.2) {
+                return { off: true, reason: 'unter Heizgrenze' };
+            }
+
+            const tEstrich     = tInnen + Q_W / opts.avgKEstrich; // °C
+            const flowUsed     = (opts.flow && opts.flow > 0) ? opts.flow : opts.avgFlow;
+            const dT_wasser    = Q_W / (flowUsed * C_WATER);       // K, abhängig vom (Szenario-)Durchfluss
+            const tVL          = tEstrich + dT_wasser / 2;
+            const tRL          = tEstrich - dT_wasser / 2;
+
+            // Mischer-Stufe (wenn KVL angegeben)
+            let stufeSoll = null, xSoll = null, mischerStatus = null;
+            if (!isNaN(kvl) && kvl > 0) {
+                if (kvl > tVL) {
+                    // Normaler Fall: Kessel-VL liegt über benötigtem Vorlauf — Mischer arbeitet
+                    xSoll = (tVL - tRL) / (kvl - tRL);
+
+                    // Priorität 1: empirische Kalibrierung aus Messreihe (eine oder mehrere Stufen)
+                    if (opts.avgStufeProX !== null && opts.avgStufeProX !== undefined && opts.avgStufeProX > 0) {
+                        stufeSoll = xSoll * opts.avgStufeProX;
+                    } else {
+                        // Priorität 2: Fallback aus manueller Stufe + aktuellen Mess-Mittelwerten
+                        const xAkt = (opts.avgVL - opts.avgRL) / (kvl - opts.avgRL);
+                        if (xAkt > 0 && xAkt <= 1 && !isNaN(stufeAkt)) {
+                            stufeSoll = stufeAkt * (xSoll / xAkt);
+                        } else {
+                            stufeSoll = xSoll * 10; // letzter Fallback: lineare Annahme 0..10
+                        }
+                    }
+
+                    if (stufeSoll < 0) stufeSoll = 0;
+                    if (stufeSoll > 10) {
+                        stufeSoll = 10;
+                        mischerStatus = 'limit';
+                    } else {
+                        mischerStatus = 'ok';
+                    }
+                } else if (kvl > tRL) {
+                    // Kessel-VL liegt zwischen Rücklauf und benötigtem Vorlauf — Mischer muss voll auf
+                    xSoll = 1.0;
+                    stufeSoll = 10;
+                    mischerStatus = 'maxopen';
+                } else {
+                    // Kessel-VL ist niedriger als Rücklauf — Kessel reicht nicht aus
+                    xSoll = null;
+                    stufeSoll = null;
+                    mischerStatus = 'too_low';
+                }
+            }
+
+            const dayKwhHeat   = Q_kW * 24;
+            const dayKwhKessel = dayKwhHeat / (opts.verteilWirkungsgrad || 1.0);
+            const dayKwhGas    = dayKwhKessel / opts.efficiency;
+            const dayCost      = dayKwhGas * opts.gasPriceEuroPerKwh + opts.basePriceDay;
+            const hourCost     = dayCost / 24;
+
+            return {
+                off: false,
+                Q_kW, tEstrich, dT_wasser, tVL, tRL,
+                stufeSoll, xSoll, mischerStatus,
+                dayKwhHeat, dayKwhGas, dayCost, hourCost
+            };
+        }
+
+        function calculateScenario() {
+            // Wenn noch nicht kalibriert, ruf die Hauptberechnung im Hintergrund auf
+            if (!calibration) calculate();
+
+            const out = document.getElementById('scenarioOutput');
+
+            if (!calibration || !calibration.valid) {
+                out.innerHTML = `
+                    <div class="warning-box danger">
+                        <span class="icon">⚠</span>
+                        <span>Für den Szenario-Rechner brauche ich mindestens eine vollständige Messung (Innen, Außen, Vorlauf, Rücklauf, Durchfluss).
+                        Bitte oben mindestens eine Zeile komplett ausfüllen und auf <strong>"Messreihe auswerten"</strong> klicken.</span>
+                    </div>`;
+                return;
+            }
+
+            const tInnen   = parseNum('scen_innen');
+            const tAussen  = parseNum('scen_aussen');
+            const kvl      = parseNum('scen_kvl');
+            const stufeAkt = parseNum('scen_stufe');
+            const flowScen = parseNum('scen_flow');
+
+            if (isNaN(tInnen) || isNaN(tAussen)) {
+                out.innerHTML = `
+                    <div class="warning-box danger">
+                        <span class="icon">⚠</span>
+                        <span>Bitte mindestens Wunsch-Innentemperatur und Außentemperatur eingeben.</span>
+                    </div>`;
+                return;
+            }
+
+            const opts = {
+                avgUA: calibration.avgUA,
+                avgKEstrich: calibration.avgKEstrich,
+                avgFlow: calibration.avgFlow,
+                avgVL: calibration.avgVL,
+                avgRL: calibration.avgRL,
+                flow: flowScen,   // Szenario-Durchfluss (überschreibt avgFlow für die Berechnung)
+                efficiency: parseNum('efficiency') / 100,
+                gasPriceEuroPerKwh: parseNum('gasprice') / 100,
+                basePriceDay: parseNum('baseprice') / 365,
+                verteilWirkungsgrad: calibration.verteilWirkungsgrad || 1.0,
+                avgStufeProX: calibration.avgStufeProX,  // empirische Mischer-Kalibrierung
+                fTotal: getProfileFactor('ventilation', VENTILATION_PROFILES) *
+                        getProfileFactor('solar',       SOLAR_PROFILES)
+            };
+
+            const s = computeScenarioPoint(tInnen, tAussen, kvl, stufeAkt, opts);
+
+            let html = '';
+
+            // Hauptszenario-Box
+            if (s.off) {
+                html += `
+                    <div class="summary-box scenario-result">
+                        <h4>Szenario · ${tInnen.toFixed(1)} °C innen bei ${tAussen.toFixed(1)} °C außen</h4>
+                        <div class="warning-box info">
+                            <span class="icon">ℹ</span>
+                            <span>Bei diesen Bedingungen ist <strong>keine Heizung nötig</strong> (${s.reason}). Eine moderne Regelung würde abschalten.</span>
+                        </div>
+                    </div>`;
+            } else {
+                let mischerHtml;
+                if (s.stufeSoll !== null) {
+                    const statusNote = s.mischerStatus === 'limit'
+                        ? '<span style="color: var(--rose);">⚠ Mischer am Limit</span>'
+                        : s.mischerStatus === 'maxopen'
+                            ? '<span style="color: var(--rose);">⚠ Kessel-VL knapp</span>'
+                            : `${(s.xSoll*100).toFixed(0)} % Kessel-VL-Anteil`;
+                    mischerHtml = `
+                        <div class="result-item highlight">
+                            <span class="result-label">Mischer-Stufe</span>
+                            <span class="result-value val-violet">${s.stufeSoll.toFixed(1)}<span class="unit">/10</span></span>
+                            <span class="result-sub">${statusNote}</span>
+                        </div>`;
+                } else if (s.mischerStatus === 'too_low') {
+                    mischerHtml = `
+                        <div class="result-item" style="background: var(--rose-light); border-color: #fbb6ce;">
+                            <span class="result-label" style="color: var(--rose);">Mischer-Stufe</span>
+                            <span class="result-value val-rose" style="font-size: 18px;">Kessel zu niedrig</span>
+                            <span class="result-sub">VL ≥ ${(s.tVL+2).toFixed(0)} °C nötig</span>
+                        </div>`;
+                } else {
+                    mischerHtml = `
+                        <div class="result-item">
+                            <span class="result-label">Mischer-Stufe</span>
+                            <span class="result-value" style="font-size: 16px; color: var(--ink-400);">— —</span>
+                            <span class="result-sub">Kessel-VL eingeben</span>
+                        </div>`;
+                }
+
+                const flowDisplay = (!isNaN(flowScen) && flowScen > 0) ? flowScen : calibration.avgFlow;
+                const flowNote = (Math.abs(flowDisplay - calibration.avgFlow) > 5)
+                    ? `<strong style="color: var(--violet)">${flowDisplay.toFixed(0)} l/h</strong> <span style="opacity:0.7">(gemessen: ${calibration.avgFlow.toFixed(0)} l/h)</span>`
+                    : `<strong>${flowDisplay.toFixed(0)} l/h</strong>`;
+
+                html += `
+                    <div class="summary-box scenario-result">
+                        <h4>Szenario · ${tInnen.toFixed(1)} °C innen bei ${tAussen.toFixed(1)} °C außen</h4>
+                        <p class="summary-intro">
+                            Basierend auf deinem UA-Wert <strong>${calibration.avgUA.toFixed(0)} W/K</strong>,
+                            Estrich-K <strong>${calibration.avgKEstrich.toFixed(0)} W/K</strong>,
+                            Durchfluss ${flowNote}${
+                                Math.abs(opts.fTotal - 1.0) > 0.001
+                                ? ` · Korrektur <strong style="color: var(--violet)">${opts.fTotal.toFixed(2)}×</strong> aus Profilen`
+                                : ''
+                            }.
+                        </p>
+                        <div class="result-grid">
+                            <div class="result-item highlight">
+                                <span class="result-label">Vorlauf FBH</span>
+                                <span class="result-value val-ember">${s.tVL.toFixed(1)}<span class="unit">°C</span></span>
+                                <span class="result-sub">empfohlen</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Rücklauf FBH</span>
+                                <span class="result-value val-teal">${s.tRL.toFixed(1)}<span class="unit">°C</span></span>
+                                <span class="result-sub">ΔT ${s.dT_wasser.toFixed(1)} K</span>
+                            </div>
+                            ${mischerHtml}
+                            <div class="result-item">
+                                <span class="result-label">Heizleistung</span>
+                                <span class="result-value val-ember">${s.Q_kW.toFixed(2)}<span class="unit">kW</span></span>
+                                <span class="result-sub">benötigt</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Stunden-Kosten</span>
+                                <span class="result-value val-forest">${s.hourCost.toFixed(3)}<span class="unit">€/h</span></span>
+                                <span class="result-sub">bei η ${(opts.efficiency*100).toFixed(0)} %</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Tageskosten</span>
+                                <span class="result-value val-forest">${s.dayCost.toFixed(2)}<span class="unit">€</span></span>
+                                <span class="result-sub">24 h · inkl. Grundpreis</span>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            // Heizkurven-Tabelle: typische Außentemperaturen
+            const curveTemps = [-15, -10, -5, 0, 5, 10, 15];
+            const flowForCurve = (!isNaN(flowScen) && flowScen > 0) ? flowScen : calibration.avgFlow;
+            const rows = curveTemps.map(t => {
+                const r = computeScenarioPoint(tInnen, t, kvl, stufeAkt, opts);
+                if (r.off) {
+                    return `<tr>
+                        <td class="outT">${t} °C</td>
+                        <td class="off" colspan="6">Heizung aus / Heizgrenze</td>
+                        <td class="off">${r.reason}</td>
+                    </tr>`;
+                }
+                const stufeCell = (r.stufeSoll !== null)
+                    ? (r.mischerStatus === 'limit' || r.mischerStatus === 'maxopen'
+                        ? `<span style="color: var(--rose);">${r.stufeSoll.toFixed(1)} ⚠</span>`
+                        : r.stufeSoll.toFixed(1))
+                    : (r.mischerStatus === 'too_low'
+                        ? '<span style="color: var(--rose);">Kessel ↑</span>'
+                        : '—');
+                return `<tr>
+                    <td class="outT">${t} °C</td>
+                    <td><strong>${r.Q_kW.toFixed(2)}</strong> kW</td>
+                    <td><strong>${r.tVL.toFixed(1)}</strong> °C</td>
+                    <td>${r.tRL.toFixed(1)} °C</td>
+                    <td>${r.dT_wasser.toFixed(1)} K</td>
+                    <td>${flowForCurve.toFixed(0)} l/h</td>
+                    <td><strong>${stufeCell}</strong></td>
+                    <td><strong>${r.dayCost.toFixed(2)}</strong> €</td>
+                </tr>`;
+            }).join('');
+
+            html += `
+                <div class="section-divider"><span>Heizkurve für ${tInnen.toFixed(1)} °C Innen · ${flowForCurve.toFixed(0)} l/h</span></div>
+                <div class="table-wrap">
+                    <div class="table-scroll">
+                        <table class="curve-table">
+                            <thead>
+                                <tr>
+                                    <th>Außen</th>
+                                    <th>Heizleistung</th>
+                                    <th>Vorlauf</th>
+                                    <th>Rücklauf</th>
+                                    <th>ΔT-W</th>
+                                    <th>Durchfluss</th>
+                                    <th>Mischer</th>
+                                    <th>Kosten/Tag</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+                <p style="font-size: 12.5px; color: var(--ink-500); margin-top: 12px; line-height: 1.6;">
+                    Die <strong>Mischer-Stufe</strong> setzt voraus, dass du oben einen Kessel-Vorlauf eingegeben hast. Sie wird über das Mischverhältnis berechnet und auf deine 10-stufige Skala umgerechnet, kalibriert über deine aktuelle Stufe ${(!isNaN(stufeAkt)) ? stufeAkt.toFixed(1) : '—'}.
+                    Der <strong>Durchfluss</strong> bestimmt die Spreizung ΔT-W: mehr Durchfluss → kleinere Spreizung → niedrigere Vorlauftemperatur möglich (gut für Brennwert-Wirkungsgrad). Aktuell verwendet: ${flowForCurve.toFixed(0)} l/h${Math.abs(flowForCurve - calibration.avgFlow) > 5 ? ` (vom Messwert ${calibration.avgFlow.toFixed(0)} l/h abweichend)` : ''}.
+                    Ein <strong style="color: var(--rose);">⚠</strong> bedeutet, der Mischer ist am Limit; <strong style="color: var(--rose);">„Kessel ↑"</strong> heißt: der eingestellte Kessel-Vorlauf ist zu niedrig für diese Außentemperatur — du müsstest am Kessel selbst höher fahren.
+                </p>`;
+
+            out.innerHTML = html;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            buildTable();
+            fillSelect('region',      REGIONS,              DEFAULT_REGION);
+            fillSelect('ventilation', VENTILATION_PROFILES, DEFAULT_VENTILATION);
+            fillSelect('solar',       SOLAR_PROFILES,       DEFAULT_SOLAR);
+            loadAll();
+            // Konsistenz-Check: wenn NAT/HGT nicht zur gewählten Region passen → auf "Eigene Werte"
+            const regionEl = document.getElementById('region');
+            if (regionEl) {
+                const region = REGIONS.find(r => r.id === regionEl.value);
+                if (region && region.id !== 'custom' && region.nat !== null && region.hgt !== null) {
+                    const nat = parseFloat(document.getElementById('normaussen').value);
+                    const hgt = parseFloat(document.getElementById('hgt').value);
+                    if (nat !== region.nat || hgt !== region.hgt) {
+                        regionEl.value = 'custom';
+                    }
+                }
+            }
+            watchManualClimateEdits();
+            attachAutoSave();
+        });
+    </script>
+</body>
+</html>
