@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<!--
+  Dieter Tepe — Tool-Werkstatt: Start-/Übersichtsseite
+  Version: 1.1.0
+  Stand: 2026-06-27
+  Changelog:
+    1.1.0 – Favoriten-Funktion: Stern pro Kachel markiert einen Favoriten
+            (immer nur einer aktiv), erscheint oben in eigener Leiste mit
+            Direkt-Start-Button. Zusätzlich auf jeder Kachel ein eigener
+            „Direkt starten"-Link, der das Tool ohne Overlay sofort öffnet.
+            Favorit wird lokal im Browser gespeichert (localStorage).
+    1.0.0 – Erste Version. Alle 8 Programme aus info_1.md als Kacheln,
+            gruppiert nach Projektfamilie (Lotto 6aus49, EuroJackpot,
+            Skip-Bo, DT-ProfiDreieck), mit Familien-Filter-Schaltern,
+            Icon pro Kachel, Detail-Overlay mit vollem Text + Link.
+  Einzeldatei, vollständig selbst-enthalten (CSS + JS inline), keine
+  externen Ressourcen zur Laufzeit. Läuft auf Handy, Tablet und PC.
+-->
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dieter Tepe — Tool-Werkstatt</title>
+<style>
+  :root{
+    --bg: #0b0e12;
+    --bg-panel: #11151b;
+    --bg-card: #161b22;
+    --bg-card-hover: #1b212a;
+    --border: #242b34;
+    --border-soft: #1c222b;
+    --text: #e7e5e0;
+    --text-muted: #8a8f98;
+    --text-faint: #5b6068;
+
+    --lotto: #e8a33d;
+    --euro: #3fc1c9;
+    --skipbo: #d6455a;
+    --dreieck: #7c93a8;
+
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Consolas", "Roboto Mono", monospace;
+    --sans: ui-sans-serif, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+    --radius: 10px;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(232,163,61,0.05), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 90% 0%, rgba(63,193,201,0.05), transparent 60%);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  a{ color: inherit; }
+
+  .wrap{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 16px 56px;
+  }
+
+  /* ---------- Header / Schaltpult ---------- */
+
+  header.panel{
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    margin-bottom: 22px;
+  }
+
+  .panel-top{
+    display:flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  h1{
+    font-family: var(--mono);
+    font-size: clamp(1.1rem, 1rem + 1vw, 1.55rem);
+    letter-spacing: 0.04em;
+    margin: 0 0 4px 0;
+    font-weight: 600;
+  }
+
+  .subtitle{
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    margin: 0;
+    max-width: 46ch;
+  }
+
+  .readout{
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    text-align: right;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+
+  .switches{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .switch{
+    --c: var(--text-muted);
+    display:flex;
+    align-items:center;
+    gap: 7px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 7px 13px 7px 10px;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+    min-height: 36px;
+  }
+  .switch .dot{
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border);
+    box-shadow: none;
+    transition: background .15s, box-shadow .15s;
+    flex: none;
+  }
+  .switch[aria-pressed="true"]{
+    color: var(--text);
+    border-color: var(--c);
+    background: var(--bg-card-hover);
+  }
+  .switch[aria-pressed="true"] .dot{
+    background: var(--c);
+    box-shadow: 0 0 8px 1px var(--c);
+  }
+  .switch:hover{ color: var(--text); }
+  .switch:focus-visible{ outline: 2px solid var(--c); outline-offset: 2px; }
+
+  /* ---------- Favoriten-Leiste ---------- */
+
+  .fav-bar{
+    --c: var(--text-muted);
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--c);
+    border-radius: 8px;
+    background: var(--bg-card);
+  }
+  .fav-bar.is-empty{
+    color: var(--text-faint);
+    font-size: 0.84rem;
+  }
+  .fav-bar .icon-box{ width: 34px; height: 34px; flex: none; }
+  .fav-bar .icon-box svg{ width: 18px; height: 18px; }
+  .fav-bar .fav-info{ flex: 1; min-width: 140px; }
+  .fav-bar .fav-eyebrow{
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c);
+    margin: 0 0 2px 0;
+  }
+  .fav-bar .fav-title{
+    font-size: 0.92rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  .fav-bar .fav-start{
+    display:inline-flex;
+    align-items:center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: var(--c);
+    color: #0b0e12;
+    font-weight: 600;
+    font-size: 0.84rem;
+    text-decoration: none;
+    white-space: nowrap;
+    min-height: 40px;
+  }
+  .fav-bar .fav-start:hover{ filter: brightness(1.08); }
+
+  /* ---------- Sections ---------- */
+
+  section.family{
+    margin-bottom: 30px;
+  }
+  section.family.is-hidden{ display:none; }
+
+  .family-head{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    margin: 0 0 12px 2px;
+  }
+  .family-head .bar{
+    width: 16px; height: 3px; border-radius: 2px;
+    background: var(--c);
+  }
+  .family-head h2{
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  /* ---------- Card ---------- */
+
+  .card{
+    --c: var(--text-muted);
+    text-align: left;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--c);
+    border-radius: var(--radius);
+    padding: 16px 16px 14px;
+    color: var(--text);
+    font-family: var(--sans);
+    display:flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 100%;
+    transition: background .15s, border-color .15s;
+  }
+  .card:hover{ background: var(--bg-card-hover); }
+  .card.is-favorite{ background: var(--bg-card-hover); }
+
+  .card-main{
+    display:flex;
+    flex-direction: column;
+    gap: 10px;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .card-main:active{ transform: scale(0.997); }
+  .card-main:focus-visible{ outline: 2px solid var(--c); outline-offset: 2px; border-radius: 6px; }
+
+  .card-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .star-btn{
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    width: 38px; height: 38px;
+    flex: none;
+    font-size: 1.05rem;
+    line-height: 1;
+    color: var(--text-faint);
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .star-btn:hover{ color: var(--c); border-color: var(--c); }
+  .star-btn[aria-pressed="true"]{
+    color: var(--c);
+    border-color: var(--c);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--c) 55%, transparent);
+  }
+  .star-btn:focus-visible{ outline: 2px solid var(--c); outline-offset: 2px; }
+
+  .icon-box{
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    display:flex; align-items:center; justify-content:center;
+    flex: none;
+    color: var(--c);
+  }
+  .icon-box svg{ width: 20px; height: 20px; display:block; }
+
+  .version-chip{
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--c);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    border-radius: 5px;
+    padding: 3px 7px;
+    text-shadow: 0 0 6px color-mix(in srgb, var(--c) 60%, transparent);
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  .card h3{
+    font-size: 0.98rem;
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .card .teaser{
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    margin: 0;
+    flex: 1;
+  }
+
+  .card .more{
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--c);
+    letter-spacing: 0.03em;
+    margin-top: 2px;
+  }
+
+  .card-actions{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 2px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .quick-start{
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    color: var(--c);
+    text-decoration: none;
+    padding: 6px 0;
+    white-space: nowrap;
+  }
+  .quick-start:hover{ text-decoration: underline; }
+  .quick-start:focus-visible{ outline: 2px solid var(--c); outline-offset: 2px; }
+
+  /* ---------- Overlay / Modal ---------- */
+
+  .backdrop{
+    position: fixed; inset: 0;
+    background: rgba(5,7,9,0.72);
+    backdrop-filter: blur(2px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 20px;
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s;
+  }
+  .backdrop.open{ opacity: 1; pointer-events: auto; }
+
+  .modal{
+    --c: var(--text-muted);
+    width: 100%;
+    max-width: 640px;
+    max-height: 86vh;
+    overflow-y: auto;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--c);
+    border-radius: var(--radius);
+    padding: 22px 22px 24px;
+    transform: translateY(8px) scale(0.985);
+    transition: transform .18s;
+  }
+  .backdrop.open .modal{ transform: translateY(0) scale(1); }
+
+  .modal-head{
+    display:flex;
+    justify-content: space-between;
+    align-items:flex-start;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .modal-head-left{ display:flex; gap: 12px; align-items:flex-start; }
+  .modal .icon-box{ width: 42px; height: 42px; }
+  .modal .icon-box svg{ width: 22px; height: 22px; }
+  .modal h2{
+    font-size: 1.08rem;
+    margin: 0 0 4px 0;
+    line-height: 1.35;
+  }
+  .modal .version-chip{ margin-top: 0; }
+
+  .modal .close{
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    flex: none;
+  }
+  .modal .close:hover{ color: var(--text); border-color: var(--c); }
+
+  .modal-section{ margin-top: 16px; }
+  .modal-section .label{
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c);
+    margin: 0 0 6px 0;
+  }
+  .modal-section p{
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  .modal .open-link{
+    display:inline-flex;
+    align-items:center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 11px 18px;
+    border-radius: 8px;
+    background: var(--c);
+    color: #0b0e12;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    min-height: 44px;
+  }
+  .modal .open-link:hover{ filter: brightness(1.08); }
+
+  /* ---------- Footer ---------- */
+
+  footer{
+    margin-top: 30px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-soft);
+    color: var(--text-faint);
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+  footer .page-version{
+    font-family: var(--mono);
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="panel">
+    <div class="panel-top">
+      <div>
+        <h1>DIETER TEPE — TOOL-WERKSTATT</h1>
+        <p class="subtitle">Eigene Browser-Tools — Lotto- &amp; EuroJackpot-Analyse, Skip-Bo und ein Werkstatt-Dreiecksrechner. Alles läuft direkt im Browser, ohne Installation.</p>
+      </div>
+      <div class="readout" id="readout"></div>
+    </div>
+    <div class="switches" id="switches"></div>
+    <div class="fav-bar" id="fav-bar"></div>
+  </header>
+
+  <main id="sections"></main>
+
+  <footer>
+    <p>Die Lotto- und EuroJackpot-Tools werten Ziehungsdaten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.</p>
+    <p class="page-version">Übersichtsseite v1.1.0 · Stand 27.06.2026</p>
+  </footer>
+
+</div>
+
+<div class="backdrop" id="backdrop">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <div class="icon-box" id="modal-icon"></div>
+        <div>
+          <h2 id="modal-title"></h2>
+          <span class="version-chip" id="modal-version"></span>
+        </div>
+      </div>
+      <button class="close" id="modal-close" aria-label="Schließen">✕</button>
+    </div>
+
+    <div class="modal-section">
+      <p class="label">Was es kann</p>
+      <p id="modal-kann"></p>
+    </div>
+    <div class="modal-section">
+      <p class="label">Was es auszeichnet</p>
+      <p id="modal-auszeichnet"></p>
+    </div>
+
+    <a href="#" target="_blank" rel="noopener" class="open-link" id="modal-link">Öffnen ↗</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Icons (inline SVG, currentColor) ----------
+  var ICONS = {
+    chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><rect x="7" y="11" width="3" height="8"/><rect x="12" y="7" width="3" height="12"/><rect x="17" y="13" width="3" height="6"/></svg>',
+    funnel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 7.5V18l-4 2v-7.5L4 5Z"/></svg>',
+    star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="5.2"/><path d="M12 3.3l.8 1.7 1.9.2-1.4 1.3.3 1.9-1.6-.9-1.6.9.3-1.9-1.4-1.3 1.9-.2.8-1.7Z"/></svg>',
+    importbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/><path d="M12 14V3M12 14l-3.5-3.5M12 14l3.5-3.5"/></svg>',
+    cardsflat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="11" height="15" rx="1.5"/><path d="M6 8.5h11"/></svg>',
+    cardsshine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="5.5" width="10" height="14" rx="1.5" transform="rotate(-8 9.5 12.5)"/><rect x="9.5" y="4.5" width="10" height="14" rx="1.5"/><path d="M19 2.4l.6 1.3 1.4.2-1 .9.2 1.4-1.2-.7-1.2.7.2-1.4-1-.9 1.4-.2.6-1.3Z"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.5v2M12 17.5v2M4.5 12h2M17.5 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4"/></svg>',
+    triangle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 20 19H4L12 4.5Z"/><path d="M4 19h16M9 19v1.6M15 19v1.6M12 4.5v-1.6"/></svg>'
+  };
+
+  // ---------- Family definitions ----------
+  var FAMILIES = [
+    { key: "lotto",   label: "Lotto 6aus49",     color: "var(--lotto)" },
+    { key: "euro",    label: "EuroJackpot",       color: "var(--euro)" },
+    { key: "skipbo",  label: "Skip-Bo",           color: "var(--skipbo)" },
+    { key: "dreieck", label: "DT-ProfiDreieck",   color: "var(--dreieck)" }
+  ];
+
+  // ---------- Tool data (aus info_1.md) ----------
+  var TOOLS = [
+    {
+      id: "lotto-konsole", family: "lotto", icon: "chart",
+      title: "Lotto 6aus49 — Analyse-Konsole", version: "2.1.0",
+      teaser: "Wertet die komplette 6aus49-Historie seit 1955 aus — Häufigkeiten, Tests, Prognosen, Wheeling.",
+      kann: "Häufigkeiten und „heiße/kalte\u201C Zahlen, statistische Tests (Chi-Quadrat, Entropie), Übergangs-Muster, sowie Verteilungen nach Wochentag, Gerade/Ungerade, Hoch/Niedrig und Zahlensumme. Dazu zwei eigenständige Prognose-Methoden inklusive passender Superzahl, ein Backtest, der jede Methode gegen echte vergangene Ziehungen prüft, und eine automatische Gewichte-Optimierung. Aus den Ergebnissen erzeugt die Konsole zwölf fertige Spielfelder und ein Abdeck-System (Wheeling), das mehrere Tipps geschickt bündelt — alles bearbeitbar, ausdruckbar und als PDF speicherbar.",
+      auszeichnet: "Ehrlichkeit. Ein eingebautes „Forschungslabor\u201C prüft mit echten statistischen Verfahren, ob aufeinanderfolgende Ziehungen zusammenhängen — das Ergebnis bestätigt: Lotto ist Zufall, keine Methode schlägt auf Dauer den Erwartungswert. Das Tool verspricht deshalb keine Gewinnzahlen, sondern grenzt Wahrscheinlichkeiten sauber ein und zeigt mit dem Wheeling den einzigen Hebel, der wirklich etwas bewirkt. Die Daten sind dank angebundenem Online-Archiv stets aktuell, und die Oberfläche läuft flüssig auf Handy, Tablet und PC.",
+      link: "https://dietertepe.github.io/Lotto/Lotto_2-1-0.html"
+    },
+    {
+      id: "lotto-manager", family: "lotto", icon: "funnel",
+      title: "Lotto 6aus49 — Daten-Manager", version: "2.0.0",
+      teaser: "Pflegt und prüft die Ziehungsdaten für die 6aus49-Konsole.",
+      kann: "Die vollständige Ziehungshistorie laden, neue Ziehungen bequem über ein Zahlenraster eingeben — mit automatischer Plausibilitätsprüfung, die Tippfehler abfängt — sowie einzelne Einträge suchen, kontrollieren und löschen. Gespeichert wird in einem schlanken, offenen Datenformat, das die Analyse-Konsole direkt weiterverwenden kann.",
+      auszeichnet: "Verlässlichkeit ohne Ballast. Der Manager erkennt fehlerhafte oder unvollständige Einträge, meldet sie klar und bewahrt den Datenbestand vor Beschädigung. Er arbeitet mit einem standardisierten, gut austauschbaren Format und läuft — wie alle Tools dieser Reihe — vollständig im Browser auf jedem Gerät, ohne Installation.",
+      link: "https://dietertepe.github.io/Lotto/Lotto_Manager_Pro_2-0-0.html"
+    },
+    {
+      id: "euro-konsole", family: "euro", icon: "star",
+      title: "EuroJackpot — Analyse-Konsole", version: "1.0.1",
+      teaser: "Doppelte Auswertung für Haupt- und Eurozahlen, epochensicher kalibriert.",
+      kann: "Sämtliche Auswertungen laufen doppelt, für Haupt- und Eurozahlen: Häufigkeiten, heiße/kalte Zahlen, statistische Tests, Übergänge, Wochentag (Dienstag/Freitag), Gerade/Ungerade, Hoch/Niedrig und Summe. Zwei Prognose-Methoden liefern je fünf Hauptzahlen und zwei echte Eurozahlen, ein Backtest bewertet beide Zahlengruppen getrennt, und das Forschungslabor prüft die Unabhängigkeit der Ziehungen. Zwölf Spielfelder werden erzeugt — jedes mit seinem eigenen Eurozahlen-Paar — dazu ein Abdeck-System (Wheeling) und eine Druck-/PDF-Funktion.",
+      auszeichnet: "Epochensicherheit. Der Eurozahlen-Bereich ist über die Jahre gewachsen (erst 1–8, dann 1–10, heute 1–12) — die Konsole rechnet das korrekt heraus, sodass neuere Zahlen nicht fälschlich als „überfällig\u201C erscheinen. So entsteht ein faires, mathematisch sauberes Bild beider Zahlengruppen. Wie ihr 6aus49-Pendant bleibt sie dabei ehrlich (sie sagt nichts voraus, sie ordnet ein) und läuft reibungslos auf Handy, Tablet und PC.",
+      link: "https://dietertepe.github.io/Eurolotto/Eurolotto_1-0-1.html"
+    },
+    {
+      id: "euro-manager", family: "euro", icon: "importbox",
+      title: "EuroJackpot — Daten-Manager", version: "0.1.8",
+      teaser: "Importiert ZIP oder CSV direkt von der offiziellen Quelle.",
+      kann: "Die geprüfte Ziehungshistorie laden, neue Ziehungen über zwei Zahlenraster eingeben (mit Validierung, die sowohl die gewachsenen Eurozahlen-Bereiche als auch die Ziehungstage Dienstag und Freitag kennt) sowie Einträge suchen und löschen. Der Import akzeptiert wahlweise eine ZIP- oder eine CSV-Datei: Die offizielle WestLotto-ZIP wird automatisch entpackt und eingelesen — ein Entpacken von Hand entfällt. Verschiedene Dateiformate werden dabei selbsttätig erkannt.",
+      auszeichnet: "Ein Schutz, der keine Daten verlieren lässt. Beim Import werden ausschließlich fehlende Ziehungen ergänzt, bereits vorhandene bleiben unangetastet — so kann man die Daten gefahrlos aktualisieren, ohne den Bestand zu gefährden. Das direkte ZIP-Einlesen gelingt ohne jede Zusatzsoftware, und der Manager läuft vollständig im Browser auf jedem Gerät.",
+      link: "https://dietertepe.github.io/Eurolotto/EuroJackpot_Manager_0-1-8.html"
+    },
+    {
+      id: "skipbo-basis", family: "skipbo", icon: "cardsflat",
+      title: "Skip-Bo — Die Basisversion", version: "6.6.0",
+      teaser: "Der Ursprung: eine Datei, das komplette Spiel, schlicht und nachvollziehbar.",
+      kann: "Das vollständige Skip-Bo-Spielprinzip gegen einen Computergegner — den eigenen Stapel zuerst leeren, indem auf den gemeinsamen Baustapeln Reihen von 1 bis 12 gelegt werden, gespeist aus Handkarten, den vier eigenen Ablagestapeln und den Skip-Bo-Jokern (Wild-Karten). Gespielt wird kostenlos und ohne Installation direkt im Browser, auf Handy, Tablet und PC.",
+      auszeichnet: "Schlichtheit als Fundament. Im Unterschied zur neuen Version ist sie noch nicht modular aufgebaut, optisch nicht überarbeitet und nicht mit mehreren Sprachen ausgestattet — dafür bleibt sie als einzelne, abgeschlossene Datei unverändert spiel- und nachvollziehbar, genau so, wie das Projekt begonnen hat.",
+      link: "https://dietertepe.github.io/Ordner1/SkipBo_6_6_0.html"
+    },
+    {
+      id: "skipbo-klassisch", family: "skipbo", icon: "cardsshine",
+      title: "Skip-Bo — Das klassische Kartenspiel", version: "7.0.0",
+      teaser: "Werktreue Neuauflage mit Original-Look, vier Sprachen, sechs Themen.",
+      kann: "Das vollständige Skip-Bo-Spielprinzip — den eigenen Stapel zuerst leeren, indem auf den gemeinsamen Baustapeln Reihen von 1 bis 12 gelegt werden, gespeist aus Handkarten, den vier eigenen Ablagestapeln und den Skip-Bo-Jokern (Wild-Karten). Gespielt wird gegen einen Computergegner. Das Kartenbild ist im Original-Look nachgebaut: die typischen Strudel-Karten in Blau, Grün und Rot, die orange Skip-Bo-Karte und passende Rückseiten. Dazu eine wählbare Spielgeschwindigkeit, ein eigener Spielername, vier Sprachen (Deutsch, Englisch, Portugiesisch, Ukrainisch) und ein Design-Menü mit sechs Hintergrund-Themen sowie Reglern für Helligkeit und Farbton — die Auswahl wird auf dem Gerät gespeichert.",
+      auszeichnet: "Liebe zum Detail. Von den Karten über die plastischen Spielfeld-Rahmen bis zum animierten Ring, der den aktiven Spieler anzeigt, ist alles darauf ausgelegt, sich wie das echte Spiel anzufühlen — aufgeräumt und hochwertig. Skip-Bo ist persönlich anpassbar und läuft vollständig im Browser, ganz ohne Installation. Es ist gratis und werbefrei; es wird nichts getrackt — alle Einstellungen bleiben lokal auf dem Gerät. Zu dieser Version gehört außerdem ein eigenständiger KI-Tuner, der die Spielstärke des Computergegners verbessert.",
+      link: "https://dietertepe.github.io/Skipo/SkipBo_7_0_0.html"
+    },
+    {
+      id: "skipbo-tuner", family: "skipbo", icon: "gear",
+      title: "Skip-Bo — KI-Tuner", version: "2.7 (Turbo + Feinschliff 2.7b)",
+      teaser: "Optimiert die Spielstärke des Computergegners per genetischer Suche.",
+      kann: "In zwei Phasen — erst breite Erkundung, dann Feinschliff — lässt der Tuner tausende simulierte Partien gegen einen Spiegel-Gegner mit identischer Engine laufen, gepaart in Mirror-Paaren, damit sich Kartenglück gegenseitig aufhebt, und beschleunigt durch Mehrkern-Web-Worker. Eine vorgeschaltete „Turbo-Sieb\u201C-Vorrunde mit einem Drittel-Deck sortiert schwache Kandidaten schon früh aus. Am Ende steht ein fertiger KONFIG-Block zum direkten Einfügen ins Spiel, ergänzt durch ein Empfehlungs-Panel mit Schiebereglern, das zeigt, welche Werte den größten Einfluss auf die Spielstärke haben.",
+      auszeichnet: "Der Selbstoptimierungs-Kreislauf — das Ergebnis eines Laufs lässt sich per Konverter wieder in den Startpunkt des nächsten Laufs zurückverwandeln, sodass jeder Tuning-Durchgang auf dem vorherigen aufbaut. Eine automatische Suchraum-Dehnung erkennt, wenn die Optimierung an ihre eigenen Wertegrenzen stößt, und erweitert sie selbsttätig. Wie das Spiel läuft auch der Tuner vollständig im Browser, ohne Installation oder Cloud-Anbindung.",
+      link: "https://dietertepe.github.io/SkipBo_Tuner/SkipBo_Tuner_v2_7.html"
+    },
+    {
+      id: "dreieck", family: "dreieck", icon: "triangle",
+      title: "DT-ProfiDreieck — Profi-Dreiecksrechner für Werkstatt & CNC", version: "Test 1.1.0 & Pro 1.1.0 (Engine 3.0.0)",
+      teaser: "Löst jedes Dreieck und liefert die fertige CAD-Zeichnung — für CNC & Werkstatt.",
+      kann: "Alle gängigen Eingabefälle (SSS, SWS, WSW, SWW, SSW) sowie die fortgeschrittenen Spezialfälle mit Umkreis, Inkreis, Fläche oder Höhen — inklusive numerischer Lösungen mit Plausibilitätsprüfung (z. B. Euler-Ungleichung R≥2r). Jedes Ergebnis kommt mit vollständigem, nachvollziehbarem Rechenweg sowie einer maßstäblichen CAD-Zeichnung. Export als PNG, SVG, PDF und — als Alleinstellung — direkt verwertbares DXF für die CNC-Maschine. Die Testversion rechnet alle Standardfälle und exportiert frei; die Pro-Version schaltet zusätzlich die Spezial-Eingabefälle frei und trägt ein persönliches Lizenz-Wasserzeichen.",
+      auszeichnet: "Ehrlichkeit und Nachvollziehbarkeit — der Rechenweg wird unabhängig vom eigentlichen Lösungsprozess neu berechnet, damit jede angezeigte Formel sich selbst bestätigt. Die Spezialfälle sind der eigentliche Burggraben, den kaum ein anderes frei verfügbares Tool abdeckt. Dazu kommt der direkte DXF-Export, der die Geometrie ohne Umwege an die Werkstatt-Maschine bringt. Beide Versionen laufen als einzelne, offline funktionierende Datei ohne Cloud-Anbindung und ohne laufende Kosten.",
+      link: "https://www.dt-profidreieck.de/"
+    }
+  ];
+
+  // ---------- State ----------
+  var activeFamilies = {};
+  FAMILIES.forEach(function(f){ activeFamilies[f.key] = true; });
+
+  var FAV_KEY = "dt_werkstatt_favorit";
+  function getFavoriteId(){
+    try { return localStorage.getItem(FAV_KEY); } catch(e){ return null; }
+  }
+  function setFavoriteId(id){
+    try {
+      if(id) localStorage.setItem(FAV_KEY, id);
+      else localStorage.removeItem(FAV_KEY);
+    } catch(e){ /* lokaler Speicher nicht verfügbar — Favorit gilt nur für diese Sitzung */ }
+  }
+  function findTool(id){
+    for(var i=0;i<TOOLS.length;i++){ if(TOOLS[i].id === id) return TOOLS[i]; }
+    return null;
+  }
+  function familyOf(tool){
+    for(var i=0;i<FAMILIES.length;i++){ if(FAMILIES[i].key === tool.family) return FAMILIES[i]; }
+    return null;
+  }
+
+  // ---------- Render: switches ----------
+  var switchesEl = document.getElementById("switches");
+  FAMILIES.forEach(function(f){
+    var btn = document.createElement("button");
+    btn.className = "switch";
+    btn.type = "button";
+    btn.setAttribute("aria-pressed", "true");
+    btn.style.setProperty("--c", f.color);
+    btn.dataset.family = f.key;
+    btn.innerHTML = '<span class="dot"></span><span>' + f.label + '</span>';
+    btn.addEventListener("click", function(){
+      activeFamilies[f.key] = !activeFamilies[f.key];
+      btn.setAttribute("aria-pressed", String(activeFamilies[f.key]));
+      renderSections();
+    });
+    switchesEl.appendChild(btn);
+  });
+
+  // ---------- Render: sections + cards ----------
+  var sectionsEl = document.getElementById("sections");
+
+  function renderSections(){
+    sectionsEl.innerHTML = "";
+    FAMILIES.forEach(function(f){
+      var tools = TOOLS.filter(function(t){ return t.family === f.key; });
+      var section = document.createElement("section");
+      section.className = "family";
+      if(!activeFamilies[f.key]) section.classList.add("is-hidden");
+
+      var head = document.createElement("div");
+      head.className = "family-head";
+      head.innerHTML = '<span class="bar" style="background:' + f.color + '"></span><h2>' + f.label + '</h2>';
+      section.appendChild(head);
+
+      var grid = document.createElement("div");
+      grid.className = "grid";
+
+      tools.forEach(function(t){
+        var isFav = (getFavoriteId() === t.id);
+
+        var card = document.createElement("div");
+        card.className = "card" + (isFav ? " is-favorite" : "");
+        card.style.setProperty("--c", f.color);
+
+        var top = document.createElement("div");
+        top.className = "card-top";
+
+        var iconBox = document.createElement("div");
+        iconBox.className = "icon-box";
+        iconBox.innerHTML = ICONS[t.icon];
+
+        var starBtn = document.createElement("button");
+        starBtn.type = "button";
+        starBtn.className = "star-btn";
+        starBtn.style.setProperty("--c", f.color);
+        starBtn.setAttribute("aria-pressed", String(isFav));
+        starBtn.setAttribute("aria-label", isFav ? "Als Favorit entfernen" : "Als Favorit markieren");
+        starBtn.textContent = isFav ? "★" : "☆";
+        starBtn.addEventListener("click", function(){
+          setFavoriteId(isFav ? null : t.id);
+          renderSections();
+          renderFavBar();
+        });
+
+        top.appendChild(iconBox);
+        top.appendChild(starBtn);
+
+        var main = document.createElement("button");
+        main.type = "button";
+        main.className = "card-main";
+        main.innerHTML =
+          '<span class="version-chip">v' + t.version + '</span>' +
+          '<h3>' + t.title + '</h3>' +
+          '<p class="teaser">' + t.teaser + '</p>' +
+          '<span class="more">Details →</span>';
+        main.addEventListener("click", function(){ openModal(t, f); });
+
+        var actions = document.createElement("div");
+        actions.className = "card-actions";
+        var quick = document.createElement("a");
+        quick.className = "quick-start";
+        quick.href = t.link;
+        quick.target = "_blank";
+        quick.rel = "noopener";
+        quick.textContent = "Direkt starten ↗";
+        actions.appendChild(quick);
+
+        card.appendChild(top);
+        card.appendChild(main);
+        card.appendChild(actions);
+        grid.appendChild(card);
+      });
+
+      section.appendChild(grid);
+      sectionsEl.appendChild(section);
+    });
+  }
+
+  renderSections();
+
+  // ---------- Render: Favoriten-Leiste ----------
+  var favBarEl = document.getElementById("fav-bar");
+
+  function renderFavBar(){
+    var favId = getFavoriteId();
+    var tool = favId ? findTool(favId) : null;
+
+    if(!tool){
+      favBarEl.className = "fav-bar is-empty";
+      favBarEl.style.removeProperty("--c");
+      favBarEl.innerHTML = "Noch kein Favorit gewählt — markiere ein Tool mit ☆, um es hier direkt starten zu können.";
+      return;
+    }
+
+    var fam = familyOf(tool);
+    favBarEl.className = "fav-bar";
+    favBarEl.style.setProperty("--c", fam.color);
+    favBarEl.innerHTML =
+      '<div class="icon-box">' + ICONS[tool.icon] + '</div>' +
+      '<div class="fav-info">' +
+        '<p class="fav-eyebrow">Favorit</p>' +
+        '<p class="fav-title">' + tool.title + '</p>' +
+      '</div>' +
+      '<a class="fav-start" href="' + tool.link + '" target="_blank" rel="noopener">Jetzt starten ↗</a>';
+  }
+
+  renderFavBar();
+
+  // ---------- Readout (kleine Live-Anzeige) ----------
+  var readoutEl = document.getElementById("readout");
+  function updateReadout(){
+    var now = new Date();
+    var d = now.toLocaleDateString("de-DE");
+    var t = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    readoutEl.innerHTML = d + "<br>" + t + " · " + TOOLS.length + " Tools";
+  }
+  updateReadout();
+  setInterval(updateReadout, 30000);
+
+  // ---------- Modal ----------
+  var backdrop = document.getElementById("backdrop");
+  var modal = document.getElementById("modal");
+  var modalIcon = document.getElementById("modal-icon");
+  var modalTitle = document.getElementById("modal-title");
+  var modalVersion = document.getElementById("modal-version");
+  var modalKann = document.getElementById("modal-kann");
+  var modalAuszeichnet = document.getElementById("modal-auszeichnet");
+  var modalLink = document.getElementById("modal-link");
+  var modalClose = document.getElementById("modal-close");
+  var lastFocused = null;
+
+  function openModal(tool, fam){
+    modal.style.setProperty("--c", fam.color);
+    modalIcon.style.color = fam.color;
+    modalIcon.innerHTML = ICONS[tool.icon];
+    modalTitle.textContent = tool.title;
+    modalVersion.textContent = "v" + tool.version;
+    modalKann.textContent = tool.kann;
+    modalAuszeichnet.textContent = tool.auszeichnet;
+    modalLink.href = tool.link;
+    backdrop.classList.add("open");
+    lastFocused = document.activeElement;
+    modalClose.focus();
+    document.addEventListener("keydown", onKeydown);
+  }
+
+  function closeModal(){
+    backdrop.classList.remove("open");
+    document.removeEventListener("keydown", onKeydown);
+    if(lastFocused) lastFocused.focus();
+  }
+
+  function onKeydown(e){
+    if(e.key === "Escape") closeModal();
+  }
+
+  modalClose.addEventListener("click", closeModal);
+  backdrop.addEventListener("click", function(e){
+    if(e.target === backdrop) closeModal();
+  });
+
+})();
+</script>
+</body>
+</html>
