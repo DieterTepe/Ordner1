@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <!--
   Dieter Tepe — Tool-Werkstatt: Start-/Übersichtsseite
-  Version: 1.6.0
-  Stand: 2026-06-27
+  Version: 1.7.0
+  Stand: 2026-06-28
   Changelog:
+    1.7.0 – Bugfix Auto-Übersetzung + Flaggen + Filter-Speicherung:
+            • BUGFIX: Manche Browser haben die Seite bei nicht-deutscher
+              Sprache automatisch übersetzt (z. B. „UK“ → „Vereinigtes
+              Königreich") und dabei mit der eigenen Umschaltung kollidiert
+              („alles durcheinander", Umschalten ging nicht mehr). Jetzt
+              unterbunden über <html translate="no"> + Meta „notranslate" —
+              die Seite bringt ihre Übersetzung ja selbst mit. Das
+              <html lang> bleibt für Vorlesehilfen erhalten.
+            • Sprach-Schalter mit kleinen, selbst gezeichneten Flaggen
+              (SVG, damit auf jedem Gerät gleich — Flaggen-Emojis erscheinen
+              auf Windows nur als Buchstaben). Ukrainisch-Kürzel von „UK"
+              auf „UA" geändert, damit es nicht wie United Kingdom wirkt
+              (interner Sprachcode bleibt „uk").
+            • Familien-Filter (ein-/ausgeblendete Gruppen) wird jetzt lokal
+              gespeichert und beim nächsten Start wiederhergestellt — wie
+              Sprache und Favorit.
     1.6.0 – Mehrsprachigkeit (Deutsch · Englisch · Portugiesisch · Ukrainisch):
-            • Vier Sprach-Schalter oben rechts (DE/EN/PT/UK) im Kippschalter-
-              Stil; die Wahl wird lokal gespeichert (localStorage) und das
-              <html lang>-Attribut mitgesetzt.
-            • ALLE Oberflächen-Texte sind übersetzt: Titelzeilen, Untertitel,
-              Familien-Beschriftungen, Buttons (Favorit/Jetzt starten/Direkt
-              starten/Details), Overlay-Überschriften, Footer, Readout
-              (inkl. lokalem Datums-/Zeitformat) und Tooltips.
-            • ALLE Tool-Beschreibungen (Titel, Teaser, „Was es kann",
-              „Was es auszeichnet" und die Anleitungs-Schritte des
-              Heizungs-Checks) liegen in allen vier Sprachen vor.
-            • Datenstruktur erweiterbar: pro Tool ein i18n-Block
-              {de,en,pt,uk}; sprachunabhängige Felder (id, family, icon,
-              link, version) bleiben außerhalb. Neue Sprache = ein Key mehr.
-            • Sprachwechsel baut die Kacheln NICHT neu, sondern aktualisiert
-              nur die Texte (Referenzen aus dem einmaligen Aufbau).
+            vier Sprach-Schalter, ALLE Texte übersetzt (Oberfläche und
+            komplette Tool-Beschreibungen), Sprache lokal gespeichert,
+            <html lang> + Datums-/Zeitformat folgen der Sprache.
     1.5.0 – Zwei Handy-Verbesserungen: theme-color färbt die Statusleiste;
             Kacheln blenden am Handy zusätzlich sanft einzeln auf
             (reduced-motion in der Media-Query selbst abgesichert).
@@ -53,10 +57,10 @@
 -->
 <html lang="de" translate="no">
 <head>
-    <meta name="google" content="notranslate">
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0b0e12">
+<meta name="google" content="notranslate">
 <title>Dieter Tepe — Tool-Werkstatt</title>
 <style>
   :root{
@@ -192,6 +196,9 @@
   }
   .lang-btn{
     appearance: none; -webkit-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     border: none;
     border-left: 1px solid var(--border);
     background: transparent;
@@ -200,7 +207,6 @@
     font-size: 0.72rem;
     letter-spacing: 0.06em;
     padding: 7px 11px;
-    min-width: 40px;
     min-height: 34px;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
@@ -215,6 +221,19 @@
   }
   .lang-btn:hover{ color: var(--text); }
   .lang-btn:focus-visible{ outline: 2px solid var(--text-muted); outline-offset: 2px; }
+
+  .lang-flag{
+    width: 18px; height: 12px;
+    border-radius: 2px;
+    overflow: hidden;
+    flex: none;
+    display: block;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
+    opacity: 0.82;
+    transition: opacity .15s;
+  }
+  .lang-flag svg{ width: 100%; height: 100%; display: block; }
+  .lang-btn[aria-pressed="true"] .lang-flag{ opacity: 1; }
 
   /* ---------- Familien-Filter-Schalter ---------- */
 
@@ -744,12 +763,26 @@
   var LANG_NAMES = { de: "Deutsch", en: "English", pt: "Português", uk: "Українська" };
   var LOCALES   = { de: "de-DE", en: "en-GB", pt: "pt-PT", uk: "uk-UA" };
 
+  // Sichtbares Kürzel im Schalter. Für Ukrainisch bewusst „UA" (Länderkürzel)
+  // statt „UK" — „UK" würde wie United Kingdom aussehen. Interner Sprachcode
+  // bleibt „uk" (ISO 639-1, korrekt für <html lang> und localStorage).
+  var LANG_ABBR = { de: "DE", en: "EN", pt: "PT", uk: "UA" };
+
+  // Kleine, selbst gezeichnete Flaggen (SVG, füllt den Container). Bewusst als
+  // Grafik statt Emoji: Flaggen-Emojis erscheinen auf Windows nur als Buchstaben.
+  var LANG_FLAGS = {
+    de: '<svg viewBox="0 0 3 2" preserveAspectRatio="none"><rect width="3" height="2" fill="#000"/><rect y="0.667" width="3" height="0.667" fill="#D00"/><rect y="1.334" width="3" height="0.666" fill="#FFCE00"/></svg>',
+    en: '<svg viewBox="0 0 60 40" preserveAspectRatio="none"><rect width="60" height="40" fill="#012169"/><path d="M0,0 60,40 M60,0 0,40" stroke="#fff" stroke-width="8"/><path d="M0,0 60,40 M60,0 0,40" stroke="#C8102E" stroke-width="4"/><path d="M30,0 V40 M0,20 H60" stroke="#fff" stroke-width="12"/><path d="M30,0 V40 M0,20 H60" stroke="#C8102E" stroke-width="7"/></svg>',
+    pt: '<svg viewBox="0 0 60 40" preserveAspectRatio="none"><rect width="60" height="40" fill="#D52B1E"/><rect width="24" height="40" fill="#006600"/><circle cx="24" cy="20" r="8" fill="none" stroke="#FFE600" stroke-width="2"/><circle cx="24" cy="20" r="3.4" fill="#fff" stroke="#003399" stroke-width="2.6"/></svg>',
+    uk: '<svg viewBox="0 0 3 2" preserveAspectRatio="none"><rect width="3" height="1" fill="#0057B7"/><rect y="1" width="3" height="1" fill="#FFD700"/></svg>'
+  };
+
   // Oberflächen-Texte (alles außer den Tool-Beschreibungen).
   var UI = {
     de: {
       subtitle: "Eigene Browser-Tools — Lotto- & EuroJackpot-Analyse, Skip-Bo, ein Werkstatt-Dreiecksrechner und ein Heizungs-Check fürs eigene Zuhause. Alles läuft direkt im Browser, ohne Installation.",
       footerNote: "Die Lotto- und EuroJackpot-Tools werten Ziehungsdaten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.",
-      pageVersion: "Übersichtsseite v1.6.0 · Stand 27.06.2026",
+      pageVersion: "Übersichtsseite v1.7.0 · Stand 28.06.2026",
       langLabel: "Sprache",
       toolsWord: "Tools",
       favEyebrow: "Favorit",
@@ -768,7 +801,7 @@
     en: {
       subtitle: "Personal browser tools — Lotto & EuroJackpot analysis, Skip-Bo, a workshop triangle calculator and a heating check for your own home. Everything runs right in the browser, no installation.",
       footerNote: "The Lotto and EuroJackpot tools analyse draw data and support your number selection — they do not predict any draw.",
-      pageVersion: "Overview page v1.6.0 · As of 27 Jun 2026",
+      pageVersion: "Overview page v1.7.0 · As of 28 Jun 2026",
       langLabel: "Language",
       toolsWord: "tools",
       favEyebrow: "Favourite",
@@ -787,7 +820,7 @@
     pt: {
       subtitle: "Ferramentas próprias para o navegador — análise da Lotto e do EuroJackpot, Skip-Bo, uma calculadora de triângulos para a oficina e uma verificação do aquecimento para a própria casa. Tudo funciona diretamente no navegador, sem instalação.",
       footerNote: "As ferramentas da Lotto e do EuroJackpot analisam os dados dos sorteios e ajudam na escolha dos números — não preveem nenhum sorteio.",
-      pageVersion: "Página de visão geral v1.6.0 · Atualizado em 27/06/2026",
+      pageVersion: "Página de visão geral v1.7.0 · Atualizado em 28/06/2026",
       langLabel: "Idioma",
       toolsWord: "ferramentas",
       favEyebrow: "Favorito",
@@ -806,7 +839,7 @@
     uk: {
       subtitle: "Власні браузерні інструменти — аналіз Lotto та EuroJackpot, Skip-Bo, калькулятор трикутників для майстерні та перевірка опалення для власного дому. Усе працює прямо у браузері, без встановлення.",
       footerNote: "Інструменти Lotto та EuroJackpot аналізують дані тиражів і допомагають у виборі чисел — вони не передбачають жодного тиражу.",
-      pageVersion: "Оглядова сторінка v1.6.0 · Станом на 27.06.2026",
+      pageVersion: "Оглядова сторінка v1.7.0 · Станом на 28.06.2026",
       langLabel: "Мова",
       toolsWord: "інструментів",
       favEyebrow: "Обране",
@@ -1209,8 +1242,33 @@
   }
   function setLang(l){ try { localStorage.setItem(LANG_KEY, l); } catch(e){ /* nur diese Sitzung */ } }
 
+  var FILTER_KEY = "dt_werkstatt_filter";
+  // Filter-Zustand laden: gespeichert ist ein Array der AUSGEBLENDETEN Familien.
+  // (Default = nichts ausgeblendet = alle Familien sichtbar.)
+  function loadHiddenFamilies(){
+    try {
+      var raw = localStorage.getItem(FILTER_KEY);
+      if(!raw) return {};
+      var arr = JSON.parse(raw);
+      if(!Array.isArray(arr)) return {};
+      var map = {};
+      arr.forEach(function(k){ map[k] = true; });
+      return map;
+    } catch(e){ return {}; }
+  }
+  function saveHiddenFamilies(){
+    try {
+      var hidden = [];
+      FAMILIES.forEach(function(f){ if(!activeFamilies[f.key]) hidden.push(f.key); });
+      localStorage.setItem(FILTER_KEY, JSON.stringify(hidden));
+    } catch(e){ /* Speicher nicht verfügbar — gilt dann nur für diese Sitzung */ }
+  }
+
   var activeFamilies = {};
-  FAMILIES.forEach(function(f){ activeFamilies[f.key] = true; });
+  (function initActiveFamilies(){
+    var hidden = loadHiddenFamilies();
+    FAMILIES.forEach(function(f){ activeFamilies[f.key] = !hidden[f.key]; });
+  })();
 
   var FAV_KEY = "dt_werkstatt_favorit";
   function getFavoriteId(){
@@ -1243,10 +1301,12 @@
   // ---- Sprach-Schalter (einmalig) ----
   function buildLangSwitch(){
     LANGS.forEach(function(lang){
+      var flag = el("span", { class: "lang-flag", html: LANG_FLAGS[lang] || "" });
+      var abbr = el("span", { class: "lang-abbr", text: LANG_ABBR[lang] || lang.toUpperCase() });
       var btn = el("button", {
         class: "lang-btn",
-        text: lang.toUpperCase(),
-        attrs: { type: "button", "aria-pressed": "false", "data-lang": lang, "lang": lang, title: LANG_NAMES[lang], "aria-label": LANG_NAMES[lang] }
+        attrs: { type: "button", "aria-pressed": "false", "data-lang": lang, "lang": lang, title: LANG_NAMES[lang], "aria-label": LANG_NAMES[lang] },
+        children: [flag, abbr]
       });
       btn.addEventListener("click", function(){
         setLang(lang);
@@ -1265,12 +1325,13 @@
       var btn = el("button", {
         class: "switch",
         cvar: f.color,
-        attrs: { type: "button", "aria-pressed": "true", "data-family": f.key },
+        attrs: { type: "button", "aria-pressed": String(activeFamilies[f.key]), "data-family": f.key },
         children: [dot, labelEl]
       });
       btn.addEventListener("click", function(){
         activeFamilies[f.key] = !activeFamilies[f.key];
         btn.setAttribute("aria-pressed", String(activeFamilies[f.key]));
+        saveHiddenFamilies();
         applyFilter();
       });
       switchRefs.push({ key: f.key, labelEl: labelEl });
