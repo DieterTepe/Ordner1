@@ -46,7 +46,7 @@ Lotto/Skip-Bo/Dreieck/Heizungs-Tool, sondern die zentrale Startseite für alle.
 - **Design:** Dunkles Konsolen-/Schaltpult-Design. Fünf Akzentfarben nach
   Projektfamilie (Lotto = Gold, EuroJackpot = Türkis, Skip-Bo = Karmesinrot,
   DT-ProfiDreieck = Stahlblau-Grau, Wärmeverlust-Analyse = Ember-Orange).
-- **Stand v1.4.0 (fertig):**
+- **Stand v1.5.0 (fertig):**
   - Alle 9 Tools als Kacheln, gruppiert nach Familie (inkl. Heizungs-Check)
   - Familien-Filter-Schalter oben (Kippschalter-Optik, LED-Puls)
   - Eigenes Icon pro Kachel (handgezeichnetes Inline-SVG)
@@ -62,6 +62,10 @@ Lotto/Skip-Bo/Dreieck/Heizungs-Tool, sondern die zentrale Startseite für alle.
   - Optik „echtes Schaltpult": Panel-Tiefe (Schraubenkopf-Punkte, Groove),
     Hover-Glow + nachzeichnende Icons, Boot-Animation beim Laden + dauerhaft
     pulsierende Status-LEDs, dezente Farbverläufe im Hintergrund
+  - Handy-Feinschliff (v1.5.0): theme-color färbt die Browser-Statusleiste
+    im dunklen Schaltpult-Ton; am Handy blenden die Kacheln zusätzlich sanft
+    einzeln auf (gedeckelte Staffelung, am PC bewusst ruhig). reduced-motion
+    wird auch dort respektiert (in der Media-Query selbst abgesichert).
 - **Code-Stand (seit v1.4.0):** Daten (TOOLS/FAMILIES/ICONS) strikt von der
   Logik getrennt; Kacheln werden EINMAL gebaut, der Filter schaltet nur
   Sichtbarkeit; alle Inhalts-Texte über textContent (robust gegen
