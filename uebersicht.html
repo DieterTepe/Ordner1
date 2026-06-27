@@ -1,9 +1,19 @@
 <!DOCTYPE html>
 <!--
   Dieter Tepe — Tool-Werkstatt: Start-/Übersichtsseite
-  Version: 1.4.0
+  Version: 1.5.0
   Stand: 2026-06-27
   Changelog:
+    1.5.0 – Zwei Handy-Verbesserungen (reine Einzeldatei, kein externer
+            Zusatz):
+            • Statusleisten-Farbe: theme-color im <head> setzt die
+              Browser-Statusleiste am Handy auf den dunklen Schaltpult-Ton,
+              nahtloser Übergang System → Seite.
+            • Boot-Animation am Handy kräftiger: auf schmalen Bildschirmen
+              blendet jede Kachel zusätzlich sanft einzeln auf (etwas
+              ausgeprägter als das ruhige Verhalten am PC). Ab Tablet/PC
+              bleibt es dezent wie bisher. prefers-reduced-motion wird
+              weiterhin respektiert.
     1.4.0 – Code-Überarbeitung (Struktur, Sicherheit, Erweiterbarkeit),
             ohne sichtbare Änderung an Aussehen oder Verhalten:
             • Alle Inhalts-Texte werden jetzt über textContent gesetzt
@@ -66,6 +76,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b0e12">
 <title>Dieter Tepe — Tool-Werkstatt</title>
 <style>
   :root{
@@ -120,6 +131,10 @@
   @keyframes cardGlow{
     0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -2px 6px rgba(0,0,0,0.35), 0 0 0 1px color-mix(in srgb, var(--c) 25%, transparent); }
     50%      { box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -2px 6px rgba(0,0,0,0.35), 0 0 16px 1px color-mix(in srgb, var(--c) 45%, transparent); }
+  }
+  @keyframes cardIn{
+    0%   { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -617,6 +632,21 @@
     font-family: var(--mono);
     color: var(--text-muted);
   }
+
+  /* ---------- Handy: Kacheln blenden zusätzlich einzeln auf ---------- */
+  /* Greift nur auf schmalen Bildschirmen. Die Verzögerung (--cardDelay)
+     setzt das JS pro Kachel; am Tablet/PC bleibt alles ruhig wie bisher. */
+  @media (max-width: 640px) and (prefers-reduced-motion: no-preference){
+    .card{
+      animation: cardIn .42s ease-out both;
+      animation-delay: var(--cardDelay, 0s);
+    }
+    /* Der Favorit pulsiert weiter — nach dem einmaligen Aufblenden. */
+    .card.is-favorite{
+      animation: cardIn .42s ease-out both, cardGlow 3.2s ease-in-out infinite;
+      animation-delay: var(--cardDelay, 0s), .5s;
+    }
+  }
 </style>
 </head>
 <body>
@@ -639,7 +669,7 @@
 
   <footer>
     <p>Die Lotto- und EuroJackpot-Tools werten Ziehungsdaten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.</p>
-    <p class="page-version">Übersichtsseite v1.4.0 · Stand 27.06.2026</p>
+    <p class="page-version">Übersichtsseite v1.5.0 · Stand 27.06.2026</p>
   </footer>
 
 </div>
@@ -939,6 +969,7 @@
 
   // ---- Sektionen + Kacheln (einmalig) ----
   function buildSections(){
+    var cardIndex = 0; // global über alle Sektionen, für gestaffeltes Aufblenden am Handy
     FAMILIES.forEach(function(f, idx){
       var tools = TOOLS.filter(function(t){ return t.family === f.key; });
       if(!tools.length) return; // leere Familie -> keine Sektion
@@ -952,7 +983,15 @@
       });
 
       var grid = el("div", { class: "grid" });
-      tools.forEach(function(t){ grid.appendChild(buildCard(t, f)); });
+      tools.forEach(function(t){
+        var card = buildCard(t, f);
+        // Verzögerung fürs Handy-Aufblenden (gedeckelt, damit es nicht zu lang wird).
+        // Am Tablet/PC ignoriert, weil die Media-Query die Animation dort nicht setzt.
+        var delay = Math.min(cardIndex * 0.05, 0.5);
+        card.style.setProperty("--cardDelay", delay.toFixed(2) + "s");
+        cardIndex++;
+        grid.appendChild(card);
+      });
 
       var section = el("section", { class: "family", children: [head, grid] });
       // Boot-Animations-Verzögerung gestaffelt per JS (skaliert mit Anzahl mit)
