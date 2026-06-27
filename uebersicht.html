@@ -1,75 +1,54 @@
 <!DOCTYPE html>
 <!--
   Dieter Tepe — Tool-Werkstatt: Start-/Übersichtsseite
-  Version: 1.5.0
+  Version: 1.6.0
   Stand: 2026-06-27
   Changelog:
-    1.5.0 – Zwei Handy-Verbesserungen (reine Einzeldatei, kein externer
-            Zusatz):
-            • Statusleisten-Farbe: theme-color im <head> setzt die
-              Browser-Statusleiste am Handy auf den dunklen Schaltpult-Ton,
-              nahtloser Übergang System → Seite.
-            • Boot-Animation am Handy kräftiger: auf schmalen Bildschirmen
-              blendet jede Kachel zusätzlich sanft einzeln auf (etwas
-              ausgeprägter als das ruhige Verhalten am PC). Ab Tablet/PC
-              bleibt es dezent wie bisher. prefers-reduced-motion wird
-              weiterhin respektiert.
-    1.4.0 – Code-Überarbeitung (Struktur, Sicherheit, Erweiterbarkeit),
-            ohne sichtbare Änderung an Aussehen oder Verhalten:
-            • Alle Inhalts-Texte werden jetzt über textContent gesetzt
-              statt per innerHTML-Konkatenation — robust gegen Sonderzeichen
-              (<, &, ") in künftigen Tool-Texten, kein HTML-Bruch mehr.
-              SVG-Icons (statisch, eigene Quelle) bleiben der einzige
-              innerHTML-Einsatz.
-            • Kleine el()-Hilfsfunktion zum sicheren Erzeugen von Elementen
-              (Tag, Klassen, Text, Attribute, Kinder) — ersetzt die
-              String-Bauerei und macht das Hinzufügen neuer Tools simpler.
-            • Render in zwei Schritten getrennt: Kacheln werden EINMAL
-              gebaut, der Familien-Filter schaltet nur noch Sichtbarkeit um
-              (kein Komplett-Neuaufbau samt Event-Listenern bei jedem Klick).
-            • Favorit wird pro Render nur einmal aus dem Speicher gelesen
-              statt einmal je Kachel.
-            • Boot-Animations-Verzögerung der Familien-Sektionen wird per
-              JS gesetzt (skaliert automatisch mit, wenn Familien dazukommen)
-              statt über feste nth-of-type-Regeln.
-            • Datenmodell strikt von Logik getrennt; durchgehend kommentierte
-              Abschnitte (Daten → Helfer → State → Render → Modal → Init).
-    1.3.0 – Optische Überarbeitung („echtes Schaltpult"): Kacheln mit
-            Panel-Tiefe (Schraubenkopf-Punkte, innere Groove-Schatten),
-            Familien-Filter als echte Kippschalter (Bevel-Look statt
-            Pillen), Hover-Glow in Akzentfarbe + nachzeichnende
-            Icon-Linienanimation, Favoriten-Leiste zum großen Haupt-Display
-            ausgebaut (mit Glow-Verlauf), Hintergrund mit mehreren
-            dezenten Farbverläufen in allen Akzentfarben. Animation
-            kombiniert: einmaliger „Power-on"-Boot-Effekt beim Laden
-            (Header → Sektionen gestaffelt → Footer) plus dauerhaft sanft
-            pulsierende Status-LEDs (aktive Schalter, Favorit-Icon,
-            favorisierte Kachel). Respektiert weiterhin
-            prefers-reduced-motion.
-    1.2.0 – Fehlendes 9. Tool ergänzt: Wärmeverlust- & Gebäude-Analyse
-            (Heizungs-Check), eigene Familie/Akzentfarbe + Icon. Da dieses
-            Tool zusätzlich eine Nutzungs-Anleitung in Schritten hat, hat
-            das Detail-Overlay jetzt einen optionalen dritten Abschnitt
-            „So wird es genutzt", der nur erscheint, wenn ein Tool
-            Anleitungs-Schritte hinterlegt hat.
-    1.1.0 – Favoriten-Funktion: Stern pro Kachel markiert einen Favoriten
-            (immer nur einer aktiv), erscheint oben in eigener Leiste mit
-            Direkt-Start-Button. Zusätzlich auf jeder Kachel ein eigener
-            „Direkt starten"-Link, der das Tool ohne Overlay sofort öffnet.
-            Favorit wird lokal im Browser gespeichert (localStorage).
-    1.0.0 – Erste Version. Alle 8 Programme aus info_1.md als Kacheln,
-            gruppiert nach Projektfamilie (Lotto 6aus49, EuroJackpot,
-            Skip-Bo, DT-ProfiDreieck), mit Familien-Filter-Schaltern,
-            Icon pro Kachel, Detail-Overlay mit vollem Text + Link.
+    1.6.0 – Mehrsprachigkeit (Deutsch · Englisch · Portugiesisch · Ukrainisch):
+            • Vier Sprach-Schalter oben rechts (DE/EN/PT/UK) im Kippschalter-
+              Stil; die Wahl wird lokal gespeichert (localStorage) und das
+              <html lang>-Attribut mitgesetzt.
+            • ALLE Oberflächen-Texte sind übersetzt: Titelzeilen, Untertitel,
+              Familien-Beschriftungen, Buttons (Favorit/Jetzt starten/Direkt
+              starten/Details), Overlay-Überschriften, Footer, Readout
+              (inkl. lokalem Datums-/Zeitformat) und Tooltips.
+            • ALLE Tool-Beschreibungen (Titel, Teaser, „Was es kann",
+              „Was es auszeichnet" und die Anleitungs-Schritte des
+              Heizungs-Checks) liegen in allen vier Sprachen vor.
+            • Datenstruktur erweiterbar: pro Tool ein i18n-Block
+              {de,en,pt,uk}; sprachunabhängige Felder (id, family, icon,
+              link, version) bleiben außerhalb. Neue Sprache = ein Key mehr.
+            • Sprachwechsel baut die Kacheln NICHT neu, sondern aktualisiert
+              nur die Texte (Referenzen aus dem einmaligen Aufbau).
+    1.5.0 – Zwei Handy-Verbesserungen: theme-color färbt die Statusleiste;
+            Kacheln blenden am Handy zusätzlich sanft einzeln auf
+            (reduced-motion in der Media-Query selbst abgesichert).
+    1.4.0 – Code-Überarbeitung (Struktur/Sicherheit/Erweiterbarkeit):
+            Texte über textContent statt innerHTML-Konkatenation; el()-
+            Element-Fabrik; Kacheln einmal bauen, Filter schaltet nur
+            Sichtbarkeit; Favorit nur einmal pro Render gelesen; Boot-
+            Verzögerung per JS; Daten strikt von Logik getrennt.
+    1.3.0 – Optische Überarbeitung („echtes Schaltpult"): Panel-Tiefe,
+            Kippschalter, Hover-Glow + Icon-Linienanimation, großes
+            Favoriten-Display, Farbverläufe, Boot- + LED-Puls-Animation.
+    1.2.0 – 9. Tool ergänzt: Wärmeverlust- & Gebäude-Analyse, eigene
+            Familie/Farbe/Icon, optionaler Overlay-Abschnitt „So wird es
+            genutzt".
+    1.1.0 – Favoriten-Funktion (Stern, lokal gespeichert) + „Direkt
+            starten" pro Kachel.
+    1.0.0 – Erste Version. Alle 8 Programme als Kacheln, gruppiert nach
+            Familie, mit Filter-Schaltern, Icon, Detail-Overlay + Link.
   Einzeldatei, vollständig selbst-enthalten (CSS + JS inline), keine
   externen Ressourcen zur Laufzeit. Läuft auf Handy, Tablet und PC.
 
   ── Zum Erweitern (für später) ──────────────────────────────────────
-    • Neues Tool: einen Eintrag im TOOLS-Array ergänzen (id, family, icon,
-      title, version, teaser, kann, auszeichnet, link; anleitung optional).
-    • Neue Familie: einen Eintrag in FAMILIES + eine --akzentfarbe in :root
-      + ein Icon in ICONS. Alles andere (Schalter, Sektion, Boot-Animation)
-      entsteht automatisch.
+    • Neues Tool: einen Eintrag im TOOLS-Array ergänzen. Pflichtfelder
+      außerhalb von i18n: id, family, icon, version, link. Im i18n-Block
+      je Sprache: title, teaser, kann, auszeichnet (anleitung optional).
+    • Neue Familie: Eintrag in FAMILIES (mit label je Sprache) + eine
+      --akzentfarbe in :root + ein Icon in ICONS.
+    • Neue Sprache: Kürzel in LANGS + Eintrag in UI, in jeder FAMILIES-
+      label und in jedem TOOLS-i18n. Locale in LOCALES ergänzen.
   ─────────────────────────────────────────────────────────────────────
 -->
 <html lang="de">
@@ -165,8 +144,15 @@
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 12px;
+    gap: 14px;
     margin-bottom: 18px;
+  }
+  .panel-head-left{ flex: 1; min-width: 240px; }
+  .panel-head-right{
+    display:flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
   }
 
   h1{
@@ -192,6 +178,44 @@
     line-height: 1.6;
     white-space: nowrap;
   }
+
+  /* ---------- Sprach-Schalter (Segment-Optik) ---------- */
+
+  .lang-switch{
+    display:inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #1a2029, #11151b);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.4);
+  }
+  .lang-btn{
+    appearance: none; -webkit-appearance: none;
+    border: none;
+    border-left: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 7px 11px;
+    min-width: 40px;
+    min-height: 34px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .15s, color .15s;
+  }
+  .lang-btn:first-child{ border-left: none; }
+  .lang-btn[aria-pressed="true"]{
+    color: var(--text);
+    background: linear-gradient(180deg, #0c0f13, #181e26);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.55), inset 0 -1px 0 rgba(255,255,255,0.03);
+    text-shadow: 0 0 8px rgba(231,229,224,0.35);
+  }
+  .lang-btn:hover{ color: var(--text); }
+  .lang-btn:focus-visible{ outline: 2px solid var(--text-muted); outline-offset: 2px; }
+
+  /* ---------- Familien-Filter-Schalter ---------- */
 
   .switches{
     display:flex;
@@ -655,11 +679,14 @@
 
   <header class="panel">
     <div class="panel-top">
-      <div>
+      <div class="panel-head-left">
         <h1>DIETER TEPE — TOOL-WERKSTATT</h1>
-        <p class="subtitle">Eigene Browser-Tools — Lotto- &amp; EuroJackpot-Analyse, Skip-Bo, ein Werkstatt-Dreiecksrechner und ein Heizungs-Check fürs eigene Zuhause. Alles läuft direkt im Browser, ohne Installation.</p>
+        <p class="subtitle" id="subtitle"></p>
       </div>
-      <div class="readout" id="readout"></div>
+      <div class="panel-head-right">
+        <div class="lang-switch" id="lang-switch" role="group"></div>
+        <div class="readout" id="readout"></div>
+      </div>
     </div>
     <div class="switches" id="switches"></div>
     <div class="fav-bar" id="fav-bar"></div>
@@ -668,8 +695,8 @@
   <main id="sections"></main>
 
   <footer>
-    <p>Die Lotto- und EuroJackpot-Tools werten Ziehungsdaten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.</p>
-    <p class="page-version">Übersichtsseite v1.5.0 · Stand 27.06.2026</p>
+    <p id="footer-note"></p>
+    <p class="page-version" id="page-version"></p>
   </footer>
 
 </div>
@@ -684,23 +711,23 @@
           <span class="version-chip" id="modal-version"></span>
         </div>
       </div>
-      <button class="close" id="modal-close" aria-label="Schließen">✕</button>
+      <button class="close" id="modal-close">✕</button>
     </div>
 
     <div class="modal-section">
-      <p class="label">Was es kann</p>
+      <p class="label" id="modal-label-kann"></p>
       <p id="modal-kann"></p>
     </div>
     <div class="modal-section is-hidden" id="modal-anleitung-wrap">
-      <p class="label">So wird es genutzt</p>
+      <p class="label" id="modal-label-anleitung"></p>
       <ol id="modal-anleitung"></ol>
     </div>
     <div class="modal-section">
-      <p class="label">Was es auszeichnet</p>
+      <p class="label" id="modal-label-auszeichnet"></p>
       <p id="modal-auszeichnet"></p>
     </div>
 
-    <a href="#" target="_blank" rel="noopener" class="open-link" id="modal-link">Öffnen ↗</a>
+    <a href="#" target="_blank" rel="noopener" class="open-link" id="modal-link"></a>
   </div>
 </div>
 
@@ -709,8 +736,95 @@
   "use strict";
 
   /* ============================================================
-     1) DATEN  —  hier wird gepflegt, was die Seite anzeigt.
-        Logik weiter unten muss dafür nicht angefasst werden.
+     1) SPRACHEN  —  Kürzel, Anzeige-Namen, Locale fürs Datum
+     ============================================================ */
+
+  var LANGS = ["de", "en", "pt", "uk"];
+  var LANG_NAMES = { de: "Deutsch", en: "English", pt: "Português", uk: "Українська" };
+  var LOCALES   = { de: "de-DE", en: "en-GB", pt: "pt-PT", uk: "uk-UA" };
+
+  // Oberflächen-Texte (alles außer den Tool-Beschreibungen).
+  var UI = {
+    de: {
+      subtitle: "Eigene Browser-Tools — Lotto- & EuroJackpot-Analyse, Skip-Bo, ein Werkstatt-Dreiecksrechner und ein Heizungs-Check fürs eigene Zuhause. Alles läuft direkt im Browser, ohne Installation.",
+      footerNote: "Die Lotto- und EuroJackpot-Tools werten Ziehungsdaten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.",
+      pageVersion: "Übersichtsseite v1.6.0 · Stand 27.06.2026",
+      langLabel: "Sprache",
+      toolsWord: "Tools",
+      favEyebrow: "Favorit",
+      favStart: "Jetzt starten ↗",
+      favEmpty: "Noch kein Favorit gewählt — markiere ein Tool mit ☆, um es hier direkt starten zu können.",
+      quickStart: "Direkt starten ↗",
+      more: "Details →",
+      labelKann: "Was es kann",
+      labelAnleitung: "So wird es genutzt",
+      labelAuszeichnet: "Was es auszeichnet",
+      openLink: "Öffnen ↗",
+      closeLabel: "Schließen",
+      starAdd: "Als Favorit markieren",
+      starRemove: "Als Favorit entfernen"
+    },
+    en: {
+      subtitle: "Personal browser tools — Lotto & EuroJackpot analysis, Skip-Bo, a workshop triangle calculator and a heating check for your own home. Everything runs right in the browser, no installation.",
+      footerNote: "The Lotto and EuroJackpot tools analyse draw data and support your number selection — they do not predict any draw.",
+      pageVersion: "Overview page v1.6.0 · As of 27 Jun 2026",
+      langLabel: "Language",
+      toolsWord: "tools",
+      favEyebrow: "Favourite",
+      favStart: "Start now ↗",
+      favEmpty: "No favourite selected yet — mark a tool with ☆ to launch it directly from here.",
+      quickStart: "Launch directly ↗",
+      more: "Details →",
+      labelKann: "What it does",
+      labelAnleitung: "How to use it",
+      labelAuszeichnet: "What sets it apart",
+      openLink: "Open ↗",
+      closeLabel: "Close",
+      starAdd: "Mark as favourite",
+      starRemove: "Remove favourite"
+    },
+    pt: {
+      subtitle: "Ferramentas próprias para o navegador — análise da Lotto e do EuroJackpot, Skip-Bo, uma calculadora de triângulos para a oficina e uma verificação do aquecimento para a própria casa. Tudo funciona diretamente no navegador, sem instalação.",
+      footerNote: "As ferramentas da Lotto e do EuroJackpot analisam os dados dos sorteios e ajudam na escolha dos números — não preveem nenhum sorteio.",
+      pageVersion: "Página de visão geral v1.6.0 · Atualizado em 27/06/2026",
+      langLabel: "Idioma",
+      toolsWord: "ferramentas",
+      favEyebrow: "Favorito",
+      favStart: "Iniciar agora ↗",
+      favEmpty: "Ainda não há favorito selecionado — marca uma ferramenta com ☆ para a iniciares diretamente a partir daqui.",
+      quickStart: "Iniciar diretamente ↗",
+      more: "Detalhes →",
+      labelKann: "O que faz",
+      labelAnleitung: "Como se utiliza",
+      labelAuszeichnet: "O que a distingue",
+      openLink: "Abrir ↗",
+      closeLabel: "Fechar",
+      starAdd: "Marcar como favorito",
+      starRemove: "Remover favorito"
+    },
+    uk: {
+      subtitle: "Власні браузерні інструменти — аналіз Lotto та EuroJackpot, Skip-Bo, калькулятор трикутників для майстерні та перевірка опалення для власного дому. Усе працює прямо у браузері, без встановлення.",
+      footerNote: "Інструменти Lotto та EuroJackpot аналізують дані тиражів і допомагають у виборі чисел — вони не передбачають жодного тиражу.",
+      pageVersion: "Оглядова сторінка v1.6.0 · Станом на 27.06.2026",
+      langLabel: "Мова",
+      toolsWord: "інструментів",
+      favEyebrow: "Обране",
+      favStart: "Запустити зараз ↗",
+      favEmpty: "Обране ще не вибрано — позначте інструмент зірочкою ☆, щоб запускати його звідси.",
+      quickStart: "Запустити одразу ↗",
+      more: "Докладніше →",
+      labelKann: "Що вміє",
+      labelAnleitung: "Як користуватися",
+      labelAuszeichnet: "Чим вирізняється",
+      openLink: "Відкрити ↗",
+      closeLabel: "Закрити",
+      starAdd: "Позначити як обране",
+      starRemove: "Прибрати з обраного"
+    }
+  };
+
+  /* ============================================================
+     2) DATEN  —  Icons, Familien, Tools (mit i18n je Tool)
      ============================================================ */
 
   // Icons: statische, selbst erstellte Inline-SVGs (currentColor).
@@ -727,111 +841,326 @@
     thermo:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 14.5V5.5a1.5 1.5 0 0 1 3 0v9a3 3 0 1 1-3 0Z"/><path d="M12.5 8h2.5M12.5 11h2.5"/><circle cx="12.5" cy="16.5" r="1.3" fill="currentColor" stroke="none"/></svg>'
   };
 
-  // Projektfamilien (Reihenfolge = Anzeige-Reihenfolge der Sektionen
-  // und der Filter-Schalter). color verweist auf eine --variable aus :root.
+  // Projektfamilien. label je Sprache (Eigennamen bleiben gleich, nur
+  // „Wärmeverlust-Analyse" wird übersetzt). color verweist auf :root.
   var FAMILIES = [
-    { key: "lotto",   label: "Lotto 6aus49",        color: "var(--lotto)" },
-    { key: "euro",    label: "EuroJackpot",          color: "var(--euro)" },
-    { key: "skipbo",  label: "Skip-Bo",              color: "var(--skipbo)" },
-    { key: "dreieck", label: "DT-ProfiDreieck",      color: "var(--dreieck)" },
-    { key: "heizung", label: "Wärmeverlust-Analyse", color: "var(--heizung)" }
+    { key: "lotto",   color: "var(--lotto)",   label: { de: "Lotto 6aus49",        en: "Lotto 6aus49",        pt: "Lotto 6aus49",                uk: "Lotto 6aus49" } },
+    { key: "euro",    color: "var(--euro)",    label: { de: "EuroJackpot",          en: "EuroJackpot",          pt: "EuroJackpot",                 uk: "EuroJackpot" } },
+    { key: "skipbo",  color: "var(--skipbo)",  label: { de: "Skip-Bo",              en: "Skip-Bo",              pt: "Skip-Bo",                     uk: "Skip-Bo" } },
+    { key: "dreieck", color: "var(--dreieck)", label: { de: "DT-ProfiDreieck",      en: "DT-ProfiDreieck",      pt: "DT-ProfiDreieck",             uk: "DT-ProfiDreieck" } },
+    { key: "heizung", color: "var(--heizung)", label: { de: "Wärmeverlust-Analyse", en: "Heat-loss analysis",   pt: "Análise de perdas de calor",  uk: "Аналіз тепловтрат" } }
   ];
 
-  // Die Tools selbst (Texte aus info_1.md).
-  // Pflichtfelder: id, family, icon, title, version, teaser, kann, auszeichnet, link.
-  // Optional: anleitung (Array von Schritten) -> erzeugt den dritten Overlay-Abschnitt.
+  // Tools. Sprachunabhängig: id, family, icon, version, link.
+  // Je Sprache im i18n-Block: title, teaser, kann, auszeichnet (anleitung optional).
   var TOOLS = [
     {
-      id: "lotto-konsole", family: "lotto", icon: "chart",
-      title: "Lotto 6aus49 — Analyse-Konsole", version: "2.1.0",
-      teaser: "Wertet die komplette 6aus49-Historie seit 1955 aus — Häufigkeiten, Tests, Prognosen, Wheeling.",
-      kann: "Häufigkeiten und „heiße/kalte\u201C Zahlen, statistische Tests (Chi-Quadrat, Entropie), Übergangs-Muster, sowie Verteilungen nach Wochentag, Gerade/Ungerade, Hoch/Niedrig und Zahlensumme. Dazu zwei eigenständige Prognose-Methoden inklusive passender Superzahl, ein Backtest, der jede Methode gegen echte vergangene Ziehungen prüft, und eine automatische Gewichte-Optimierung. Aus den Ergebnissen erzeugt die Konsole zwölf fertige Spielfelder und ein Abdeck-System (Wheeling), das mehrere Tipps geschickt bündelt — alles bearbeitbar, ausdruckbar und als PDF speicherbar.",
-      auszeichnet: "Ehrlichkeit. Ein eingebautes „Forschungslabor\u201C prüft mit echten statistischen Verfahren, ob aufeinanderfolgende Ziehungen zusammenhängen — das Ergebnis bestätigt: Lotto ist Zufall, keine Methode schlägt auf Dauer den Erwartungswert. Das Tool verspricht deshalb keine Gewinnzahlen, sondern grenzt Wahrscheinlichkeiten sauber ein und zeigt mit dem Wheeling den einzigen Hebel, der wirklich etwas bewirkt. Die Daten sind dank angebundenem Online-Archiv stets aktuell, und die Oberfläche läuft flüssig auf Handy, Tablet und PC.",
-      link: "https://dietertepe.github.io/Lotto/Lotto_2-1-0.html"
+      id: "lotto-konsole", family: "lotto", icon: "chart", version: "2.1.0",
+      link: "https://dietertepe.github.io/Lotto/Lotto_2-1-0.html",
+      i18n: {
+        de: {
+          title: "Lotto 6aus49 — Analyse-Konsole",
+          teaser: "Wertet die komplette 6aus49-Historie seit 1955 aus — Häufigkeiten, Tests, Prognosen, Wheeling.",
+          kann: "Häufigkeiten und „heiße/kalte“ Zahlen, statistische Tests (Chi-Quadrat, Entropie), Übergangs-Muster, sowie Verteilungen nach Wochentag, Gerade/Ungerade, Hoch/Niedrig und Zahlensumme. Dazu zwei eigenständige Prognose-Methoden inklusive passender Superzahl, ein Backtest, der jede Methode gegen echte vergangene Ziehungen prüft, und eine automatische Gewichte-Optimierung. Aus den Ergebnissen erzeugt die Konsole zwölf fertige Spielfelder und ein Abdeck-System (Wheeling), das mehrere Tipps geschickt bündelt — alles bearbeitbar, ausdruckbar und als PDF speicherbar.",
+          auszeichnet: "Ehrlichkeit. Ein eingebautes „Forschungslabor“ prüft mit echten statistischen Verfahren, ob aufeinanderfolgende Ziehungen zusammenhängen — das Ergebnis bestätigt: Lotto ist Zufall, keine Methode schlägt auf Dauer den Erwartungswert. Das Tool verspricht deshalb keine Gewinnzahlen, sondern grenzt Wahrscheinlichkeiten sauber ein und zeigt mit dem Wheeling den einzigen Hebel, der wirklich etwas bewirkt. Die Daten sind dank angebundenem Online-Archiv stets aktuell, und die Oberfläche läuft flüssig auf Handy, Tablet und PC."
+        },
+        en: {
+          title: "Lotto 6aus49 — Analysis Console",
+          teaser: "Analyses the complete 6aus49 history since 1955 — frequencies, tests, forecasts, wheeling.",
+          kann: "Frequencies and “hot/cold” numbers, statistical tests (chi-squared, entropy), transition patterns, plus distributions by weekday, even/odd, high/low and number sum. On top of that, two independent forecasting methods including a matching Superzahl, a backtest that checks each method against real past draws, and an automatic weight optimisation. From the results the console generates twelve ready-made tickets and a covering system (wheeling) that cleverly bundles several entries — all editable, printable and saveable as PDF.",
+          auszeichnet: "Honesty. A built-in “research lab” uses real statistical methods to check whether consecutive draws are related — and the result confirms it: the lottery is random, no method beats the expected value in the long run. That is why the tool promises no winning numbers, but instead narrows down probabilities cleanly and shows, with wheeling, the only lever that really makes a difference. Thanks to a connected online archive the data is always up to date, and the interface runs smoothly on phone, tablet and PC."
+        },
+        pt: {
+          title: "Lotto 6aus49 — Consola de Análise",
+          teaser: "Analisa todo o histórico do 6aus49 desde 1955 — frequências, testes, previsões, wheeling.",
+          kann: "Frequências e números «quentes/frios», testes estatísticos (qui-quadrado, entropia), padrões de transição, bem como distribuições por dia da semana, par/ímpar, alto/baixo e soma dos números. Além disso, dois métodos de previsão independentes, incluindo o respetivo Superzahl, um backtest que verifica cada método com sorteios reais do passado e uma otimização automática dos pesos. A partir dos resultados, a consola gera doze boletins prontos e um sistema de cobertura (wheeling) que combina habilmente várias apostas — tudo editável, imprimível e exportável em PDF.",
+          auszeichnet: "Honestidade. Um «laboratório de investigação» integrado verifica, com métodos estatísticos reais, se sorteios consecutivos estão relacionados — e o resultado confirma: a lotaria é aleatória, nenhum método supera o valor esperado a longo prazo. Por isso, a ferramenta não promete números vencedores, mas delimita as probabilidades de forma rigorosa e mostra, com o wheeling, a única alavanca que realmente faz diferença. Graças a um arquivo online ligado, os dados estão sempre atualizados, e a interface funciona de forma fluida no telemóvel, tablet e PC."
+        },
+        uk: {
+          title: "Lotto 6aus49 — Консоль аналізу",
+          teaser: "Аналізує всю історію 6aus49 з 1955 року — частоти, тести, прогнози, вілінг.",
+          kann: "Частоти та «гарячі/холодні» числа, статистичні тести (хі-квадрат, ентропія), патерни переходів, а також розподіли за днем тижня, парність/непарність, високі/низькі та сума чисел. Додатково — два самостійні методи прогнозування разом із відповідним числом Superzahl, бектест, що перевіряє кожен метод на реальних минулих тиражах, і автоматична оптимізація вагів. За результатами консоль формує дванадцять готових ігрових полів і систему покриття (вілінг), яка вдало поєднує кілька ставок — усе можна редагувати, друкувати та зберігати у PDF.",
+          auszeichnet: "Чесність. Вбудована «дослідницька лабораторія» за допомогою справжніх статистичних методів перевіряє, чи пов’язані послідовні тиражі — і результат підтверджує: лотерея випадкова, жоден метод не перевершує очікуване значення в довгостроковій перспективі. Тому інструмент не обіцяє виграшних чисел, а чітко окреслює ймовірності й показує за допомогою вілінгу єдиний важіль, що справді щось змінює. Завдяки під’єднаному онлайн-архіву дані завжди актуальні, а інтерфейс плавно працює на телефоні, планшеті та ПК."
+        }
+      }
     },
     {
-      id: "lotto-manager", family: "lotto", icon: "funnel",
-      title: "Lotto 6aus49 — Daten-Manager", version: "2.0.0",
-      teaser: "Pflegt und prüft die Ziehungsdaten für die 6aus49-Konsole.",
-      kann: "Die vollständige Ziehungshistorie laden, neue Ziehungen bequem über ein Zahlenraster eingeben — mit automatischer Plausibilitätsprüfung, die Tippfehler abfängt — sowie einzelne Einträge suchen, kontrollieren und löschen. Gespeichert wird in einem schlanken, offenen Datenformat, das die Analyse-Konsole direkt weiterverwenden kann.",
-      auszeichnet: "Verlässlichkeit ohne Ballast. Der Manager erkennt fehlerhafte oder unvollständige Einträge, meldet sie klar und bewahrt den Datenbestand vor Beschädigung. Er arbeitet mit einem standardisierten, gut austauschbaren Format und läuft — wie alle Tools dieser Reihe — vollständig im Browser auf jedem Gerät, ohne Installation.",
-      link: "https://dietertepe.github.io/Lotto/Lotto_Manager_Pro_2-0-0.html"
+      id: "lotto-manager", family: "lotto", icon: "funnel", version: "2.0.0",
+      link: "https://dietertepe.github.io/Lotto/Lotto_Manager_Pro_2-0-0.html",
+      i18n: {
+        de: {
+          title: "Lotto 6aus49 — Daten-Manager",
+          teaser: "Pflegt und prüft die Ziehungsdaten für die 6aus49-Konsole.",
+          kann: "Die vollständige Ziehungshistorie laden, neue Ziehungen bequem über ein Zahlenraster eingeben — mit automatischer Plausibilitätsprüfung, die Tippfehler abfängt — sowie einzelne Einträge suchen, kontrollieren und löschen. Gespeichert wird in einem schlanken, offenen Datenformat, das die Analyse-Konsole direkt weiterverwenden kann.",
+          auszeichnet: "Verlässlichkeit ohne Ballast. Der Manager erkennt fehlerhafte oder unvollständige Einträge, meldet sie klar und bewahrt den Datenbestand vor Beschädigung. Er arbeitet mit einem standardisierten, gut austauschbaren Format und läuft — wie alle Tools dieser Reihe — vollständig im Browser auf jedem Gerät, ohne Installation."
+        },
+        en: {
+          title: "Lotto 6aus49 — Data Manager",
+          teaser: "Maintains and validates the draw data for the 6aus49 console.",
+          kann: "Load the complete draw history, enter new draws conveniently via a number grid — with an automatic plausibility check that catches typos — as well as search, review and delete individual entries. Data is stored in a lean, open format that the analysis console can use directly.",
+          auszeichnet: "Reliability without ballast. The manager detects faulty or incomplete entries, reports them clearly and protects the data set from corruption. It works with a standardised, easily exchangeable format and runs — like all tools in this series — entirely in the browser on any device, without installation."
+        },
+        pt: {
+          title: "Lotto 6aus49 — Gestor de Dados",
+          teaser: "Mantém e valida os dados dos sorteios para a consola 6aus49.",
+          kann: "Carregar todo o histórico de sorteios, introduzir novos sorteios comodamente através de uma grelha de números — com uma verificação automática de plausibilidade que deteta erros de digitação — bem como procurar, verificar e eliminar entradas individuais. Os dados são guardados num formato aberto e leve, que a consola de análise pode utilizar diretamente.",
+          auszeichnet: "Fiabilidade sem peso desnecessário. O gestor deteta entradas incorretas ou incompletas, comunica-as claramente e protege o conjunto de dados contra danos. Trabalha com um formato padronizado e facilmente intercambiável e funciona — como todas as ferramentas desta série — inteiramente no navegador, em qualquer dispositivo, sem instalação."
+        },
+        uk: {
+          title: "Lotto 6aus49 — Менеджер даних",
+          teaser: "Підтримує та перевіряє дані тиражів для консолі 6aus49.",
+          kann: "Завантаження повної історії тиражів, зручне введення нових тиражів через числову сітку — з автоматичною перевіркою правдоподібності, що виявляє друкарські помилки, — а також пошук, перевірка та видалення окремих записів. Дані зберігаються в компактному відкритому форматі, який консоль аналізу може використовувати безпосередньо.",
+          auszeichnet: "Надійність без зайвого. Менеджер виявляє помилкові чи неповні записи, чітко повідомляє про них і захищає набір даних від пошкодження. Він працює зі стандартизованим, легко обмінюваним форматом і працює — як і всі інструменти цієї серії — повністю у браузері на будь-якому пристрої, без встановлення."
+        }
+      }
     },
     {
-      id: "euro-konsole", family: "euro", icon: "star",
-      title: "EuroJackpot — Analyse-Konsole", version: "1.0.1",
-      teaser: "Doppelte Auswertung für Haupt- und Eurozahlen, epochensicher kalibriert.",
-      kann: "Sämtliche Auswertungen laufen doppelt, für Haupt- und Eurozahlen: Häufigkeiten, heiße/kalte Zahlen, statistische Tests, Übergänge, Wochentag (Dienstag/Freitag), Gerade/Ungerade, Hoch/Niedrig und Summe. Zwei Prognose-Methoden liefern je fünf Hauptzahlen und zwei echte Eurozahlen, ein Backtest bewertet beide Zahlengruppen getrennt, und das Forschungslabor prüft die Unabhängigkeit der Ziehungen. Zwölf Spielfelder werden erzeugt — jedes mit seinem eigenen Eurozahlen-Paar — dazu ein Abdeck-System (Wheeling) und eine Druck-/PDF-Funktion.",
-      auszeichnet: "Epochensicherheit. Der Eurozahlen-Bereich ist über die Jahre gewachsen (erst 1–8, dann 1–10, heute 1–12) — die Konsole rechnet das korrekt heraus, sodass neuere Zahlen nicht fälschlich als „überfällig\u201C erscheinen. So entsteht ein faires, mathematisch sauberes Bild beider Zahlengruppen. Wie ihr 6aus49-Pendant bleibt sie dabei ehrlich (sie sagt nichts voraus, sie ordnet ein) und läuft reibungslos auf Handy, Tablet und PC.",
-      link: "https://dietertepe.github.io/Eurolotto/Eurolotto_1-0-1.html"
+      id: "euro-konsole", family: "euro", icon: "star", version: "1.0.1",
+      link: "https://dietertepe.github.io/Eurolotto/Eurolotto_1-0-1.html",
+      i18n: {
+        de: {
+          title: "EuroJackpot — Analyse-Konsole",
+          teaser: "Doppelte Auswertung für Haupt- und Eurozahlen, epochensicher kalibriert.",
+          kann: "Sämtliche Auswertungen laufen doppelt, für Haupt- und Eurozahlen: Häufigkeiten, heiße/kalte Zahlen, statistische Tests, Übergänge, Wochentag (Dienstag/Freitag), Gerade/Ungerade, Hoch/Niedrig und Summe. Zwei Prognose-Methoden liefern je fünf Hauptzahlen und zwei echte Eurozahlen, ein Backtest bewertet beide Zahlengruppen getrennt, und das Forschungslabor prüft die Unabhängigkeit der Ziehungen. Zwölf Spielfelder werden erzeugt — jedes mit seinem eigenen Eurozahlen-Paar — dazu ein Abdeck-System (Wheeling) und eine Druck-/PDF-Funktion.",
+          auszeichnet: "Epochensicherheit. Der Eurozahlen-Bereich ist über die Jahre gewachsen (erst 1–8, dann 1–10, heute 1–12) — die Konsole rechnet das korrekt heraus, sodass neuere Zahlen nicht fälschlich als „überfällig“ erscheinen. So entsteht ein faires, mathematisch sauberes Bild beider Zahlengruppen. Wie ihr 6aus49-Pendant bleibt sie dabei ehrlich (sie sagt nichts voraus, sie ordnet ein) und läuft reibungslos auf Handy, Tablet und PC."
+        },
+        en: {
+          title: "EuroJackpot — Analysis Console",
+          teaser: "Twin analysis for main numbers and Euro numbers, calibrated across eras.",
+          kann: "Every analysis runs twice, for main numbers and Euro numbers: frequencies, hot/cold numbers, statistical tests, transitions, weekday (Tuesday/Friday), even/odd, high/low and sum. Two forecasting methods each deliver five main numbers and two genuine Euro numbers, a backtest evaluates both number groups separately, and the research lab checks the independence of the draws. Twelve tickets are generated — each with its own pair of Euro numbers — plus a covering system (wheeling) and a print/PDF function.",
+          auszeichnet: "Era-safety. The Euro number range has grown over the years (first 1–8, then 1–10, today 1–12) — the console accounts for this correctly, so newer numbers do not falsely appear “overdue”. This produces a fair, mathematically clean picture of both number groups. Like its 6aus49 counterpart it stays honest (it predicts nothing, it puts things in context) and runs smoothly on phone, tablet and PC."
+        },
+        pt: {
+          title: "EuroJackpot — Consola de Análise",
+          teaser: "Análise dupla para números principais e números Euro, calibrada de forma segura entre épocas.",
+          kann: "Todas as análises correm em duplicado, para os números principais e os números Euro: frequências, números quentes/frios, testes estatísticos, transições, dia da semana (terça/sexta), par/ímpar, alto/baixo e soma. Dois métodos de previsão fornecem, cada um, cinco números principais e dois números Euro verdadeiros, um backtest avalia separadamente ambos os grupos de números, e o laboratório de investigação verifica a independência dos sorteios. São gerados doze boletins — cada um com o seu próprio par de números Euro — além de um sistema de cobertura (wheeling) e uma função de impressão/PDF.",
+          auszeichnet: "Segurança entre épocas. O intervalo dos números Euro cresceu ao longo dos anos (primeiro 1–8, depois 1–10, hoje 1–12) — a consola tem isto em conta corretamente, para que os números mais recentes não pareçam erradamente «em atraso». Assim, obtém-se uma imagem justa e matematicamente correta de ambos os grupos de números. Tal como a sua congénere do 6aus49, mantém-se honesta (não prevê nada, contextualiza) e funciona de forma fluida no telemóvel, tablet e PC."
+        },
+        uk: {
+          title: "EuroJackpot — Консоль аналізу",
+          teaser: "Подвійний аналіз для основних та Євро-чисел, відкалібрований з урахуванням різних епох.",
+          kann: "Усі аналізи виконуються подвійно — для основних та Євро-чисел: частоти, гарячі/холодні числа, статистичні тести, переходи, день тижня (вівторок/п’ятниця), парність/непарність, високі/низькі та сума. Два методи прогнозування дають по п’ять основних чисел і два справжні Євро-числа, бектест оцінює обидві групи чисел окремо, а дослідницька лабораторія перевіряє незалежність тиражів. Формується дванадцять ігрових полів — кожне зі своєю парою Євро-чисел — а також система покриття (вілінг) і функція друку/PDF.",
+          auszeichnet: "Захищеність щодо епох. Діапазон Євро-чисел зростав із роками (спершу 1–8, потім 1–10, сьогодні 1–12) — консоль враховує це коректно, тож новіші числа не виглядають хибно «простроченими». Так формується справедлива, математично чиста картина обох груп чисел. Як і її аналог для 6aus49, вона лишається чесною (нічого не передбачає, лише впорядковує) і плавно працює на телефоні, планшеті та ПК."
+        }
+      }
     },
     {
-      id: "euro-manager", family: "euro", icon: "importbox",
-      title: "EuroJackpot — Daten-Manager", version: "0.1.8",
-      teaser: "Importiert ZIP oder CSV direkt von der offiziellen Quelle.",
-      kann: "Die geprüfte Ziehungshistorie laden, neue Ziehungen über zwei Zahlenraster eingeben (mit Validierung, die sowohl die gewachsenen Eurozahlen-Bereiche als auch die Ziehungstage Dienstag und Freitag kennt) sowie Einträge suchen und löschen. Der Import akzeptiert wahlweise eine ZIP- oder eine CSV-Datei: Die offizielle WestLotto-ZIP wird automatisch entpackt und eingelesen — ein Entpacken von Hand entfällt. Verschiedene Dateiformate werden dabei selbsttätig erkannt.",
-      auszeichnet: "Ein Schutz, der keine Daten verlieren lässt. Beim Import werden ausschließlich fehlende Ziehungen ergänzt, bereits vorhandene bleiben unangetastet — so kann man die Daten gefahrlos aktualisieren, ohne den Bestand zu gefährden. Das direkte ZIP-Einlesen gelingt ohne jede Zusatzsoftware, und der Manager läuft vollständig im Browser auf jedem Gerät.",
-      link: "https://dietertepe.github.io/Eurolotto/EuroJackpot_Manager_0-1-8.html"
+      id: "euro-manager", family: "euro", icon: "importbox", version: "0.1.8",
+      link: "https://dietertepe.github.io/Eurolotto/EuroJackpot_Manager_0-1-8.html",
+      i18n: {
+        de: {
+          title: "EuroJackpot — Daten-Manager",
+          teaser: "Importiert ZIP oder CSV direkt von der offiziellen Quelle.",
+          kann: "Die geprüfte Ziehungshistorie laden, neue Ziehungen über zwei Zahlenraster eingeben (mit Validierung, die sowohl die gewachsenen Eurozahlen-Bereiche als auch die Ziehungstage Dienstag und Freitag kennt) sowie Einträge suchen und löschen. Der Import akzeptiert wahlweise eine ZIP- oder eine CSV-Datei: Die offizielle WestLotto-ZIP wird automatisch entpackt und eingelesen — ein Entpacken von Hand entfällt. Verschiedene Dateiformate werden dabei selbsttätig erkannt.",
+          auszeichnet: "Ein Schutz, der keine Daten verlieren lässt. Beim Import werden ausschließlich fehlende Ziehungen ergänzt, bereits vorhandene bleiben unangetastet — so kann man die Daten gefahrlos aktualisieren, ohne den Bestand zu gefährden. Das direkte ZIP-Einlesen gelingt ohne jede Zusatzsoftware, und der Manager läuft vollständig im Browser auf jedem Gerät."
+        },
+        en: {
+          title: "EuroJackpot — Data Manager",
+          teaser: "Imports ZIP or CSV directly from the official source.",
+          kann: "Load the verified draw history, enter new draws via two number grids (with validation that knows both the expanded Euro number ranges and the draw days Tuesday and Friday) as well as search and delete entries. The import accepts either a ZIP or a CSV file: the official WestLotto ZIP is unpacked and read in automatically — no manual extraction needed. Different file formats are detected automatically.",
+          auszeichnet: "Protection that never loses data. During import only missing draws are added, existing ones remain untouched — so you can update the data safely without endangering your records. Reading the ZIP directly works without any additional software, and the manager runs entirely in the browser on any device."
+        },
+        pt: {
+          title: "EuroJackpot — Gestor de Dados",
+          teaser: "Importa ZIP ou CSV diretamente da fonte oficial.",
+          kann: "Carregar o histórico de sorteios verificado, introduzir novos sorteios através de duas grelhas de números (com validação que conhece tanto os intervalos alargados dos números Euro como os dias de sorteio, terça e sexta) e ainda procurar e eliminar entradas. A importação aceita um ficheiro ZIP ou CSV: o ZIP oficial da WestLotto é descompactado e lido automaticamente — não é preciso descompactar à mão. Diferentes formatos de ficheiro são reconhecidos automaticamente.",
+          auszeichnet: "Uma proteção que não deixa perder dados. Na importação, apenas os sorteios em falta são acrescentados; os já existentes permanecem intactos — assim, é possível atualizar os dados com segurança, sem pôr em risco o acervo. A leitura direta do ZIP funciona sem qualquer software adicional, e o gestor funciona inteiramente no navegador, em qualquer dispositivo."
+        },
+        uk: {
+          title: "EuroJackpot — Менеджер даних",
+          teaser: "Імпортує ZIP або CSV безпосередньо з офіційного джерела.",
+          kann: "Завантаження перевіреної історії тиражів, введення нових тиражів через дві числові сітки (з перевіркою, яка знає як розширені діапазони Євро-чисел, так і дні тиражів — вівторок і п’ятницю), а також пошук і видалення записів. Імпорт приймає на вибір файл ZIP або CSV: офіційний ZIP від WestLotto автоматично розпаковується та зчитується — розпаковувати вручну не потрібно. Різні формати файлів розпізнаються автоматично.",
+          auszeichnet: "Захист, що не дає втратити дані. Під час імпорту додаються лише відсутні тиражі, а наявні залишаються незмінними — тож дані можна безпечно оновлювати, не ризикуючи наявним масивом. Пряме зчитування ZIP працює без жодного додаткового ПЗ, а менеджер повністю працює у браузері на будь-якому пристрої."
+        }
+      }
     },
     {
-      id: "skipbo-basis", family: "skipbo", icon: "cardsflat",
-      title: "Skip-Bo — Die Basisversion", version: "6.6.0",
-      teaser: "Der Ursprung: eine Datei, das komplette Spiel, schlicht und nachvollziehbar.",
-      kann: "Das vollständige Skip-Bo-Spielprinzip gegen einen Computergegner — den eigenen Stapel zuerst leeren, indem auf den gemeinsamen Baustapeln Reihen von 1 bis 12 gelegt werden, gespeist aus Handkarten, den vier eigenen Ablagestapeln und den Skip-Bo-Jokern (Wild-Karten). Gespielt wird kostenlos und ohne Installation direkt im Browser, auf Handy, Tablet und PC.",
-      auszeichnet: "Schlichtheit als Fundament. Im Unterschied zur neuen Version ist sie noch nicht modular aufgebaut, optisch nicht überarbeitet und nicht mit mehreren Sprachen ausgestattet — dafür bleibt sie als einzelne, abgeschlossene Datei unverändert spiel- und nachvollziehbar, genau so, wie das Projekt begonnen hat.",
-      link: "https://dietertepe.github.io/Ordner1/SkipBo_6_6_0.html"
+      id: "skipbo-basis", family: "skipbo", icon: "cardsflat", version: "6.6.0",
+      link: "https://dietertepe.github.io/Ordner1/SkipBo_6_6_0.html",
+      i18n: {
+        de: {
+          title: "Skip-Bo — Die Basisversion",
+          teaser: "Der Ursprung: eine Datei, das komplette Spiel, schlicht und nachvollziehbar.",
+          kann: "Das vollständige Skip-Bo-Spielprinzip gegen einen Computergegner — den eigenen Stapel zuerst leeren, indem auf den gemeinsamen Baustapeln Reihen von 1 bis 12 gelegt werden, gespeist aus Handkarten, den vier eigenen Ablagestapeln und den Skip-Bo-Jokern (Wild-Karten). Gespielt wird kostenlos und ohne Installation direkt im Browser, auf Handy, Tablet und PC.",
+          auszeichnet: "Schlichtheit als Fundament. Im Unterschied zur neuen Version ist sie noch nicht modular aufgebaut, optisch nicht überarbeitet und nicht mit mehreren Sprachen ausgestattet — dafür bleibt sie als einzelne, abgeschlossene Datei unverändert spiel- und nachvollziehbar, genau so, wie das Projekt begonnen hat."
+        },
+        en: {
+          title: "Skip-Bo — The Base Version",
+          teaser: "The origin: one file, the complete game, simple and transparent.",
+          kann: "The full Skip-Bo game principle against a computer opponent — empty your own stockpile first by building runs from 1 to 12 on the shared building piles, fed from your hand, your four personal discard piles and the Skip-Bo jokers (wild cards). Play for free and without installation right in the browser, on phone, tablet and PC.",
+          auszeichnet: "Simplicity as a foundation. Unlike the new version it is not yet modular, not visually reworked and not equipped with multiple languages — but as a single, self-contained file it remains playable and transparent exactly as the project began."
+        },
+        pt: {
+          title: "Skip-Bo — A Versão Base",
+          teaser: "A origem: um ficheiro, o jogo completo, simples e claro.",
+          kann: "O princípio completo do jogo Skip-Bo contra um adversário do computador — esvaziar primeiro a própria pilha, formando sequências de 1 a 12 nas pilhas de construção partilhadas, alimentadas pelas cartas da mão, pelas quatro pilhas de descarte próprias e pelos jokers Skip-Bo (cartas wild). Joga-se gratuitamente e sem instalação, diretamente no navegador, no telemóvel, tablet e PC.",
+          auszeichnet: "A simplicidade como base. Ao contrário da nova versão, ainda não é modular, não foi reformulada visualmente nem está equipada com vários idiomas — mas, como ficheiro único e autossuficiente, mantém-se jogável e transparente, tal como o projeto começou."
+        },
+        uk: {
+          title: "Skip-Bo — Базова версія",
+          teaser: "Витоки: один файл, повна гра, проста й зрозуміла.",
+          kann: "Повний принцип гри Skip-Bo проти комп’ютерного суперника — спершу спорожнити власну колоду, викладаючи на спільних стосах послідовності від 1 до 12 з карт руки, чотирьох власних стосів скидання та джокерів Skip-Bo (диких карт). Грати можна безкоштовно й без встановлення прямо у браузері — на телефоні, планшеті та ПК.",
+          auszeichnet: "Простота як основа. На відміну від нової версії, вона ще не модульна, візуально не перероблена й не має кількох мов — проте як єдиний самодостатній файл лишається придатною для гри та зрозумілою саме такою, якою проєкт починався."
+        }
+      }
     },
     {
-      id: "skipbo-klassisch", family: "skipbo", icon: "cardsshine",
-      title: "Skip-Bo — Das klassische Kartenspiel", version: "7.0.0",
-      teaser: "Werktreue Neuauflage mit Original-Look, vier Sprachen, sechs Themen.",
-      kann: "Das vollständige Skip-Bo-Spielprinzip — den eigenen Stapel zuerst leeren, indem auf den gemeinsamen Baustapeln Reihen von 1 bis 12 gelegt werden, gespeist aus Handkarten, den vier eigenen Ablagestapeln und den Skip-Bo-Jokern (Wild-Karten). Gespielt wird gegen einen Computergegner. Das Kartenbild ist im Original-Look nachgebaut: die typischen Strudel-Karten in Blau, Grün und Rot, die orange Skip-Bo-Karte und passende Rückseiten. Dazu eine wählbare Spielgeschwindigkeit, ein eigener Spielername, vier Sprachen (Deutsch, Englisch, Portugiesisch, Ukrainisch) und ein Design-Menü mit sechs Hintergrund-Themen sowie Reglern für Helligkeit und Farbton — die Auswahl wird auf dem Gerät gespeichert.",
-      auszeichnet: "Liebe zum Detail. Von den Karten über die plastischen Spielfeld-Rahmen bis zum animierten Ring, der den aktiven Spieler anzeigt, ist alles darauf ausgelegt, sich wie das echte Spiel anzufühlen — aufgeräumt und hochwertig. Skip-Bo ist persönlich anpassbar und läuft vollständig im Browser, ganz ohne Installation. Es ist gratis und werbefrei; es wird nichts getrackt — alle Einstellungen bleiben lokal auf dem Gerät. Zu dieser Version gehört außerdem ein eigenständiger KI-Tuner, der die Spielstärke des Computergegners verbessert.",
-      link: "https://dietertepe.github.io/Skipo/SkipBo_7_0_0.html"
+      id: "skipbo-klassisch", family: "skipbo", icon: "cardsshine", version: "7.0.0",
+      link: "https://dietertepe.github.io/Skipo/SkipBo_7_0_0.html",
+      i18n: {
+        de: {
+          title: "Skip-Bo — Das klassische Kartenspiel",
+          teaser: "Werktreue Neuauflage mit Original-Look, vier Sprachen, sechs Themen.",
+          kann: "Das vollständige Skip-Bo-Spielprinzip — den eigenen Stapel zuerst leeren, indem auf den gemeinsamen Baustapeln Reihen von 1 bis 12 gelegt werden, gespeist aus Handkarten, den vier eigenen Ablagestapeln und den Skip-Bo-Jokern (Wild-Karten). Gespielt wird gegen einen Computergegner. Das Kartenbild ist im Original-Look nachgebaut: die typischen Strudel-Karten in Blau, Grün und Rot, die orange Skip-Bo-Karte und passende Rückseiten. Dazu eine wählbare Spielgeschwindigkeit, ein eigener Spielername, vier Sprachen (Deutsch, Englisch, Portugiesisch, Ukrainisch) und ein Design-Menü mit sechs Hintergrund-Themen sowie Reglern für Helligkeit und Farbton — die Auswahl wird auf dem Gerät gespeichert.",
+          auszeichnet: "Liebe zum Detail. Von den Karten über die plastischen Spielfeld-Rahmen bis zum animierten Ring, der den aktiven Spieler anzeigt, ist alles darauf ausgelegt, sich wie das echte Spiel anzufühlen — aufgeräumt und hochwertig. Skip-Bo ist persönlich anpassbar und läuft vollständig im Browser, ganz ohne Installation. Es ist gratis und werbefrei; es wird nichts getrackt — alle Einstellungen bleiben lokal auf dem Gerät. Zu dieser Version gehört außerdem ein eigenständiger KI-Tuner, der die Spielstärke des Computergegners verbessert."
+        },
+        en: {
+          title: "Skip-Bo — The Classic Card Game",
+          teaser: "Faithful remake with the original look, four languages, six themes.",
+          kann: "The full Skip-Bo game principle — empty your own stockpile first by building runs from 1 to 12 on the shared building piles, fed from your hand, your four personal discard piles and the Skip-Bo jokers (wild cards). You play against a computer opponent. The card artwork is rebuilt in the original look: the typical swirl cards in blue, green and red, the orange Skip-Bo card and matching backs. Plus a selectable game speed, your own player name, four languages (German, English, Portuguese, Ukrainian) and a design menu with six background themes as well as sliders for brightness and hue — your choice is saved on the device.",
+          auszeichnet: "Attention to detail. From the cards to the three-dimensional board frames to the animated ring that marks the active player, everything is designed to feel like the real game — tidy and high-quality. Skip-Bo is personally customisable and runs entirely in the browser, completely without installation. It is free and ad-free; nothing is tracked — all settings stay locally on the device. This version also comes with a standalone AI tuner that improves the playing strength of the computer opponent."
+        },
+        pt: {
+          title: "Skip-Bo — O Jogo de Cartas Clássico",
+          teaser: "Recriação fiel com o visual original, quatro idiomas, seis temas.",
+          kann: "O princípio completo do jogo Skip-Bo — esvaziar primeiro a própria pilha, formando sequências de 1 a 12 nas pilhas de construção partilhadas, alimentadas pelas cartas da mão, pelas quatro pilhas de descarte próprias e pelos jokers Skip-Bo (cartas wild). Joga-se contra um adversário do computador. As cartas são recriadas no visual original: as típicas cartas em espiral em azul, verde e vermelho, a carta Skip-Bo laranja e versos a condizer. Além disso, uma velocidade de jogo selecionável, um nome de jogador próprio, quatro idiomas (alemão, inglês, português, ucraniano) e um menu de design com seis temas de fundo, bem como controlos de brilho e tonalidade — a escolha é guardada no dispositivo.",
+          auszeichnet: "Atenção ao detalhe. Desde as cartas, passando pelas molduras tridimensionais do tabuleiro, até ao anel animado que assinala o jogador ativo, tudo foi pensado para parecer o jogo real — organizado e de alta qualidade. O Skip-Bo é personalizável e funciona inteiramente no navegador, sem qualquer instalação. É gratuito e sem publicidade; nada é rastreado — todas as definições ficam localmente no dispositivo. Esta versão inclui ainda um afinador de IA autónomo que melhora a força de jogo do adversário do computador."
+        },
+        uk: {
+          title: "Skip-Bo — Класична карткова гра",
+          teaser: "Точне відтворення з оригінальним виглядом, чотири мови, шість тем.",
+          kann: "Повний принцип гри Skip-Bo — спершу спорожнити власну колоду, викладаючи на спільних стосах послідовності від 1 до 12 з карт руки, чотирьох власних стосів скидання та джокерів Skip-Bo (диких карт). Гра ведеться проти комп’ютерного суперника. Зображення карт відтворено в оригінальному вигляді: характерні карти-вихори синього, зеленого та червоного кольорів, помаранчева карта Skip-Bo та відповідні сорочки. Додатково — регульована швидкість гри, власне ім’я гравця, чотири мови (німецька, англійська, португальська, українська) та меню дизайну з шістьма фоновими темами, а також повзунки яскравості й відтінку — вибір зберігається на пристрої.",
+          auszeichnet: "Увага до деталей. Від карт і об’ємних рамок ігрового поля до анімованого кільця, що позначає активного гравця, — усе створено так, щоб відчуватися як справжня гра: охайно та якісно. Skip-Bo можна персоналізувати, і він повністю працює у браузері, зовсім без встановлення. Він безкоштовний і без реклами; нічого не відстежується — усі налаштування залишаються локально на пристрої. До цієї версії також входить окремий ШІ-тюнер, що покращує силу гри комп’ютерного суперника."
+        }
+      }
     },
     {
-      id: "skipbo-tuner", family: "skipbo", icon: "gear",
-      title: "Skip-Bo — KI-Tuner", version: "2.7 (Turbo + Feinschliff 2.7b)",
-      teaser: "Optimiert die Spielstärke des Computergegners per genetischer Suche.",
-      kann: "In zwei Phasen — erst breite Erkundung, dann Feinschliff — lässt der Tuner tausende simulierte Partien gegen einen Spiegel-Gegner mit identischer Engine laufen, gepaart in Mirror-Paaren, damit sich Kartenglück gegenseitig aufhebt, und beschleunigt durch Mehrkern-Web-Worker. Eine vorgeschaltete „Turbo-Sieb\u201C-Vorrunde mit einem Drittel-Deck sortiert schwache Kandidaten schon früh aus. Am Ende steht ein fertiger KONFIG-Block zum direkten Einfügen ins Spiel, ergänzt durch ein Empfehlungs-Panel mit Schiebereglern, das zeigt, welche Werte den größten Einfluss auf die Spielstärke haben.",
-      auszeichnet: "Der Selbstoptimierungs-Kreislauf — das Ergebnis eines Laufs lässt sich per Konverter wieder in den Startpunkt des nächsten Laufs zurückverwandeln, sodass jeder Tuning-Durchgang auf dem vorherigen aufbaut. Eine automatische Suchraum-Dehnung erkennt, wenn die Optimierung an ihre eigenen Wertegrenzen stößt, und erweitert sie selbsttätig. Wie das Spiel läuft auch der Tuner vollständig im Browser, ohne Installation oder Cloud-Anbindung.",
-      link: "https://dietertepe.github.io/SkipBo_Tuner/SkipBo_Tuner_v2_7.html"
+      id: "skipbo-tuner", family: "skipbo", icon: "gear", version: "2.7 (Turbo + Feinschliff 2.7b)",
+      link: "https://dietertepe.github.io/SkipBo_Tuner/SkipBo_Tuner_v2_7.html",
+      i18n: {
+        de: {
+          title: "Skip-Bo — KI-Tuner",
+          teaser: "Optimiert die Spielstärke des Computergegners per genetischer Suche.",
+          kann: "In zwei Phasen — erst breite Erkundung, dann Feinschliff — lässt der Tuner tausende simulierte Partien gegen einen Spiegel-Gegner mit identischer Engine laufen, gepaart in Mirror-Paaren, damit sich Kartenglück gegenseitig aufhebt, und beschleunigt durch Mehrkern-Web-Worker. Eine vorgeschaltete „Turbo-Sieb“-Vorrunde mit einem Drittel-Deck sortiert schwache Kandidaten schon früh aus. Am Ende steht ein fertiger KONFIG-Block zum direkten Einfügen ins Spiel, ergänzt durch ein Empfehlungs-Panel mit Schiebereglern, das zeigt, welche Werte den größten Einfluss auf die Spielstärke haben.",
+          auszeichnet: "Der Selbstoptimierungs-Kreislauf — das Ergebnis eines Laufs lässt sich per Konverter wieder in den Startpunkt des nächsten Laufs zurückverwandeln, sodass jeder Tuning-Durchgang auf dem vorherigen aufbaut. Eine automatische Suchraum-Dehnung erkennt, wenn die Optimierung an ihre eigenen Wertegrenzen stößt, und erweitert sie selbsttätig. Wie das Spiel läuft auch der Tuner vollständig im Browser, ohne Installation oder Cloud-Anbindung."
+        },
+        en: {
+          title: "Skip-Bo — AI Tuner",
+          teaser: "Optimises the computer opponent's playing strength via genetic search.",
+          kann: "In two phases — first broad exploration, then fine-tuning — the tuner runs thousands of simulated games against a mirror opponent with an identical engine, paired in mirror matches so that card luck cancels out, and accelerated by multi-core web workers. A preceding “turbo sieve” round with a one-third deck filters out weak candidates early on. The result is a ready-made CONFIG block to paste straight into the game, complemented by a recommendation panel with sliders that shows which values have the greatest impact on playing strength.",
+          auszeichnet: "The self-optimisation loop — the result of one run can be converted back into the starting point of the next run, so that each tuning pass builds on the previous one. An automatic search-space expansion detects when the optimisation hits its own value limits and widens them by itself. Like the game, the tuner also runs entirely in the browser, without installation or cloud connection."
+        },
+        pt: {
+          title: "Skip-Bo — Afinador de IA",
+          teaser: "Otimiza a força de jogo do adversário do computador através de busca genética.",
+          kann: "Em duas fases — primeiro uma exploração ampla, depois o afinamento — o afinador executa milhares de partidas simuladas contra um adversário-espelho com um motor idêntico, emparelhadas em pares-espelho para que a sorte das cartas se anule, e aceleradas por web workers multi-core. Uma ronda prévia de «peneira turbo» com um terço do baralho elimina cedo os candidatos fracos. No final, fica um bloco CONFIG pronto para colar diretamente no jogo, complementado por um painel de recomendações com controlos deslizantes que mostra quais os valores com maior impacto na força de jogo.",
+          auszeichnet: "O ciclo de auto-otimização — o resultado de uma execução pode ser convertido novamente no ponto de partida da execução seguinte, de modo que cada passagem de afinação assenta na anterior. Uma expansão automática do espaço de busca deteta quando a otimização atinge os seus próprios limites de valores e alarga-os por si só. Tal como o jogo, o afinador também funciona inteiramente no navegador, sem instalação nem ligação à nuvem."
+        },
+        uk: {
+          title: "Skip-Bo — ШІ-тюнер",
+          teaser: "Оптимізує силу гри комп’ютерного суперника за допомогою генетичного пошуку.",
+          kann: "У дві фази — спершу широке дослідження, потім тонке налаштування — тюнер проганяє тисячі змодельованих партій проти дзеркального суперника з ідентичним рушієм, у дзеркальних парах, щоб карткове везіння взаємно нівелювалося, і прискорює це багатоядерними веб-воркерами. Попередній раунд «турбо-сита» з третиною колоди рано відсіює слабких кандидатів. У підсумку отримуєте готовий блок CONFIG для прямого вставлення у гру, доповнений панеллю рекомендацій із повзунками, що показує, які значення найбільше впливають на силу гри.",
+          auszeichnet: "Цикл самооптимізації — результат одного запуску можна конвертувати назад у початкову точку наступного, тож кожен прохід налаштування спирається на попередній. Автоматичне розширення простору пошуку виявляє, коли оптимізація сягає власних меж значень, і розширює їх самостійно. Як і гра, тюнер також повністю працює у браузері, без встановлення чи підключення до хмари."
+        }
+      }
     },
     {
-      id: "dreieck", family: "dreieck", icon: "triangle",
-      title: "DT-ProfiDreieck — Profi-Dreiecksrechner für Werkstatt & CNC", version: "Test 1.1.0 & Pro 1.1.0 (Engine 3.0.0)",
-      teaser: "Löst jedes Dreieck und liefert die fertige CAD-Zeichnung — für CNC & Werkstatt.",
-      kann: "Alle gängigen Eingabefälle (SSS, SWS, WSW, SWW, SSW) sowie die fortgeschrittenen Spezialfälle mit Umkreis, Inkreis, Fläche oder Höhen — inklusive numerischer Lösungen mit Plausibilitätsprüfung (z. B. Euler-Ungleichung R≥2r). Jedes Ergebnis kommt mit vollständigem, nachvollziehbarem Rechenweg sowie einer maßstäblichen CAD-Zeichnung. Export als PNG, SVG, PDF und — als Alleinstellung — direkt verwertbares DXF für die CNC-Maschine. Die Testversion rechnet alle Standardfälle und exportiert frei; die Pro-Version schaltet zusätzlich die Spezial-Eingabefälle frei und trägt ein persönliches Lizenz-Wasserzeichen.",
-      auszeichnet: "Ehrlichkeit und Nachvollziehbarkeit — der Rechenweg wird unabhängig vom eigentlichen Lösungsprozess neu berechnet, damit jede angezeigte Formel sich selbst bestätigt. Die Spezialfälle sind der eigentliche Burggraben, den kaum ein anderes frei verfügbares Tool abdeckt. Dazu kommt der direkte DXF-Export, der die Geometrie ohne Umwege an die Werkstatt-Maschine bringt. Beide Versionen laufen als einzelne, offline funktionierende Datei ohne Cloud-Anbindung und ohne laufende Kosten.",
-      link: "https://www.dt-profidreieck.de/"
+      id: "dreieck", family: "dreieck", icon: "triangle", version: "Test 1.1.0 & Pro 1.1.0 (Engine 3.0.0)",
+      link: "https://www.dt-profidreieck.de/",
+      i18n: {
+        de: {
+          title: "DT-ProfiDreieck — Profi-Dreiecksrechner für Werkstatt & CNC",
+          teaser: "Löst jedes Dreieck und liefert die fertige CAD-Zeichnung — für CNC & Werkstatt.",
+          kann: "Alle gängigen Eingabefälle (SSS, SWS, WSW, SWW, SSW) sowie die fortgeschrittenen Spezialfälle mit Umkreis, Inkreis, Fläche oder Höhen — inklusive numerischer Lösungen mit Plausibilitätsprüfung (z. B. Euler-Ungleichung R≥2r). Jedes Ergebnis kommt mit vollständigem, nachvollziehbarem Rechenweg sowie einer maßstäblichen CAD-Zeichnung. Export als PNG, SVG, PDF und — als Alleinstellung — direkt verwertbares DXF für die CNC-Maschine. Die Testversion rechnet alle Standardfälle und exportiert frei; die Pro-Version schaltet zusätzlich die Spezial-Eingabefälle frei und trägt ein persönliches Lizenz-Wasserzeichen.",
+          auszeichnet: "Ehrlichkeit und Nachvollziehbarkeit — der Rechenweg wird unabhängig vom eigentlichen Lösungsprozess neu berechnet, damit jede angezeigte Formel sich selbst bestätigt. Die Spezialfälle sind der eigentliche Burggraben, den kaum ein anderes frei verfügbares Tool abdeckt. Dazu kommt der direkte DXF-Export, der die Geometrie ohne Umwege an die Werkstatt-Maschine bringt. Beide Versionen laufen als einzelne, offline funktionierende Datei ohne Cloud-Anbindung und ohne laufende Kosten."
+        },
+        en: {
+          title: "DT-ProfiDreieck — Professional Triangle Calculator for Workshop & CNC",
+          teaser: "Solves any triangle and delivers the finished CAD drawing — for CNC & workshop.",
+          kann: "All common input cases (SSS, SAS, ASA, AAS, SSA) as well as the advanced special cases with circumcircle, incircle, area or heights — including numerical solutions with a plausibility check (e.g. Euler's inequality R≥2r). Every result comes with a complete, traceable calculation path and a scaled CAD drawing. Export as PNG, SVG, PDF and — as a unique feature — directly usable DXF for the CNC machine. The test version computes all standard cases and exports freely; the Pro version additionally unlocks the special input cases and carries a personal licence watermark.",
+          auszeichnet: "Honesty and traceability — the calculation path is recomputed independently of the actual solving process, so that every formula shown confirms itself. The special cases are the real moat that hardly any other freely available tool covers. On top of that comes the direct DXF export, which brings the geometry to the workshop machine without detours. Both versions run as a single, offline-capable file without cloud connection and without ongoing costs."
+        },
+        pt: {
+          title: "DT-ProfiDreieck — Calculadora Profissional de Triângulos para Oficina e CNC",
+          teaser: "Resolve qualquer triângulo e fornece o desenho CAD pronto — para CNC e oficina.",
+          kann: "Todos os casos de entrada comuns (LLL, LAL, ALA, AAL, LLA) bem como os casos especiais avançados com circunferência circunscrita, circunferência inscrita, área ou alturas — incluindo soluções numéricas com verificação de plausibilidade (por exemplo, a desigualdade de Euler R≥2r). Cada resultado vem com um percurso de cálculo completo e rastreável, bem como um desenho CAD à escala. Exportação em PNG, SVG, PDF e — como característica exclusiva — DXF diretamente utilizável para a máquina CNC. A versão de teste calcula todos os casos padrão e exporta livremente; a versão Pro desbloqueia adicionalmente os casos de entrada especiais e inclui uma marca de água de licença pessoal.",
+          auszeichnet: "Honestidade e rastreabilidade — o percurso de cálculo é recalculado independentemente do processo de resolução em si, para que cada fórmula apresentada se confirme a si própria. Os casos especiais são o verdadeiro fosso que quase nenhuma outra ferramenta gratuita cobre. A isto junta-se a exportação direta em DXF, que leva a geometria à máquina da oficina sem desvios. Ambas as versões funcionam como um ficheiro único, capaz de funcionar offline, sem ligação à nuvem e sem custos recorrentes."
+        },
+        uk: {
+          title: "DT-ProfiDreieck — Професійний калькулятор трикутників для майстерні та ЧПК",
+          teaser: "Розв’язує будь-який трикутник і видає готове CAD-креслення — для ЧПК і майстерні.",
+          kann: "Усі поширені випадки введення (SSS, SAS, ASA, AAS, SSA) та розширені спеціальні випадки з описаним колом, вписаним колом, площею чи висотами — разом із числовими розв’язками та перевіркою правдоподібності (наприклад, нерівність Ейлера R≥2r). Кожен результат супроводжується повним, простежуваним ходом обчислення та масштабним CAD-кресленням. Експорт у PNG, SVG, PDF і — як унікальна можливість — придатний для прямого використання DXF для верстата ЧПК. Тестова версія обчислює всі стандартні випадки й експортує без обмежень; версія Pro додатково відкриває спеціальні випадки введення та містить персональний ліцензійний водяний знак.",
+          auszeichnet: "Чесність і простежуваність — хід обчислення перераховується незалежно від самого процесу розв’язання, тож кожна показана формула підтверджує сама себе. Спеціальні випадки — це справжній «рів», який майже жоден інший безкоштовний інструмент не покриває. До цього додається прямий експорт DXF, що доставляє геометрію до верстата майстерні без зайвих кроків. Обидві версії працюють як єдиний файл, здатний працювати офлайн, без підключення до хмари та без поточних витрат."
+        }
+      }
     },
     {
-      id: "heizung-analyse", family: "heizung", icon: "thermo",
-      title: "Wärmeverlust- & Gebäude-Analyse — Heizungs-Check fürs eigene Zuhause", version: "1.0",
-      teaser: "Berechnet aus echten Messwerten den Wärmeverlust des Hauses und die passende Heizkurve. Kein veröffentlichtes Projekt, sondern für eine konkrete eigene Anlage gebaut.",
-      kann: "Aus einer Messreihe berechnet die Konsole den UA-Wert (Wärmeverlust-Koeffizient) des Gebäudes und ordnet das Ergebnis einer Energieeffizienzklasse (A+ bis H) zu. Dazu kommen Normheizlast und eine Jahresprognose über die Heizgradtage-Methode, abgestimmt auf elf deutsche Klimaregionen oder eine frei definierbare. Nutzungsprofile für Lüftungsverhalten und Sonneneinstrahlung fließen als Korrekturfaktoren mit ein. Ein Szenario-Rechner („Was wäre, wenn?\u201C) zeigt für jede gewünschte Innen-/Außentemperatur die nötige Vorlauftemperatur, die passende Mischer-Stellung, den Durchfluss und die zu erwartenden Tageskosten — ergänzt durch eine vollständige Heizkurven-Tabelle von −15\u00A0°C bis +15\u00A0°C mit Vorlauf, Rücklauf, Spreizung, Durchfluss, Mischer-Stufe und Kosten pro Tag. Bei mehreren Messpunkten mit unterschiedlichen Mischerstellungen kalibriert sich die Mischer-Skala automatisch und zunehmend genauer, inklusive Plausibilitäts-Hinweis bei stark abweichenden Werten. Optional lässt sich zusätzlich der Leitungsverlust zwischen Kessel und Heizkreis-Verteiler berechnen, sobald Kessel-Temperaturen vorliegen.",
-      anleitung: [
-        "Messwerte eintragen — Außentemperatur, Innentemperatur, Vor- und Rücklauf am Verteiler sowie der Durchfluss; optional ergänzt um Kessel-Vor-/Rücklauf und die aktuelle Mischer-Stufe",
-        "Auf „Messreihe & Gebäude auswerten\u201C klicken — die Konsole berechnet daraus UA-Wert, Effizienzklasse und Jahresprognose",
-        "Im Szenario-Rechner eine Wunsch-Innentemperatur und eine Außentemperatur eingeben, um die passende Mischereinstellung und die Tageskosten für genau diese Situation zu sehen",
-        "Die Heizkurven-Tabelle durchsehen, um die optimale Mischerstellung für verschiedene Außentemperaturen abzulesen",
-        "Bei wiederholten Messungen mit unterschiedlichen Mischerstellungen wird die Mischer-Skala mit jedem weiteren Messpunkt präziser"
-      ],
-      auszeichnet: "Die Mischer-Kalibrierung lernt direkt aus der eigenen Anlage statt aus theoretischen Annahmen — je mehr Messpunkte mit unterschiedlicher Mischerstellung vorliegen, desto genauer wird die Empfehlung. Komma oder Punkt als Dezimaltrennzeichen, alle Eingaben werden automatisch lokal im Browser gespeichert, keine Cloud-Anbindung, keine Installation nötig.",
-      link: "https://dietertepe.github.io/Heizungsanlage/waermeverlust.html"
+      id: "heizung-analyse", family: "heizung", icon: "thermo", version: "1.0",
+      link: "https://dietertepe.github.io/Heizungsanlage/waermeverlust.html",
+      i18n: {
+        de: {
+          title: "Wärmeverlust- & Gebäude-Analyse — Heizungs-Check fürs eigene Zuhause",
+          teaser: "Berechnet aus echten Messwerten den Wärmeverlust des Hauses und die passende Heizkurve. Kein veröffentlichtes Projekt, sondern für eine konkrete eigene Anlage gebaut.",
+          kann: "Aus einer Messreihe berechnet die Konsole den UA-Wert (Wärmeverlust-Koeffizient) des Gebäudes und ordnet das Ergebnis einer Energieeffizienzklasse (A+ bis H) zu. Dazu kommen Normheizlast und eine Jahresprognose über die Heizgradtage-Methode, abgestimmt auf elf deutsche Klimaregionen oder eine frei definierbare. Nutzungsprofile für Lüftungsverhalten und Sonneneinstrahlung fließen als Korrekturfaktoren mit ein. Ein Szenario-Rechner („Was wäre, wenn?“) zeigt für jede gewünschte Innen-/Außentemperatur die nötige Vorlauftemperatur, die passende Mischer-Stellung, den Durchfluss und die zu erwartenden Tageskosten — ergänzt durch eine vollständige Heizkurven-Tabelle von −15 °C bis +15 °C mit Vorlauf, Rücklauf, Spreizung, Durchfluss, Mischer-Stufe und Kosten pro Tag. Bei mehreren Messpunkten mit unterschiedlichen Mischerstellungen kalibriert sich die Mischer-Skala automatisch und zunehmend genauer, inklusive Plausibilitäts-Hinweis bei stark abweichenden Werten. Optional lässt sich zusätzlich der Leitungsverlust zwischen Kessel und Heizkreis-Verteiler berechnen, sobald Kessel-Temperaturen vorliegen.",
+          anleitung: [
+            "Messwerte eintragen — Außentemperatur, Innentemperatur, Vor- und Rücklauf am Verteiler sowie der Durchfluss; optional ergänzt um Kessel-Vor-/Rücklauf und die aktuelle Mischer-Stufe",
+            "Auf „Messreihe & Gebäude auswerten“ klicken — die Konsole berechnet daraus UA-Wert, Effizienzklasse und Jahresprognose",
+            "Im Szenario-Rechner eine Wunsch-Innentemperatur und eine Außentemperatur eingeben, um die passende Mischereinstellung und die Tageskosten für genau diese Situation zu sehen",
+            "Die Heizkurven-Tabelle durchsehen, um die optimale Mischerstellung für verschiedene Außentemperaturen abzulesen",
+            "Bei wiederholten Messungen mit unterschiedlichen Mischerstellungen wird die Mischer-Skala mit jedem weiteren Messpunkt präziser"
+          ],
+          auszeichnet: "Die Mischer-Kalibrierung lernt direkt aus der eigenen Anlage statt aus theoretischen Annahmen — je mehr Messpunkte mit unterschiedlicher Mischerstellung vorliegen, desto genauer wird die Empfehlung. Komma oder Punkt als Dezimaltrennzeichen, alle Eingaben werden automatisch lokal im Browser gespeichert, keine Cloud-Anbindung, keine Installation nötig."
+        },
+        en: {
+          title: "Heat-Loss & Building Analysis — Heating Check for Your Own Home",
+          teaser: "Calculates the building's heat loss and the matching heating curve from real measurements. Not a published project, but built for one specific personal system.",
+          kann: "From a series of measurements the console calculates the building's UA value (heat-loss coefficient) and assigns the result to an energy efficiency class (A+ to H). Added to this are the design heat load and an annual forecast via the heating-degree-days method, tuned to eleven German climate regions or a freely definable one. Usage profiles for ventilation behaviour and solar radiation are included as correction factors. A scenario calculator (“what if?”) shows, for any desired indoor/outdoor temperature, the required flow temperature, the matching mixer setting, the flow rate and the expected daily costs — supplemented by a complete heating-curve table from −15 °C to +15 °C with flow, return, spread, flow rate, mixer stage and cost per day. With several measuring points at different mixer settings, the mixer scale calibrates itself automatically and increasingly precisely, including a plausibility note for strongly deviating values. Optionally, the pipe loss between boiler and heating-circuit distributor can also be calculated, as soon as boiler temperatures are available.",
+          anleitung: [
+            "Enter measurements — outdoor temperature, indoor temperature, flow and return at the distributor and the flow rate; optionally supplemented by boiler flow/return and the current mixer stage",
+            "Click “Evaluate measurement series & building” — the console calculates the UA value, efficiency class and annual forecast from it",
+            "In the scenario calculator, enter a desired indoor temperature and an outdoor temperature to see the matching mixer setting and the daily costs for exactly that situation",
+            "Review the heating-curve table to read off the optimal mixer setting for various outdoor temperatures",
+            "With repeated measurements at different mixer settings, the mixer scale becomes more precise with every further measuring point"
+          ],
+          auszeichnet: "The mixer calibration learns directly from your own system instead of from theoretical assumptions — the more measuring points with different mixer settings are available, the more accurate the recommendation becomes. Comma or period as decimal separator, all inputs are saved automatically and locally in the browser, no cloud connection, no installation required."
+        },
+        pt: {
+          title: "Análise de Perdas de Calor e do Edifício — Verificação do Aquecimento da Própria Casa",
+          teaser: "Calcula a perda de calor da casa e a curva de aquecimento adequada a partir de medições reais. Não é um projeto publicado, mas construído para um sistema próprio concreto.",
+          kann: "A partir de uma série de medições, a consola calcula o valor UA (coeficiente de perda de calor) do edifício e atribui o resultado a uma classe de eficiência energética (A+ a H). A isto juntam-se a carga térmica de projeto e uma previsão anual pelo método dos graus-dia de aquecimento, ajustada a onze regiões climáticas alemãs ou a uma definível livremente. Perfis de utilização para o comportamento de ventilação e a radiação solar entram como fatores de correção. Uma calculadora de cenários («e se?») mostra, para qualquer temperatura interior/exterior desejada, a temperatura de ida necessária, a posição adequada do misturador, o caudal e os custos diários esperados — complementada por uma tabela completa da curva de aquecimento de −15 °C a +15 °C com ida, retorno, diferencial, caudal, nível do misturador e custo por dia. Com vários pontos de medição em diferentes posições do misturador, a escala do misturador calibra-se automaticamente e de forma cada vez mais precisa, incluindo um aviso de plausibilidade para valores muito divergentes. Opcionalmente, é ainda possível calcular a perda na tubagem entre a caldeira e o distribuidor do circuito de aquecimento, assim que houver temperaturas da caldeira.",
+          anleitung: [
+            "Introduzir as medições — temperatura exterior, temperatura interior, ida e retorno no distribuidor e o caudal; opcionalmente complementadas com ida/retorno da caldeira e o nível atual do misturador",
+            "Clicar em «Avaliar série de medições e edifício» — a consola calcula a partir daí o valor UA, a classe de eficiência e a previsão anual",
+            "Na calculadora de cenários, introduzir uma temperatura interior desejada e uma temperatura exterior para ver a regulação adequada do misturador e os custos diários exatamente para essa situação",
+            "Consultar a tabela da curva de aquecimento para ler a regulação ideal do misturador para diferentes temperaturas exteriores",
+            "Com medições repetidas em diferentes posições do misturador, a escala do misturador torna-se mais precisa a cada novo ponto de medição"
+          ],
+          auszeichnet: "A calibração do misturador aprende diretamente com o próprio sistema, em vez de pressupostos teóricos — quantos mais pontos de medição com diferentes posições do misturador existirem, mais precisa se torna a recomendação. Vírgula ou ponto como separador decimal, todas as entradas são guardadas automaticamente e localmente no navegador, sem ligação à nuvem, sem necessidade de instalação."
+        },
+        uk: {
+          title: "Аналіз тепловтрат і будівлі — перевірка опалення для власного дому",
+          teaser: "Обчислює тепловтрати будинку та відповідну криву опалення на основі реальних вимірювань. Не опублікований проєкт, а створений для конкретної власної системи.",
+          kann: "На основі низки вимірювань консоль обчислює значення UA (коефіцієнт тепловтрат) будівлі та відносить результат до класу енергоефективності (від A+ до H). До цього додаються розрахункове теплове навантаження та річний прогноз за методом градусо-днів опалення, узгоджений з одинадцятьма німецькими кліматичними регіонами або з довільно визначеним. Профілі використання для режиму провітрювання та сонячного випромінювання враховуються як поправкові коефіцієнти. Калькулятор сценаріїв («що, якщо?») показує для будь-якої бажаної внутрішньої/зовнішньої температури потрібну температуру подачі, відповідне положення змішувача, витрату та очікувані добові витрати — доповнений повною таблицею кривої опалення від −15 °C до +15 °C з подачею, зворотним потоком, перепадом, витратою, ступенем змішувача та вартістю на день. За кількох точок вимірювання з різними положеннями змішувача шкала змішувача калібрується автоматично й дедалі точніше, включно з приміткою про правдоподібність за сильних відхилень. За потреби можна додатково обчислити втрати в трубопроводі між котлом і розподільником опалювального контуру, щойно стануть відомі температури котла.",
+          anleitung: [
+            "Внести виміри — зовнішню температуру, внутрішню температуру, подачу та зворотний потік на розподільнику, а також витрату; за бажанням доповнити подачею/зворотним потоком котла та поточним ступенем змішувача",
+            "Натиснути «Оцінити серію вимірювань і будівлю» — консоль обчислить із цього значення UA, клас ефективності та річний прогноз",
+            "У калькуляторі сценаріїв ввести бажану внутрішню температуру та зовнішню температуру, щоб побачити відповідне налаштування змішувача та добові витрати саме для цієї ситуації",
+            "Переглянути таблицю кривої опалення, щоб зчитати оптимальне положення змішувача для різних зовнішніх температур",
+            "За повторних вимірювань з різними положеннями змішувача шкала змішувача стає точнішою з кожною новою точкою вимірювання"
+          ],
+          auszeichnet: "Калібрування змішувача навчається безпосередньо з власної системи, а не з теоретичних припущень — що більше точок вимірювання з різними положеннями змішувача, то точнішою стає рекомендація. Кома або крапка як десятковий роздільник, усі введені дані автоматично зберігаються локально у браузері, без підключення до хмари, без потреби встановлення."
+        }
+      }
     }
   ];
 
   /* ============================================================
-     2) KLEINE HELFER
+     3) KLEINE HELFER
      ============================================================ */
 
   function $(id){ return document.getElementById(id); }
 
-  // Element-Fabrik: erzeugt ein Element und setzt Klassen, Text, Attribute,
-  // Kinder in einem Rutsch. Text geht über textContent (sicher gegen
-  // Sonderzeichen) — innerHTML wird hier bewusst NICHT genutzt.
-  // opts: { class, text, attrs:{}, html (nur für vertrauenswürdige SVGs), children:[] }
+  // Element-Fabrik: Text über textContent (sicher), innerHTML nur für ICONS.
   function el(tag, opts){
     opts = opts || {};
     var node = document.createElement(tag);
@@ -850,8 +1179,6 @@
     return node;
   }
 
-  // Icon-Box mit statischem SVG. Fällt auf eine leere Box zurück, falls ein
-  // Icon-Key mal nicht existiert (statt eine Exception zu werfen).
   function iconBox(iconKey, cvar){
     return el("div", { class: "icon-box", cvar: cvar, html: ICONS[iconKey] || "" });
   }
@@ -865,9 +1192,21 @@
     return null;
   }
 
+  // Sprach-Zugriff mit Fallback auf Deutsch (falls eine Übersetzung fehlt).
+  function ui(lang){ return UI[lang] || UI.de; }
+  function toolText(tool, lang){ return (tool.i18n && tool.i18n[lang]) || tool.i18n.de; }
+  function famLabel(fam, lang){ return (fam.label && fam.label[lang]) || fam.label.de; }
+
   /* ============================================================
-     3) ZUSTAND  —  Filter + Favorit (Favorit lokal gespeichert)
+     4) ZUSTAND  —  Sprache + Filter + Favorit (beides lokal gespeichert)
      ============================================================ */
+
+  var LANG_KEY = "dt_werkstatt_sprache";
+  function getLang(){
+    try { var l = localStorage.getItem(LANG_KEY); return (LANGS.indexOf(l) >= 0) ? l : "de"; }
+    catch(e){ return "de"; }
+  }
+  function setLang(l){ try { localStorage.setItem(LANG_KEY, l); } catch(e){ /* nur diese Sitzung */ } }
 
   var activeFamilies = {};
   FAMILIES.forEach(function(f){ activeFamilies[f.key] = true; });
@@ -880,113 +1219,124 @@
     try {
       if(id) localStorage.setItem(FAV_KEY, id);
       else localStorage.removeItem(FAV_KEY);
-    } catch(e){ /* Speicher nicht verfügbar — Favorit gilt dann nur für diese Sitzung */ }
+    } catch(e){ /* Speicher nicht verfügbar — gilt dann nur für diese Sitzung */ }
   }
 
   /* ============================================================
-     4) AUFBAU  —  Schalter, Kacheln, Favoriten-Display
-        Kacheln werden EINMAL gebaut; der Filter schaltet danach
-        nur noch Sichtbarkeit (kein Neuaufbau pro Klick).
+     5) AUFBAU  —  Sprach-Schalter, Filter-Schalter, Kacheln
+        Alles wird EINMAL gebaut. Referenzen merken wir uns, damit
+        Sprachwechsel und Favoriten-Wechsel nur Texte/Zustände
+        aktualisieren (kein Neuaufbau).
      ============================================================ */
 
-  var switchesEl = $("switches");
-  var sectionsEl = $("sections");
-  var favBarEl   = $("fav-bar");
+  var langSwitchEl = $("lang-switch");
+  var switchesEl   = $("switches");
+  var sectionsEl   = $("sections");
+  var favBarEl     = $("fav-bar");
 
-  // Referenzen, um Favoriten-Zustand gezielt zu aktualisieren,
-  // ohne alles neu zu bauen.
-  var cardRefs = []; // [{ id, card, starBtn }]
-  var sectionRefs = {}; // family.key -> section-Element
+  var langRefs   = []; // [{ lang, btn }]
+  var switchRefs = []; // [{ key, labelEl }]
+  var headRefs   = []; // [{ key, h2El }]
+  var cardRefs   = []; // [{ id, tool, card, starBtn, titleEl, teaserEl, moreEl, quickEl }]
+
+  // ---- Sprach-Schalter (einmalig) ----
+  function buildLangSwitch(){
+    LANGS.forEach(function(lang){
+      var btn = el("button", {
+        class: "lang-btn",
+        text: lang.toUpperCase(),
+        attrs: { type: "button", "aria-pressed": "false", "data-lang": lang, "lang": lang, title: LANG_NAMES[lang], "aria-label": LANG_NAMES[lang] }
+      });
+      btn.addEventListener("click", function(){
+        setLang(lang);
+        applyLanguage();
+      });
+      langRefs.push({ lang: lang, btn: btn });
+      langSwitchEl.appendChild(btn);
+    });
+  }
 
   // ---- Filter-Schalter (einmalig) ----
   function buildSwitches(){
     FAMILIES.forEach(function(f){
       var dot = el("span", { class: "dot" });
-      var label = el("span", { text: f.label });
+      var labelEl = el("span", { text: famLabel(f, getLang()) });
       var btn = el("button", {
         class: "switch",
         cvar: f.color,
         attrs: { type: "button", "aria-pressed": "true", "data-family": f.key },
-        children: [dot, label]
+        children: [dot, labelEl]
       });
       btn.addEventListener("click", function(){
         activeFamilies[f.key] = !activeFamilies[f.key];
         btn.setAttribute("aria-pressed", String(activeFamilies[f.key]));
         applyFilter();
       });
+      switchRefs.push({ key: f.key, labelEl: labelEl });
       switchesEl.appendChild(btn);
     });
   }
 
   // ---- Eine Kachel bauen ----
   function buildCard(tool, fam){
-    var top = el("div", {
-      class: "card-top",
-      children: [
-        iconBox(tool.icon, fam.color),
-        // Stern-Button: Zustand wird in updateFavoriteUI() gesetzt
-        (function(){
-          var s = el("button", {
-            class: "star-btn",
-            cvar: fam.color,
-            attrs: { type: "button" }
-          });
-          s.addEventListener("click", function(){
-            var nowFav = (getFavoriteId() !== tool.id);
-            setFavoriteId(nowFav ? tool.id : null);
-            updateFavoriteUI();
-          });
-          return s;
-        })()
-      ]
+    var lang = getLang();
+    var tx = toolText(tool, lang);
+
+    var starBtn = el("button", { class: "star-btn", cvar: fam.color, attrs: { type: "button" } });
+    starBtn.addEventListener("click", function(){
+      var nowFav = (getFavoriteId() !== tool.id);
+      setFavoriteId(nowFav ? tool.id : null);
+      updateFavoriteUI();
     });
 
+    var top = el("div", { class: "card-top", children: [ iconBox(tool.icon, fam.color), starBtn ] });
+
+    var versionChip = el("span", { class: "version-chip", text: "v" + tool.version });
+    var titleEl = el("h3", { text: tx.title });
+    var teaserEl = el("p", { class: "teaser", text: tx.teaser });
+    var moreEl = el("span", { class: "more", text: ui(lang).more });
     var main = el("button", {
       class: "card-main",
       attrs: { type: "button" },
-      children: [
-        el("span", { class: "version-chip", text: "v" + tool.version }),
-        el("h3", { text: tool.title }),
-        el("p", { class: "teaser", text: tool.teaser }),
-        el("span", { class: "more", text: "Details →" })
-      ]
+      children: [ versionChip, titleEl, teaserEl, moreEl ]
     });
     main.addEventListener("click", function(){ openModal(tool, fam); });
 
-    var quick = el("a", {
+    var quickEl = el("a", {
       class: "quick-start",
-      text: "Direkt starten ↗",
+      text: ui(lang).quickStart,
       attrs: { href: tool.link, target: "_blank", rel: "noopener" }
     });
-    var actions = el("div", { class: "card-actions", children: [quick] });
+    var actions = el("div", { class: "card-actions", children: [quickEl] });
 
     var card = el("div", { class: "card", cvar: fam.color, children: [top, main, actions] });
 
-    // Referenz merken (Stern ist top.children[1])
-    cardRefs.push({ id: tool.id, card: card, starBtn: top.children[1] });
+    cardRefs.push({
+      id: tool.id, tool: tool, card: card, starBtn: starBtn,
+      titleEl: titleEl, teaserEl: teaserEl, moreEl: moreEl, quickEl: quickEl
+    });
     return card;
   }
 
   // ---- Sektionen + Kacheln (einmalig) ----
   function buildSections(){
-    var cardIndex = 0; // global über alle Sektionen, für gestaffeltes Aufblenden am Handy
+    var lang = getLang();
+    var cardIndex = 0; // global, für gestaffeltes Aufblenden am Handy
     FAMILIES.forEach(function(f, idx){
       var tools = TOOLS.filter(function(t){ return t.family === f.key; });
-      if(!tools.length) return; // leere Familie -> keine Sektion
+      if(!tools.length) return;
+
+      var h2El = el("h2", { text: famLabel(f, lang) });
+      headRefs.push({ key: f.key, h2El: h2El });
 
       var head = el("div", {
         class: "family-head",
-        children: [
-          el("span", { class: "bar", attrs: { style: "background:" + f.color } }),
-          el("h2", { text: f.label })
-        ]
+        children: [ el("span", { class: "bar", attrs: { style: "background:" + f.color } }), h2El ]
       });
 
       var grid = el("div", { class: "grid" });
       tools.forEach(function(t){
         var card = buildCard(t, f);
-        // Verzögerung fürs Handy-Aufblenden (gedeckelt, damit es nicht zu lang wird).
-        // Am Tablet/PC ignoriert, weil die Media-Query die Animation dort nicht setzt.
         var delay = Math.min(cardIndex * 0.05, 0.5);
         card.style.setProperty("--cardDelay", delay.toFixed(2) + "s");
         cardIndex++;
@@ -994,13 +1344,14 @@
       });
 
       var section = el("section", { class: "family", children: [head, grid] });
-      // Boot-Animations-Verzögerung gestaffelt per JS (skaliert mit Anzahl mit)
       section.style.animationDelay = (0.14 + idx * 0.06).toFixed(2) + "s";
 
       sectionRefs[f.key] = section;
       sectionsEl.appendChild(section);
     });
   }
+
+  var sectionRefs = {}; // family.key -> section-Element
 
   // ---- Filter anwenden: nur Sichtbarkeit umschalten ----
   function applyFilter(){
@@ -1013,37 +1364,78 @@
   }
 
   /* ============================================================
-     5) FAVORIT-ANZEIGE  —  Sterne, Kachel-Glow und Haupt-Display
-        aktualisieren, ohne die Kacheln neu zu bauen.
+     6) SPRACHE ANWENDEN  —  alle Texte aktualisieren, ohne Neuaufbau
+     ============================================================ */
+
+  function applyLanguage(){
+    var lang = getLang();
+    var t = ui(lang);
+
+    document.documentElement.lang = lang;
+
+    // Sprach-Schalter: aktiven Zustand setzen
+    langRefs.forEach(function(r){ r.btn.setAttribute("aria-pressed", String(r.lang === lang)); });
+    langSwitchEl.setAttribute("aria-label", t.langLabel);
+
+    // Statische UI-Texte
+    $("subtitle").textContent     = t.subtitle;
+    $("footer-note").textContent  = t.footerNote;
+    $("page-version").textContent = t.pageVersion;
+
+    // Familien-Beschriftungen (Schalter + Sektionsköpfe)
+    switchRefs.forEach(function(r){ r.labelEl.textContent = famLabelByKey(r.key, lang); });
+    headRefs.forEach(function(r){ r.h2El.textContent = famLabelByKey(r.key, lang); });
+
+    // Kachel-Texte
+    cardRefs.forEach(function(r){
+      var tx = toolText(r.tool, lang);
+      r.titleEl.textContent = tx.title;
+      r.teaserEl.textContent = tx.teaser;
+      r.moreEl.textContent = t.more;
+      r.quickEl.textContent = t.quickStart;
+    });
+
+    // Readout + Favoriten-Anzeige (Sterne-aria + Display) in neuer Sprache
+    updateReadout();
+    updateFavoriteUI();
+  }
+
+  function famLabelByKey(key, lang){
+    for(var i=0;i<FAMILIES.length;i++){ if(FAMILIES[i].key === key) return famLabel(FAMILIES[i], lang); }
+    return key;
+  }
+
+  /* ============================================================
+     7) FAVORIT-ANZEIGE  —  Sterne, Kachel-Glow, Haupt-Display
      ============================================================ */
 
   function updateFavoriteUI(){
-    var favId = getFavoriteId(); // einmal lesen pro Aktualisierung
+    var lang = getLang();
+    var t = ui(lang);
+    var favId = getFavoriteId();
 
-    // Sterne + Kachel-Markierung
     cardRefs.forEach(function(ref){
       var isFav = (ref.id === favId);
       ref.starBtn.textContent = isFav ? "★" : "☆";
       ref.starBtn.setAttribute("aria-pressed", String(isFav));
-      ref.starBtn.setAttribute("aria-label", isFav ? "Als Favorit entfernen" : "Als Favorit markieren");
+      ref.starBtn.setAttribute("aria-label", isFav ? t.starRemove : t.starAdd);
       if(isFav) ref.card.classList.add("is-favorite");
       else ref.card.classList.remove("is-favorite");
     });
 
-    // Haupt-Display oben
-    renderFavBar(favId);
+    renderFavBar(favId, lang);
   }
 
-  function renderFavBar(favId){
+  function renderFavBar(favId, lang){
+    var t = ui(lang);
     var tool = favId ? findTool(favId) : null;
 
-    // Inhalt zurücksetzen
     favBarEl.textContent = "";
 
     if(!tool){
       favBarEl.className = "fav-bar is-empty";
       favBarEl.style.removeProperty("--c");
-      favBarEl.textContent = "Noch kein Favorit gewählt — markiere ein Tool mit ☆, um es hier direkt starten zu können.";
+      favBarEl.textContent = t.favEmpty;
       return;
     }
 
@@ -1054,13 +1446,13 @@
     var info = el("div", {
       class: "fav-info",
       children: [
-        el("p", { class: "fav-eyebrow", text: "Favorit" }),
-        el("p", { class: "fav-title", text: tool.title })
+        el("p", { class: "fav-eyebrow", text: t.favEyebrow }),
+        el("p", { class: "fav-title", text: toolText(tool, lang).title })
       ]
     });
     var start = el("a", {
       class: "fav-start",
-      text: "Jetzt starten ↗",
+      text: t.favStart,
       attrs: { href: tool.link, target: "_blank", rel: "noopener" }
     });
 
@@ -1070,7 +1462,7 @@
   }
 
   /* ============================================================
-     6) MODAL (Detail-Overlay)
+     8) MODAL (Detail-Overlay) — liest die aktuelle Sprache
      ============================================================ */
 
   var backdrop          = $("backdrop");
@@ -1078,26 +1470,37 @@
   var modalIcon         = $("modal-icon");
   var modalTitle        = $("modal-title");
   var modalVersion      = $("modal-version");
+  var modalLabelKann    = $("modal-label-kann");
   var modalKann         = $("modal-kann");
   var modalAnleitungWrap= $("modal-anleitung-wrap");
+  var modalLabelAnl     = $("modal-label-anleitung");
   var modalAnleitung    = $("modal-anleitung");
+  var modalLabelAusz    = $("modal-label-auszeichnet");
   var modalAuszeichnet  = $("modal-auszeichnet");
   var modalLink         = $("modal-link");
   var modalClose        = $("modal-close");
   var lastFocused       = null;
 
   function openModal(tool, fam){
+    var lang = getLang();
+    var t = ui(lang);
+    var tx = toolText(tool, lang);
+
     modal.style.setProperty("--c", fam.color);
     modalIcon.style.color = fam.color;
     modalIcon.innerHTML = ICONS[tool.icon] || ""; // statisches SVG
-    modalTitle.textContent = tool.title;
+
+    modalTitle.textContent = tx.title;
     modalVersion.textContent = "v" + tool.version;
-    modalKann.textContent = tool.kann;
+
+    modalLabelKann.textContent = t.labelKann;
+    modalKann.textContent = tx.kann;
 
     // Optionaler Anleitungs-Abschnitt
     modalAnleitung.textContent = "";
-    if(tool.anleitung && tool.anleitung.length){
-      tool.anleitung.forEach(function(step){
+    if(tx.anleitung && tx.anleitung.length){
+      modalLabelAnl.textContent = t.labelAnleitung;
+      tx.anleitung.forEach(function(step){
         modalAnleitung.appendChild(el("li", { text: step }));
       });
       modalAnleitungWrap.classList.remove("is-hidden");
@@ -1105,8 +1508,12 @@
       modalAnleitungWrap.classList.add("is-hidden");
     }
 
-    modalAuszeichnet.textContent = tool.auszeichnet;
+    modalLabelAusz.textContent = t.labelAuszeichnet;
+    modalAuszeichnet.textContent = tx.auszeichnet;
+
+    modalLink.textContent = t.openLink;
     modalLink.href = tool.link;
+    modalClose.setAttribute("aria-label", t.closeLabel);
 
     backdrop.classList.add("open");
     lastFocused = document.activeElement;
@@ -1120,38 +1527,35 @@
     if(lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
   }
 
-  function onKeydown(e){
-    if(e.key === "Escape") closeModal();
-  }
+  function onKeydown(e){ if(e.key === "Escape") closeModal(); }
 
   modalClose.addEventListener("click", closeModal);
-  backdrop.addEventListener("click", function(e){
-    if(e.target === backdrop) closeModal();
-  });
+  backdrop.addEventListener("click", function(e){ if(e.target === backdrop) closeModal(); });
 
   /* ============================================================
-     7) READOUT (kleine Live-Anzeige im Header)
+     9) READOUT (kleine Live-Anzeige im Header)
      ============================================================ */
 
   var readoutEl = $("readout");
   function updateReadout(){
+    var lang = getLang();
     var now = new Date();
-    var d = now.toLocaleDateString("de-DE");
-    var t = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    var d = now.toLocaleDateString(LOCALES[lang] || "de-DE");
+    var tm = now.toLocaleTimeString(LOCALES[lang] || "de-DE", { hour: "2-digit", minute: "2-digit" });
     readoutEl.textContent = "";
     readoutEl.appendChild(el("div", { text: d }));
-    readoutEl.appendChild(el("div", { text: t + " · " + TOOLS.length + " Tools" }));
+    readoutEl.appendChild(el("div", { text: tm + " · " + TOOLS.length + " " + ui(lang).toolsWord }));
   }
 
   /* ============================================================
-     8) START
+     10) START
      ============================================================ */
 
+  buildLangSwitch();
   buildSwitches();
   buildSections();
   applyFilter();        // Sichtbarkeit setzen (alle an)
-  updateFavoriteUI();   // Sterne + Display gemäß gespeichertem Favorit
-  updateReadout();
+  applyLanguage();      // alle Texte gemäß gespeicherter Sprache (ruft updateReadout + updateFavoriteUI)
   setInterval(updateReadout, 30000);
 
 })();
