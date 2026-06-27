@@ -46,7 +46,7 @@ Lotto/Skip-Bo/Dreieck/Heizungs-Tool, sondern die zentrale Startseite für alle.
 - **Design:** Dunkles Konsolen-/Schaltpult-Design. Fünf Akzentfarben nach
   Projektfamilie (Lotto = Gold, EuroJackpot = Türkis, Skip-Bo = Karmesinrot,
   DT-ProfiDreieck = Stahlblau-Grau, Wärmeverlust-Analyse = Ember-Orange).
-- **Stand v1.5.0 (fertig):**
+- **Stand v1.6.0 (fertig):**
   - Alle 9 Tools als Kacheln, gruppiert nach Familie (inkl. Heizungs-Check)
   - Familien-Filter-Schalter oben (Kippschalter-Optik, LED-Puls)
   - Eigenes Icon pro Kachel (handgezeichnetes Inline-SVG)
@@ -57,23 +57,29 @@ Lotto/Skip-Bo/Dreieck/Heizungs-Tool, sondern die zentrale Startseite für alle.
     einer aktiv), erscheint oben im großen Favoriten-Display mit Start-Button
   - Direktstart pro Kachel: „Direkt starten"-Link, der das Tool sofort öffnet,
     ohne erst die Beschreibung lesen zu müssen
-  - Favorit wird lokal im Browser gespeichert (localStorage, kein Server,
-    kein Tracking — gleiches Prinzip wie die Theme-Speicherung bei Skip-Bo)
+  - Favorit + Sprache werden lokal im Browser gespeichert (localStorage, kein
+    Server, kein Tracking — wie die Theme-Speicherung bei Skip-Bo)
   - Optik „echtes Schaltpult": Panel-Tiefe (Schraubenkopf-Punkte, Groove),
     Hover-Glow + nachzeichnende Icons, Boot-Animation beim Laden + dauerhaft
     pulsierende Status-LEDs, dezente Farbverläufe im Hintergrund
-  - Handy-Feinschliff (v1.5.0): theme-color färbt die Browser-Statusleiste
-    im dunklen Schaltpult-Ton; am Handy blenden die Kacheln zusätzlich sanft
-    einzeln auf (gedeckelte Staffelung, am PC bewusst ruhig). reduced-motion
-    wird auch dort respektiert (in der Media-Query selbst abgesichert).
-- **Code-Stand (seit v1.4.0):** Daten (TOOLS/FAMILIES/ICONS) strikt von der
-  Logik getrennt; Kacheln werden EINMAL gebaut, der Filter schaltet nur
-  Sichtbarkeit; alle Inhalts-Texte über textContent (robust gegen
-  Sonderzeichen), nur statische SVG-Icons via innerHTML; Boot-Verzögerung
-  skaliert automatisch mit der Familienanzahl. Neues Tool = ein Eintrag im
-  TOOLS-Array; neue Familie = Eintrag in FAMILIES + Akzentfarbe + Icon.
+  - Handy: theme-color färbt die Statusleiste; Kacheln blenden am Handy
+    zusätzlich sanft einzeln auf (reduced-motion abgesichert)
+  - **Mehrsprachigkeit (v1.6.0):** vier Sprach-Schalter oben rechts
+    (DE/EN/PT/UK) im Kippschalter-Stil. ALLE Texte übersetzt — Oberfläche
+    UND die kompletten Tool-Beschreibungen (Titel, Teaser, „Was es kann",
+    „Was es auszeichnet", Heizungs-Anleitung). Sprache wird lokal gespeichert,
+    <html lang> wird mitgesetzt, Datums-/Zeitformat folgt der Sprache.
+- **Code-Stand (seit v1.4.0, erweitert in v1.6.0):** Daten strikt von Logik
+  getrennt; Kacheln werden EINMAL gebaut, Filter/Sprachwechsel aktualisieren
+  nur Sichtbarkeit bzw. Texte (über gemerkte Referenzen, kein Neuaufbau); alle
+  Inhalts-Texte über textContent, nur statische SVG-Icons via innerHTML.
+  Pro Tool ein i18n-Block {de,en,pt,uk}; sprachunabhängige Felder (id, family,
+  icon, version, link) bleiben außerhalb. Neue Sprache = Kürzel in LANGS +
+  Eintrag in UI, jeder FAMILIES-label und jedem TOOLS-i18n + Locale.
 - **Geplant, noch offen (zu besprechen):**
-  - Weitere optische Verfeinerungen nach Bedarf — konkrete Richtung offen.
+  - Ukrainische Übersetzung bei Gelegenheit von einem Muttersprachler
+    gegenlesen lassen (maschinell sorgfältig, aber nicht muttersprachlich
+    geprüft). Weitere optische Verfeinerungen nach Bedarf.
 
 ---
 
