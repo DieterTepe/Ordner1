@@ -1,9 +1,21 @@
 <!DOCTYPE html>
 <!--
   Dieter Tepe — Tool-Werkstatt: Start-/Übersichtsseite
-  Version: 1.2.0
+  Version: 1.3.0
   Stand: 2026-06-27
   Changelog:
+    1.3.0 – Optische Überarbeitung („echtes Schaltpult"): Kacheln mit
+            Panel-Tiefe (Schraubenkopf-Punkte, innere Groove-Schatten),
+            Familien-Filter als echte Kippschalter (Bevel-Look statt
+            Pillen), Hover-Glow in Akzentfarbe + nachzeichnende
+            Icon-Linienanimation, Favoriten-Leiste zum großen Haupt-Display
+            ausgebaut (mit Glow-Verlauf), Hintergrund mit mehreren
+            dezenten Farbverläufen in allen Akzentfarben. Animation
+            kombiniert: einmaliger „Power-on"-Boot-Effekt beim Laden
+            (Header → Sektionen gestaffelt → Footer) plus dauerhaft sanft
+            pulsierende Status-LEDs (aktive Schalter, Favorit-Icon,
+            favorisierte Kachel). Respektiert weiterhin
+            prefers-reduced-motion.
     1.2.0 – Fehlendes 9. Tool ergänzt: Wärmeverlust- & Gebäude-Analyse
             (Heizungs-Check), eigene Familie/Akzentfarbe + Icon. Da dieses
             Tool zusätzlich eine Nutzungs-Anleitung in Schritten hat, hat
@@ -56,12 +68,29 @@
   body{
     background: var(--bg);
     background-image:
-      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(232,163,61,0.05), transparent 60%),
-      radial-gradient(ellipse 900px 500px at 90% 0%, rgba(63,193,201,0.05), transparent 60%);
+      radial-gradient(ellipse 800px 460px at 12% -8%, color-mix(in srgb, var(--lotto) 9%, transparent), transparent 60%),
+      radial-gradient(ellipse 800px 460px at 88% 0%, color-mix(in srgb, var(--euro) 9%, transparent), transparent 60%),
+      radial-gradient(ellipse 700px 420px at 50% 38%, color-mix(in srgb, var(--skipbo) 5%, transparent), transparent 65%),
+      radial-gradient(ellipse 800px 460px at 90% 95%, color-mix(in srgb, var(--heizung) 7%, transparent), transparent 60%),
+      radial-gradient(ellipse 700px 420px at 5% 90%, color-mix(in srgb, var(--dreieck) 7%, transparent), transparent 60%);
     color: var(--text);
     font-family: var(--sans);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+  }
+
+  @keyframes powerOn{
+    0%   { opacity: 0; filter: brightness(0.35); transform: translateY(6px); }
+    55%  { opacity: 1; filter: brightness(1.18); }
+    100% { opacity: 1; filter: brightness(1); transform: translateY(0); }
+  }
+  @keyframes ledPulse{
+    0%, 100% { box-shadow: 0 0 6px 1px var(--c); }
+    50%      { box-shadow: 0 0 13px 3px var(--c); }
+  }
+  @keyframes cardGlow{
+    0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -2px 6px rgba(0,0,0,0.35), 0 0 0 1px color-mix(in srgb, var(--c) 25%, transparent); }
+    50%      { box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -2px 6px rgba(0,0,0,0.35), 0 0 16px 1px color-mix(in srgb, var(--c) 45%, transparent); }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -84,6 +113,7 @@
     border-radius: var(--radius);
     padding: 22px 20px;
     margin-bottom: 22px;
+    animation: powerOn .6s ease-out both;
   }
 
   .panel-top{
@@ -130,16 +160,18 @@
     display:flex;
     align-items:center;
     gap: 7px;
-    background: var(--bg-card);
+    background: linear-gradient(180deg, #1a2029, #11151b);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: 7px;
     padding: 7px 13px 7px 10px;
     font-family: var(--mono);
     font-size: 0.74rem;
     letter-spacing: 0.03em;
     color: var(--text-muted);
     cursor: pointer;
-    transition: border-color .15s, color .15s, background .15s;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.4);
+    transition: border-color .15s, color .15s, box-shadow .15s, background .15s;
     min-height: 36px;
   }
   .switch .dot{
@@ -152,11 +184,12 @@
   .switch[aria-pressed="true"]{
     color: var(--text);
     border-color: var(--c);
-    background: var(--bg-card-hover);
+    background: linear-gradient(180deg, #0c0f13, #181e26);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.55), inset 0 -1px 0 rgba(255,255,255,0.03);
   }
   .switch[aria-pressed="true"] .dot{
     background: var(--c);
-    box-shadow: 0 0 8px 1px var(--c);
+    animation: ledPulse 2.6s ease-in-out infinite;
   }
   .switch:hover{ color: var(--text); }
   .switch:focus-visible{ outline: 2px solid var(--c); outline-offset: 2px; }
@@ -165,50 +198,71 @@
 
   .fav-bar{
     --c: var(--text-muted);
+    position: relative;
+    overflow: hidden;
     display:flex;
     align-items:center;
-    gap: 12px;
+    gap: 16px;
     flex-wrap: wrap;
-    margin-top: 14px;
-    padding: 12px 14px;
+    margin-top: 16px;
+    padding: 18px 20px;
     border: 1px solid var(--border);
-    border-left: 3px solid var(--c);
-    border-radius: 8px;
-    background: var(--bg-card);
+    border-radius: 10px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--c) 14%, var(--bg-card)), var(--bg-card) 70%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 0 26px -8px color-mix(in srgb, var(--c) 55%, transparent);
+  }
+  .fav-bar::after{
+    content: "";
+    position: absolute;
+    top: -60px; right: -40px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--c) 30%, transparent), transparent 70%);
+    pointer-events: none;
   }
   .fav-bar.is-empty{
+    border-style: dashed;
+    background: var(--bg-card);
+    box-shadow: none;
     color: var(--text-faint);
     font-size: 0.84rem;
   }
-  .fav-bar .icon-box{ width: 34px; height: 34px; flex: none; }
-  .fav-bar .icon-box svg{ width: 18px; height: 18px; }
-  .fav-bar .fav-info{ flex: 1; min-width: 140px; }
+  .fav-bar .icon-box{
+    width: 52px; height: 52px; flex: none;
+    border-color: var(--c);
+    animation: ledPulse 3.2s ease-in-out infinite;
+  }
+  .fav-bar .icon-box svg{ width: 28px; height: 28px; }
+  .fav-bar .fav-info{ flex: 1; min-width: 140px; position: relative; z-index: 1; }
   .fav-bar .fav-eyebrow{
     font-family: var(--mono);
-    font-size: 0.64rem;
-    letter-spacing: 0.1em;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--c);
-    margin: 0 0 2px 0;
+    margin: 0 0 3px 0;
   }
   .fav-bar .fav-title{
-    font-size: 0.92rem;
-    font-weight: 600;
+    font-size: 1.12rem;
+    font-weight: 700;
     margin: 0;
+    line-height: 1.3;
   }
   .fav-bar .fav-start{
+    position: relative; z-index: 1;
     display:inline-flex;
     align-items:center;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 13px 22px;
     border-radius: 8px;
     background: var(--c);
     color: #0b0e12;
-    font-weight: 600;
-    font-size: 0.84rem;
+    font-weight: 700;
+    font-size: 0.92rem;
     text-decoration: none;
     white-space: nowrap;
-    min-height: 40px;
+    min-height: 46px;
+    -webkit-tap-highlight-color: transparent;
   }
   .fav-bar .fav-start:hover{ filter: brightness(1.08); }
 
@@ -216,8 +270,14 @@
 
   section.family{
     margin-bottom: 30px;
+    animation: powerOn .5s ease-out both;
   }
   section.family.is-hidden{ display:none; }
+  section.family:nth-of-type(1){ animation-delay: .14s; }
+  section.family:nth-of-type(2){ animation-delay: .20s; }
+  section.family:nth-of-type(3){ animation-delay: .26s; }
+  section.family:nth-of-type(4){ animation-delay: .32s; }
+  section.family:nth-of-type(5){ animation-delay: .38s; }
 
   .family-head{
     display:flex;
@@ -249,6 +309,7 @@
 
   .card{
     --c: var(--text-muted);
+    position: relative;
     text-align: left;
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -261,10 +322,28 @@
     flex-direction: column;
     gap: 10px;
     min-height: 100%;
-    transition: background .15s, border-color .15s;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -2px 6px rgba(0,0,0,0.35);
+    transition: background .15s, border-color .15s, box-shadow .2s;
   }
-  .card:hover{ background: var(--bg-card-hover); }
-  .card.is-favorite{ background: var(--bg-card-hover); }
+  .card::before, .card::after{
+    content: "";
+    position: absolute;
+    top: 9px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--border-soft);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.02);
+  }
+  .card::before{ left: 9px; }
+  .card::after{ right: 9px; }
+  .card:hover{
+    background: var(--bg-card-hover);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -2px 6px rgba(0,0,0,0.35), 0 4px 18px -6px color-mix(in srgb, var(--c) 50%, transparent), 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent);
+  }
+  .card.is-favorite{
+    background: var(--bg-card-hover);
+    animation: cardGlow 3.2s ease-in-out infinite;
+  }
 
   .card-main{
     display:flex;
@@ -279,6 +358,7 @@
     color: inherit;
     font-family: inherit;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
   .card-main:active{ transform: scale(0.997); }
   .card-main:focus-visible{ outline: 2px solid var(--c); outline-offset: 2px; border-radius: 6px; }
@@ -300,6 +380,7 @@
     line-height: 1;
     color: var(--text-faint);
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
     transition: color .15s, border-color .15s;
   }
   .star-btn:hover{ color: var(--c); border-color: var(--c); }
@@ -320,6 +401,18 @@
     color: var(--c);
   }
   .icon-box svg{ width: 20px; height: 20px; display:block; }
+  .icon-box svg path,
+  .icon-box svg rect,
+  .icon-box svg circle{
+    stroke-dasharray: 60;
+    stroke-dashoffset: 60;
+    transition: stroke-dashoffset .55s ease;
+  }
+  .card:hover .icon-box svg path,
+  .card:hover .icon-box svg rect,
+  .card:hover .icon-box svg circle{
+    stroke-dashoffset: 0;
+  }
 
   .version-chip{
     font-family: var(--mono);
@@ -374,6 +467,7 @@
     text-decoration: none;
     padding: 6px 0;
     white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
   }
   .quick-start:hover{ text-decoration: underline; }
   .quick-start:focus-visible{ outline: 2px solid var(--c); outline-offset: 2px; }
@@ -491,6 +585,8 @@
     color: var(--text-faint);
     font-size: 0.78rem;
     line-height: 1.6;
+    animation: powerOn .5s ease-out both;
+    animation-delay: .42s;
   }
   footer .page-version{
     font-family: var(--mono);
@@ -518,7 +614,7 @@
 
   <footer>
     <p>Die Lotto- und EuroJackpot-Tools werten Ziehungsdaten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.</p>
-    <p class="page-version">Übersichtsseite v1.2.0 · Stand 27.06.2026</p>
+    <p class="page-version">Übersichtsseite v1.3.0 · Stand 27.06.2026</p>
   </footer>
 
 </div>
