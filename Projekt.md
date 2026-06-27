@@ -46,7 +46,7 @@ Lotto/Skip-Bo/Dreieck/Heizungs-Tool, sondern die zentrale Startseite für alle.
 - **Design:** Dunkles Konsolen-/Schaltpult-Design. Fünf Akzentfarben nach
   Projektfamilie (Lotto = Gold, EuroJackpot = Türkis, Skip-Bo = Karmesinrot,
   DT-ProfiDreieck = Stahlblau-Grau, Wärmeverlust-Analyse = Ember-Orange).
-- **Stand v1.6.0 (fertig):**
+- **Stand v1.7.0 (fertig):**
   - Alle 9 Tools als Kacheln, gruppiert nach Familie (inkl. Heizungs-Check)
   - Familien-Filter-Schalter oben (Kippschalter-Optik, LED-Puls)
   - Eigenes Icon pro Kachel (handgezeichnetes Inline-SVG)
@@ -57,25 +57,36 @@ Lotto/Skip-Bo/Dreieck/Heizungs-Tool, sondern die zentrale Startseite für alle.
     einer aktiv), erscheint oben im großen Favoriten-Display mit Start-Button
   - Direktstart pro Kachel: „Direkt starten"-Link, der das Tool sofort öffnet,
     ohne erst die Beschreibung lesen zu müssen
-  - Favorit + Sprache werden lokal im Browser gespeichert (localStorage, kein
-    Server, kein Tracking — wie die Theme-Speicherung bei Skip-Bo)
+  - Favorit + Sprache + Familien-Filter werden lokal im Browser gespeichert
+    (localStorage, kein Server, kein Tracking — wie die Theme-Speicherung bei
+    Skip-Bo). Die ein-/ausgeblendeten Gruppen sind beim nächsten Start wieder
+    genau wie beim Verlassen (gespeichert wird die Liste der ausgeblendeten
+    Familien; Default = alle sichtbar).
   - Optik „echtes Schaltpult": Panel-Tiefe (Schraubenkopf-Punkte, Groove),
     Hover-Glow + nachzeichnende Icons, Boot-Animation beim Laden + dauerhaft
     pulsierende Status-LEDs, dezente Farbverläufe im Hintergrund
   - Handy: theme-color färbt die Statusleiste; Kacheln blenden am Handy
     zusätzlich sanft einzeln auf (reduced-motion abgesichert)
-  - **Mehrsprachigkeit (v1.6.0):** vier Sprach-Schalter oben rechts
-    (DE/EN/PT/UK) im Kippschalter-Stil. ALLE Texte übersetzt — Oberfläche
-    UND die kompletten Tool-Beschreibungen (Titel, Teaser, „Was es kann",
-    „Was es auszeichnet", Heizungs-Anleitung). Sprache wird lokal gespeichert,
+  - **Mehrsprachigkeit (seit v1.6.0):** vier Sprach-Schalter oben rechts
+    (DE/EN/PT/UA) im Kippschalter-Stil, je mit kleiner selbst gezeichneter
+    SVG-Flagge (dezent; SVG statt Emoji, weil Flaggen-Emojis auf Windows nur
+    als Buchstaben erscheinen). ALLE Texte übersetzt — Oberfläche UND die
+    kompletten Tool-Beschreibungen. Sprache wird lokal gespeichert,
     <html lang> wird mitgesetzt, Datums-/Zeitformat folgt der Sprache.
-- **Code-Stand (seit v1.4.0, erweitert in v1.6.0):** Daten strikt von Logik
-  getrennt; Kacheln werden EINMAL gebaut, Filter/Sprachwechsel aktualisieren
-  nur Sichtbarkeit bzw. Texte (über gemerkte Referenzen, kein Neuaufbau); alle
-  Inhalts-Texte über textContent, nur statische SVG-Icons via innerHTML.
-  Pro Tool ein i18n-Block {de,en,pt,uk}; sprachunabhängige Felder (id, family,
-  icon, version, link) bleiben außerhalb. Neue Sprache = Kürzel in LANGS +
-  Eintrag in UI, jeder FAMILIES-label und jedem TOOLS-i18n + Locale.
+  - **Bugfix v1.7.0 (Auto-Übersetzung):** Manche Browser übersetzten die Seite
+    bei nicht-deutscher Sprache automatisch (z. B. „UK" → „Vereinigtes
+    Königreich") und kollidierten mit der eigenen Umschaltung. Unterbunden über
+    <html translate="no"> + Meta „notranslate". Das Ukrainisch-Kürzel zeigt
+    jetzt „UA" statt „UK" (interner Sprachcode bleibt „uk").
+- **Code-Stand (seit v1.4.0, erweitert in v1.6.0/v1.7.0):** Daten strikt von
+  Logik getrennt; Kacheln werden EINMAL gebaut, Filter/Sprachwechsel
+  aktualisieren nur Sichtbarkeit bzw. Texte (über gemerkte Referenzen, kein
+  Neuaufbau); alle Inhalts-Texte über textContent, nur statische SVG-Icons und
+  -Flaggen via innerHTML. Pro Tool ein i18n-Block {de,en,pt,uk};
+  sprachunabhängige Felder (id, family, icon, version, link) bleiben außerhalb.
+  Drei localStorage-Schlüssel: Sprache, Favorit, Filter (Liste ausgeblendeter
+  Familien). Neue Sprache = Kürzel in LANGS + Eintrag in UI/LANG_ABBR/
+  LANG_FLAGS/LOCALES, jeder FAMILIES-label und jedem TOOLS-i18n.
 - **Geplant, noch offen (zu besprechen):**
   - Ukrainische Übersetzung bei Gelegenheit von einem Muttersprachler
     gegenlesen lassen (maschinell sorgfältig, aber nicht muttersprachlich
