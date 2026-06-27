@@ -1,9 +1,29 @@
 <!DOCTYPE html>
 <!--
   Dieter Tepe — Tool-Werkstatt: Start-/Übersichtsseite
-  Version: 1.3.0
+  Version: 1.4.0
   Stand: 2026-06-27
   Changelog:
+    1.4.0 – Code-Überarbeitung (Struktur, Sicherheit, Erweiterbarkeit),
+            ohne sichtbare Änderung an Aussehen oder Verhalten:
+            • Alle Inhalts-Texte werden jetzt über textContent gesetzt
+              statt per innerHTML-Konkatenation — robust gegen Sonderzeichen
+              (<, &, ") in künftigen Tool-Texten, kein HTML-Bruch mehr.
+              SVG-Icons (statisch, eigene Quelle) bleiben der einzige
+              innerHTML-Einsatz.
+            • Kleine el()-Hilfsfunktion zum sicheren Erzeugen von Elementen
+              (Tag, Klassen, Text, Attribute, Kinder) — ersetzt die
+              String-Bauerei und macht das Hinzufügen neuer Tools simpler.
+            • Render in zwei Schritten getrennt: Kacheln werden EINMAL
+              gebaut, der Familien-Filter schaltet nur noch Sichtbarkeit um
+              (kein Komplett-Neuaufbau samt Event-Listenern bei jedem Klick).
+            • Favorit wird pro Render nur einmal aus dem Speicher gelesen
+              statt einmal je Kachel.
+            • Boot-Animations-Verzögerung der Familien-Sektionen wird per
+              JS gesetzt (skaliert automatisch mit, wenn Familien dazukommen)
+              statt über feste nth-of-type-Regeln.
+            • Datenmodell strikt von Logik getrennt; durchgehend kommentierte
+              Abschnitte (Daten → Helfer → State → Render → Modal → Init).
     1.3.0 – Optische Überarbeitung („echtes Schaltpult"): Kacheln mit
             Panel-Tiefe (Schraubenkopf-Punkte, innere Groove-Schatten),
             Familien-Filter als echte Kippschalter (Bevel-Look statt
@@ -33,6 +53,14 @@
             Icon pro Kachel, Detail-Overlay mit vollem Text + Link.
   Einzeldatei, vollständig selbst-enthalten (CSS + JS inline), keine
   externen Ressourcen zur Laufzeit. Läuft auf Handy, Tablet und PC.
+
+  ── Zum Erweitern (für später) ──────────────────────────────────────
+    • Neues Tool: einen Eintrag im TOOLS-Array ergänzen (id, family, icon,
+      title, version, teaser, kann, auszeichnet, link; anleitung optional).
+    • Neue Familie: einen Eintrag in FAMILIES + eine --akzentfarbe in :root
+      + ein Icon in ICONS. Alles andere (Schalter, Sektion, Boot-Animation)
+      entsteht automatisch.
+  ─────────────────────────────────────────────────────────────────────
 -->
 <html lang="de">
 <head>
@@ -51,6 +79,7 @@
     --text-muted: #8a8f98;
     --text-faint: #5b6068;
 
+    /* Akzentfarbe je Projektfamilie */
     --lotto: #e8a33d;
     --euro: #3fc1c9;
     --skipbo: #d6455a;
@@ -194,7 +223,7 @@
   .switch:hover{ color: var(--text); }
   .switch:focus-visible{ outline: 2px solid var(--c); outline-offset: 2px; }
 
-  /* ---------- Favoriten-Leiste ---------- */
+  /* ---------- Favoriten-Leiste (Haupt-Display) ---------- */
 
   .fav-bar{
     --c: var(--text-muted);
@@ -266,18 +295,13 @@
   }
   .fav-bar .fav-start:hover{ filter: brightness(1.08); }
 
-  /* ---------- Sections ---------- */
+  /* ---------- Sektionen je Familie ---------- */
 
   section.family{
     margin-bottom: 30px;
     animation: powerOn .5s ease-out both;
   }
   section.family.is-hidden{ display:none; }
-  section.family:nth-of-type(1){ animation-delay: .14s; }
-  section.family:nth-of-type(2){ animation-delay: .20s; }
-  section.family:nth-of-type(3){ animation-delay: .26s; }
-  section.family:nth-of-type(4){ animation-delay: .32s; }
-  section.family:nth-of-type(5){ animation-delay: .38s; }
 
   .family-head{
     display:flex;
@@ -305,7 +329,7 @@
     gap: 14px;
   }
 
-  /* ---------- Card ---------- */
+  /* ---------- Kachel ---------- */
 
   .card{
     --c: var(--text-muted);
@@ -425,6 +449,7 @@
     text-shadow: 0 0 6px color-mix(in srgb, var(--c) 60%, transparent);
     white-space: nowrap;
     margin-top: 2px;
+    align-self: flex-start;
   }
 
   .card h3{
@@ -614,7 +639,7 @@
 
   <footer>
     <p>Die Lotto- und EuroJackpot-Tools werten Ziehungsdaten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.</p>
-    <p class="page-version">Übersichtsseite v1.3.0 · Stand 27.06.2026</p>
+    <p class="page-version">Übersichtsseite v1.4.0 · Stand 27.06.2026</p>
   </footer>
 
 </div>
@@ -653,29 +678,38 @@
 (function(){
   "use strict";
 
-  // ---------- Icons (inline SVG, currentColor) ----------
+  /* ============================================================
+     1) DATEN  —  hier wird gepflegt, was die Seite anzeigt.
+        Logik weiter unten muss dafür nicht angefasst werden.
+     ============================================================ */
+
+  // Icons: statische, selbst erstellte Inline-SVGs (currentColor).
+  // Einziger Ort, an dem bewusst innerHTML verwendet wird.
   var ICONS = {
-    chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><rect x="7" y="11" width="3" height="8"/><rect x="12" y="7" width="3" height="12"/><rect x="17" y="13" width="3" height="6"/></svg>',
-    funnel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 7.5V18l-4 2v-7.5L4 5Z"/></svg>',
-    star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="5.2"/><path d="M12 3.3l.8 1.7 1.9.2-1.4 1.3.3 1.9-1.6-.9-1.6.9.3-1.9-1.4-1.3 1.9-.2.8-1.7Z"/></svg>',
-    importbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/><path d="M12 14V3M12 14l-3.5-3.5M12 14l3.5-3.5"/></svg>',
-    cardsflat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="11" height="15" rx="1.5"/><path d="M6 8.5h11"/></svg>',
+    chart:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><rect x="7" y="11" width="3" height="8"/><rect x="12" y="7" width="3" height="12"/><rect x="17" y="13" width="3" height="6"/></svg>',
+    funnel:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 7.5V18l-4 2v-7.5L4 5Z"/></svg>',
+    star:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="5.2"/><path d="M12 3.3l.8 1.7 1.9.2-1.4 1.3.3 1.9-1.6-.9-1.6.9.3-1.9-1.4-1.3 1.9-.2.8-1.7Z"/></svg>',
+    importbox:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/><path d="M12 14V3M12 14l-3.5-3.5M12 14l3.5-3.5"/></svg>',
+    cardsflat:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="11" height="15" rx="1.5"/><path d="M6 8.5h11"/></svg>',
     cardsshine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="5.5" width="10" height="14" rx="1.5" transform="rotate(-8 9.5 12.5)"/><rect x="9.5" y="4.5" width="10" height="14" rx="1.5"/><path d="M19 2.4l.6 1.3 1.4.2-1 .9.2 1.4-1.2-.7-1.2.7.2-1.4-1-.9 1.4-.2.6-1.3Z"/></svg>',
-    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.5v2M12 17.5v2M4.5 12h2M17.5 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4"/></svg>',
-    triangle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 20 19H4L12 4.5Z"/><path d="M4 19h16M9 19v1.6M15 19v1.6M12 4.5v-1.6"/></svg>',
-    thermo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 14.5V5.5a1.5 1.5 0 0 1 3 0v9a3 3 0 1 1-3 0Z"/><path d="M12.5 8h2.5M12.5 11h2.5"/><circle cx="12.5" cy="16.5" r="1.3" fill="currentColor" stroke="none"/></svg>'
+    gear:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.5v2M12 17.5v2M4.5 12h2M17.5 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4"/></svg>',
+    triangle:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 20 19H4L12 4.5Z"/><path d="M4 19h16M9 19v1.6M15 19v1.6M12 4.5v-1.6"/></svg>',
+    thermo:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 14.5V5.5a1.5 1.5 0 0 1 3 0v9a3 3 0 1 1-3 0Z"/><path d="M12.5 8h2.5M12.5 11h2.5"/><circle cx="12.5" cy="16.5" r="1.3" fill="currentColor" stroke="none"/></svg>'
   };
 
-  // ---------- Family definitions ----------
+  // Projektfamilien (Reihenfolge = Anzeige-Reihenfolge der Sektionen
+  // und der Filter-Schalter). color verweist auf eine --variable aus :root.
   var FAMILIES = [
-    { key: "lotto",   label: "Lotto 6aus49",       color: "var(--lotto)" },
-    { key: "euro",    label: "EuroJackpot",         color: "var(--euro)" },
-    { key: "skipbo",  label: "Skip-Bo",             color: "var(--skipbo)" },
-    { key: "dreieck", label: "DT-ProfiDreieck",     color: "var(--dreieck)" },
+    { key: "lotto",   label: "Lotto 6aus49",        color: "var(--lotto)" },
+    { key: "euro",    label: "EuroJackpot",          color: "var(--euro)" },
+    { key: "skipbo",  label: "Skip-Bo",              color: "var(--skipbo)" },
+    { key: "dreieck", label: "DT-ProfiDreieck",      color: "var(--dreieck)" },
     { key: "heizung", label: "Wärmeverlust-Analyse", color: "var(--heizung)" }
   ];
 
-  // ---------- Tool data (aus info_1.md) ----------
+  // Die Tools selbst (Texte aus info_1.md).
+  // Pflichtfelder: id, family, icon, title, version, teaser, kann, auszeichnet, link.
+  // Optional: anleitung (Array von Schritten) -> erzeugt den dritten Overlay-Abschnitt.
   var TOOLS = [
     {
       id: "lotto-konsole", family: "lotto", icon: "chart",
@@ -758,7 +792,53 @@
     }
   ];
 
-  // ---------- State ----------
+  /* ============================================================
+     2) KLEINE HELFER
+     ============================================================ */
+
+  function $(id){ return document.getElementById(id); }
+
+  // Element-Fabrik: erzeugt ein Element und setzt Klassen, Text, Attribute,
+  // Kinder in einem Rutsch. Text geht über textContent (sicher gegen
+  // Sonderzeichen) — innerHTML wird hier bewusst NICHT genutzt.
+  // opts: { class, text, attrs:{}, html (nur für vertrauenswürdige SVGs), children:[] }
+  function el(tag, opts){
+    opts = opts || {};
+    var node = document.createElement(tag);
+    if(opts.class) node.className = opts.class;
+    if(opts.text != null) node.textContent = opts.text;
+    if(opts.html != null) node.innerHTML = opts.html; // nur für statische ICONS
+    if(opts.attrs){
+      for(var k in opts.attrs){
+        if(Object.prototype.hasOwnProperty.call(opts.attrs, k)) node.setAttribute(k, opts.attrs[k]);
+      }
+    }
+    if(opts.cvar) node.style.setProperty("--c", opts.cvar);
+    if(opts.children){
+      for(var i=0;i<opts.children.length;i++){ node.appendChild(opts.children[i]); }
+    }
+    return node;
+  }
+
+  // Icon-Box mit statischem SVG. Fällt auf eine leere Box zurück, falls ein
+  // Icon-Key mal nicht existiert (statt eine Exception zu werfen).
+  function iconBox(iconKey, cvar){
+    return el("div", { class: "icon-box", cvar: cvar, html: ICONS[iconKey] || "" });
+  }
+
+  function familyOf(tool){
+    for(var i=0;i<FAMILIES.length;i++){ if(FAMILIES[i].key === tool.family) return FAMILIES[i]; }
+    return null;
+  }
+  function findTool(id){
+    for(var i=0;i<TOOLS.length;i++){ if(TOOLS[i].id === id) return TOOLS[i]; }
+    return null;
+  }
+
+  /* ============================================================
+     3) ZUSTAND  —  Filter + Favorit (Favorit lokal gespeichert)
+     ============================================================ */
+
   var activeFamilies = {};
   FAMILIES.forEach(function(f){ activeFamilies[f.key] = true; });
 
@@ -770,188 +850,225 @@
     try {
       if(id) localStorage.setItem(FAV_KEY, id);
       else localStorage.removeItem(FAV_KEY);
-    } catch(e){ /* lokaler Speicher nicht verfügbar — Favorit gilt nur für diese Sitzung */ }
-  }
-  function findTool(id){
-    for(var i=0;i<TOOLS.length;i++){ if(TOOLS[i].id === id) return TOOLS[i]; }
-    return null;
-  }
-  function familyOf(tool){
-    for(var i=0;i<FAMILIES.length;i++){ if(FAMILIES[i].key === tool.family) return FAMILIES[i]; }
-    return null;
+    } catch(e){ /* Speicher nicht verfügbar — Favorit gilt dann nur für diese Sitzung */ }
   }
 
-  // ---------- Render: switches ----------
-  var switchesEl = document.getElementById("switches");
-  FAMILIES.forEach(function(f){
-    var btn = document.createElement("button");
-    btn.className = "switch";
-    btn.type = "button";
-    btn.setAttribute("aria-pressed", "true");
-    btn.style.setProperty("--c", f.color);
-    btn.dataset.family = f.key;
-    btn.innerHTML = '<span class="dot"></span><span>' + f.label + '</span>';
-    btn.addEventListener("click", function(){
-      activeFamilies[f.key] = !activeFamilies[f.key];
-      btn.setAttribute("aria-pressed", String(activeFamilies[f.key]));
-      renderSections();
-    });
-    switchesEl.appendChild(btn);
-  });
+  /* ============================================================
+     4) AUFBAU  —  Schalter, Kacheln, Favoriten-Display
+        Kacheln werden EINMAL gebaut; der Filter schaltet danach
+        nur noch Sichtbarkeit (kein Neuaufbau pro Klick).
+     ============================================================ */
 
-  // ---------- Render: sections + cards ----------
-  var sectionsEl = document.getElementById("sections");
+  var switchesEl = $("switches");
+  var sectionsEl = $("sections");
+  var favBarEl   = $("fav-bar");
 
-  function renderSections(){
-    sectionsEl.innerHTML = "";
+  // Referenzen, um Favoriten-Zustand gezielt zu aktualisieren,
+  // ohne alles neu zu bauen.
+  var cardRefs = []; // [{ id, card, starBtn }]
+  var sectionRefs = {}; // family.key -> section-Element
+
+  // ---- Filter-Schalter (einmalig) ----
+  function buildSwitches(){
     FAMILIES.forEach(function(f){
+      var dot = el("span", { class: "dot" });
+      var label = el("span", { text: f.label });
+      var btn = el("button", {
+        class: "switch",
+        cvar: f.color,
+        attrs: { type: "button", "aria-pressed": "true", "data-family": f.key },
+        children: [dot, label]
+      });
+      btn.addEventListener("click", function(){
+        activeFamilies[f.key] = !activeFamilies[f.key];
+        btn.setAttribute("aria-pressed", String(activeFamilies[f.key]));
+        applyFilter();
+      });
+      switchesEl.appendChild(btn);
+    });
+  }
+
+  // ---- Eine Kachel bauen ----
+  function buildCard(tool, fam){
+    var top = el("div", {
+      class: "card-top",
+      children: [
+        iconBox(tool.icon, fam.color),
+        // Stern-Button: Zustand wird in updateFavoriteUI() gesetzt
+        (function(){
+          var s = el("button", {
+            class: "star-btn",
+            cvar: fam.color,
+            attrs: { type: "button" }
+          });
+          s.addEventListener("click", function(){
+            var nowFav = (getFavoriteId() !== tool.id);
+            setFavoriteId(nowFav ? tool.id : null);
+            updateFavoriteUI();
+          });
+          return s;
+        })()
+      ]
+    });
+
+    var main = el("button", {
+      class: "card-main",
+      attrs: { type: "button" },
+      children: [
+        el("span", { class: "version-chip", text: "v" + tool.version }),
+        el("h3", { text: tool.title }),
+        el("p", { class: "teaser", text: tool.teaser }),
+        el("span", { class: "more", text: "Details →" })
+      ]
+    });
+    main.addEventListener("click", function(){ openModal(tool, fam); });
+
+    var quick = el("a", {
+      class: "quick-start",
+      text: "Direkt starten ↗",
+      attrs: { href: tool.link, target: "_blank", rel: "noopener" }
+    });
+    var actions = el("div", { class: "card-actions", children: [quick] });
+
+    var card = el("div", { class: "card", cvar: fam.color, children: [top, main, actions] });
+
+    // Referenz merken (Stern ist top.children[1])
+    cardRefs.push({ id: tool.id, card: card, starBtn: top.children[1] });
+    return card;
+  }
+
+  // ---- Sektionen + Kacheln (einmalig) ----
+  function buildSections(){
+    FAMILIES.forEach(function(f, idx){
       var tools = TOOLS.filter(function(t){ return t.family === f.key; });
-      var section = document.createElement("section");
-      section.className = "family";
-      if(!activeFamilies[f.key]) section.classList.add("is-hidden");
+      if(!tools.length) return; // leere Familie -> keine Sektion
 
-      var head = document.createElement("div");
-      head.className = "family-head";
-      head.innerHTML = '<span class="bar" style="background:' + f.color + '"></span><h2>' + f.label + '</h2>';
-      section.appendChild(head);
-
-      var grid = document.createElement("div");
-      grid.className = "grid";
-
-      tools.forEach(function(t){
-        var isFav = (getFavoriteId() === t.id);
-
-        var card = document.createElement("div");
-        card.className = "card" + (isFav ? " is-favorite" : "");
-        card.style.setProperty("--c", f.color);
-
-        var top = document.createElement("div");
-        top.className = "card-top";
-
-        var iconBox = document.createElement("div");
-        iconBox.className = "icon-box";
-        iconBox.innerHTML = ICONS[t.icon];
-
-        var starBtn = document.createElement("button");
-        starBtn.type = "button";
-        starBtn.className = "star-btn";
-        starBtn.style.setProperty("--c", f.color);
-        starBtn.setAttribute("aria-pressed", String(isFav));
-        starBtn.setAttribute("aria-label", isFav ? "Als Favorit entfernen" : "Als Favorit markieren");
-        starBtn.textContent = isFav ? "★" : "☆";
-        starBtn.addEventListener("click", function(){
-          setFavoriteId(isFav ? null : t.id);
-          renderSections();
-          renderFavBar();
-        });
-
-        top.appendChild(iconBox);
-        top.appendChild(starBtn);
-
-        var main = document.createElement("button");
-        main.type = "button";
-        main.className = "card-main";
-        main.innerHTML =
-          '<span class="version-chip">v' + t.version + '</span>' +
-          '<h3>' + t.title + '</h3>' +
-          '<p class="teaser">' + t.teaser + '</p>' +
-          '<span class="more">Details →</span>';
-        main.addEventListener("click", function(){ openModal(t, f); });
-
-        var actions = document.createElement("div");
-        actions.className = "card-actions";
-        var quick = document.createElement("a");
-        quick.className = "quick-start";
-        quick.href = t.link;
-        quick.target = "_blank";
-        quick.rel = "noopener";
-        quick.textContent = "Direkt starten ↗";
-        actions.appendChild(quick);
-
-        card.appendChild(top);
-        card.appendChild(main);
-        card.appendChild(actions);
-        grid.appendChild(card);
+      var head = el("div", {
+        class: "family-head",
+        children: [
+          el("span", { class: "bar", attrs: { style: "background:" + f.color } }),
+          el("h2", { text: f.label })
+        ]
       });
 
-      section.appendChild(grid);
+      var grid = el("div", { class: "grid" });
+      tools.forEach(function(t){ grid.appendChild(buildCard(t, f)); });
+
+      var section = el("section", { class: "family", children: [head, grid] });
+      // Boot-Animations-Verzögerung gestaffelt per JS (skaliert mit Anzahl mit)
+      section.style.animationDelay = (0.14 + idx * 0.06).toFixed(2) + "s";
+
+      sectionRefs[f.key] = section;
       sectionsEl.appendChild(section);
     });
   }
 
-  renderSections();
+  // ---- Filter anwenden: nur Sichtbarkeit umschalten ----
+  function applyFilter(){
+    FAMILIES.forEach(function(f){
+      var section = sectionRefs[f.key];
+      if(!section) return;
+      if(activeFamilies[f.key]) section.classList.remove("is-hidden");
+      else section.classList.add("is-hidden");
+    });
+  }
 
-  // ---------- Render: Favoriten-Leiste ----------
-  var favBarEl = document.getElementById("fav-bar");
+  /* ============================================================
+     5) FAVORIT-ANZEIGE  —  Sterne, Kachel-Glow und Haupt-Display
+        aktualisieren, ohne die Kacheln neu zu bauen.
+     ============================================================ */
 
-  function renderFavBar(){
-    var favId = getFavoriteId();
+  function updateFavoriteUI(){
+    var favId = getFavoriteId(); // einmal lesen pro Aktualisierung
+
+    // Sterne + Kachel-Markierung
+    cardRefs.forEach(function(ref){
+      var isFav = (ref.id === favId);
+      ref.starBtn.textContent = isFav ? "★" : "☆";
+      ref.starBtn.setAttribute("aria-pressed", String(isFav));
+      ref.starBtn.setAttribute("aria-label", isFav ? "Als Favorit entfernen" : "Als Favorit markieren");
+      if(isFav) ref.card.classList.add("is-favorite");
+      else ref.card.classList.remove("is-favorite");
+    });
+
+    // Haupt-Display oben
+    renderFavBar(favId);
+  }
+
+  function renderFavBar(favId){
     var tool = favId ? findTool(favId) : null;
+
+    // Inhalt zurücksetzen
+    favBarEl.textContent = "";
 
     if(!tool){
       favBarEl.className = "fav-bar is-empty";
       favBarEl.style.removeProperty("--c");
-      favBarEl.innerHTML = "Noch kein Favorit gewählt — markiere ein Tool mit ☆, um es hier direkt starten zu können.";
+      favBarEl.textContent = "Noch kein Favorit gewählt — markiere ein Tool mit ☆, um es hier direkt starten zu können.";
       return;
     }
 
     var fam = familyOf(tool);
     favBarEl.className = "fav-bar";
     favBarEl.style.setProperty("--c", fam.color);
-    favBarEl.innerHTML =
-      '<div class="icon-box">' + ICONS[tool.icon] + '</div>' +
-      '<div class="fav-info">' +
-        '<p class="fav-eyebrow">Favorit</p>' +
-        '<p class="fav-title">' + tool.title + '</p>' +
-      '</div>' +
-      '<a class="fav-start" href="' + tool.link + '" target="_blank" rel="noopener">Jetzt starten ↗</a>';
+
+    var info = el("div", {
+      class: "fav-info",
+      children: [
+        el("p", { class: "fav-eyebrow", text: "Favorit" }),
+        el("p", { class: "fav-title", text: tool.title })
+      ]
+    });
+    var start = el("a", {
+      class: "fav-start",
+      text: "Jetzt starten ↗",
+      attrs: { href: tool.link, target: "_blank", rel: "noopener" }
+    });
+
+    favBarEl.appendChild(iconBox(tool.icon, fam.color));
+    favBarEl.appendChild(info);
+    favBarEl.appendChild(start);
   }
 
-  renderFavBar();
+  /* ============================================================
+     6) MODAL (Detail-Overlay)
+     ============================================================ */
 
-  // ---------- Readout (kleine Live-Anzeige) ----------
-  var readoutEl = document.getElementById("readout");
-  function updateReadout(){
-    var now = new Date();
-    var d = now.toLocaleDateString("de-DE");
-    var t = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-    readoutEl.innerHTML = d + "<br>" + t + " · " + TOOLS.length + " Tools";
-  }
-  updateReadout();
-  setInterval(updateReadout, 30000);
-
-  // ---------- Modal ----------
-  var backdrop = document.getElementById("backdrop");
-  var modal = document.getElementById("modal");
-  var modalIcon = document.getElementById("modal-icon");
-  var modalTitle = document.getElementById("modal-title");
-  var modalVersion = document.getElementById("modal-version");
-  var modalKann = document.getElementById("modal-kann");
-  var modalAnleitungWrap = document.getElementById("modal-anleitung-wrap");
-  var modalAnleitung = document.getElementById("modal-anleitung");
-  var modalAuszeichnet = document.getElementById("modal-auszeichnet");
-  var modalLink = document.getElementById("modal-link");
-  var modalClose = document.getElementById("modal-close");
-  var lastFocused = null;
+  var backdrop          = $("backdrop");
+  var modal             = $("modal");
+  var modalIcon         = $("modal-icon");
+  var modalTitle        = $("modal-title");
+  var modalVersion      = $("modal-version");
+  var modalKann         = $("modal-kann");
+  var modalAnleitungWrap= $("modal-anleitung-wrap");
+  var modalAnleitung    = $("modal-anleitung");
+  var modalAuszeichnet  = $("modal-auszeichnet");
+  var modalLink         = $("modal-link");
+  var modalClose        = $("modal-close");
+  var lastFocused       = null;
 
   function openModal(tool, fam){
     modal.style.setProperty("--c", fam.color);
     modalIcon.style.color = fam.color;
-    modalIcon.innerHTML = ICONS[tool.icon];
+    modalIcon.innerHTML = ICONS[tool.icon] || ""; // statisches SVG
     modalTitle.textContent = tool.title;
     modalVersion.textContent = "v" + tool.version;
     modalKann.textContent = tool.kann;
+
+    // Optionaler Anleitungs-Abschnitt
+    modalAnleitung.textContent = "";
     if(tool.anleitung && tool.anleitung.length){
-      modalAnleitung.innerHTML = tool.anleitung.map(function(step){
-        return "<li>" + step + "</li>";
-      }).join("");
+      tool.anleitung.forEach(function(step){
+        modalAnleitung.appendChild(el("li", { text: step }));
+      });
       modalAnleitungWrap.classList.remove("is-hidden");
     } else {
-      modalAnleitung.innerHTML = "";
       modalAnleitungWrap.classList.add("is-hidden");
     }
+
     modalAuszeichnet.textContent = tool.auszeichnet;
     modalLink.href = tool.link;
+
     backdrop.classList.add("open");
     lastFocused = document.activeElement;
     modalClose.focus();
@@ -961,7 +1078,7 @@
   function closeModal(){
     backdrop.classList.remove("open");
     document.removeEventListener("keydown", onKeydown);
-    if(lastFocused) lastFocused.focus();
+    if(lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
   }
 
   function onKeydown(e){
@@ -972,6 +1089,31 @@
   backdrop.addEventListener("click", function(e){
     if(e.target === backdrop) closeModal();
   });
+
+  /* ============================================================
+     7) READOUT (kleine Live-Anzeige im Header)
+     ============================================================ */
+
+  var readoutEl = $("readout");
+  function updateReadout(){
+    var now = new Date();
+    var d = now.toLocaleDateString("de-DE");
+    var t = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    readoutEl.textContent = "";
+    readoutEl.appendChild(el("div", { text: d }));
+    readoutEl.appendChild(el("div", { text: t + " · " + TOOLS.length + " Tools" }));
+  }
+
+  /* ============================================================
+     8) START
+     ============================================================ */
+
+  buildSwitches();
+  buildSections();
+  applyFilter();        // Sichtbarkeit setzen (alle an)
+  updateFavoriteUI();   // Sterne + Display gemäß gespeichertem Favorit
+  updateReadout();
+  setInterval(updateReadout, 30000);
 
 })();
 </script>
