@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <!--
   Dieter Tepe — Tool-Werkstatt: Start-/Übersichtsseite
-  Version: 1.8.0
+  Version: 1.9.0
   Stand: 2026-07-10
   Changelog:
-    1.8.0 – Zwei neue Tools/Aufteilungen + dezente Optik:
-            • DT-ProfiDreieck ist jetzt in zwei Kacheln aufgeteilt:
-              Testversion (alle Standardfälle, freier Export) und
-              Pro-Version (zusätzlich Spezialfälle Umkreis/Inkreis/Fläche/
-              Höhen, Lizenz-Wasserzeichen).
-            • Neue Familie „DT-ProfiSchraube" (eigene Akzentfarbe + Icon):
-              Schraubenauslegung nach VDI 2230 Blatt 1 mit fünf Sicherheits-
-              Nachweisen und Ampel-Bewertung. Test- und Vollversion; die
-              Testversion rechnet alles, kann aber nicht exportieren/laden/
-              speichern.
-            • Alle neuen Texte in allen vier Sprachen (DE/EN/PT/UK).
-            • Dezente Optik: Kacheln heben sich beim Überfahren leicht an
-              (Desktop); ein einmaliger Glanz-Streif läuft über das
-              Favoriten-Display, sobald ein Favorit gesetzt ist. Beides
-              reduced-motion-abgesichert.
+    1.9.0 – Neues Tool „Speicher-Studio" (eigene, siebte Familie):
+            • Werkzeug, das den lokalen Browser-Speicher (localStorage und
+              sessionStorage) sichtbar, lesbar und bearbeitbar macht —
+              gruppiert nach Programm, mit Suche, JSON-Prüfung, Sichern/Laden
+              als JSON-Datei und zwei Lesezeichen-Werkzeugen („Brücke").
+              Eigene Akzentfarbe (Smaragdgrün) + Datenbank-Icon, ans Ende
+              der Familienliste gestellt.
+            • Der Versions-Chip ist jetzt optional: Tools ohne Versionsnummer
+              (wie Speicher-Studio bis auf Weiteres) zeigen einfach keinen
+              Chip — sauberer als ein sprachgebundener Platzhalter.
+            • Texte in allen vier Sprachen (DE/EN/PT/UK).
+    1.8.0 – DT-ProfiDreieck in zwei Kacheln geteilt (Test + Pro); neue
+            Familie „DT-ProfiSchraube" (Test + Vollversion, VDI 2230 Blatt 1).
+            Dezente Optik: Hover-Lift der Kacheln + Glanz-Streif über dem
+            Favoriten-Display.
     1.7.0 – Bugfix Auto-Übersetzung (<html translate=no> + Meta) + kleine
             SVG-Flaggen je Sprache + Familien-Filter wird lokal gespeichert.
             Ukrainisch-Kürzel „UK" → „UA" (interner Code bleibt „uk").
@@ -83,6 +83,7 @@
     --dreieck: #7c93a8;
     --schraube: #9b82d6;
     --heizung: #d9622e;
+    --speicher: #5cb37e;
 
     --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Consolas", "Roboto Mono", monospace;
     --sans: ui-sans-serif, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
@@ -100,7 +101,8 @@
       radial-gradient(ellipse 700px 420px at 50% 38%, color-mix(in srgb, var(--skipbo) 5%, transparent), transparent 65%),
       radial-gradient(ellipse 620px 380px at 48% 72%, color-mix(in srgb, var(--schraube) 6%, transparent), transparent 62%),
       radial-gradient(ellipse 800px 460px at 90% 95%, color-mix(in srgb, var(--heizung) 7%, transparent), transparent 60%),
-      radial-gradient(ellipse 700px 420px at 5% 90%, color-mix(in srgb, var(--dreieck) 7%, transparent), transparent 60%);
+      radial-gradient(ellipse 700px 420px at 5% 90%, color-mix(in srgb, var(--dreieck) 7%, transparent), transparent 60%),
+      radial-gradient(ellipse 620px 380px at 96% 48%, color-mix(in srgb, var(--speicher) 6%, transparent), transparent 62%);
     color: var(--text);
     font-family: var(--sans);
     line-height: 1.5;
@@ -805,7 +807,7 @@
     de: {
       subtitle: "Eigene Browser-Tools — Lotto- & EuroJackpot-Analyse, Skip-Bo, ein Werkstatt-Dreiecksrechner und ein Heizungs-Check fürs eigene Zuhause. Alles läuft direkt im Browser, ohne Installation.",
       footerNote: "Die Lotto- und EuroJackpot-Tools werten Ziehungsdaten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.",
-      pageVersion: "Übersichtsseite v1.8.0 · Stand 10.07.2026",
+      pageVersion: "Übersichtsseite v1.9.0 · Stand 10.07.2026",
       langLabel: "Sprache",
       toolsWord: "Tools",
       favEyebrow: "Favorit",
@@ -824,7 +826,7 @@
     en: {
       subtitle: "Personal browser tools — Lotto & EuroJackpot analysis, Skip-Bo, a workshop triangle calculator and a heating check for your own home. Everything runs right in the browser, no installation.",
       footerNote: "The Lotto and EuroJackpot tools analyse draw data and support your number selection — they do not predict any draw.",
-      pageVersion: "Overview page v1.8.0 · As of 10 Jul 2026",
+      pageVersion: "Overview page v1.9.0 · As of 10 Jul 2026",
       langLabel: "Language",
       toolsWord: "tools",
       favEyebrow: "Favourite",
@@ -843,7 +845,7 @@
     pt: {
       subtitle: "Ferramentas próprias para o navegador — análise da Lotto e do EuroJackpot, Skip-Bo, uma calculadora de triângulos para a oficina e uma verificação do aquecimento para a própria casa. Tudo funciona diretamente no navegador, sem instalação.",
       footerNote: "As ferramentas da Lotto e do EuroJackpot analisam os dados dos sorteios e ajudam na escolha dos números — não preveem nenhum sorteio.",
-      pageVersion: "Página de visão geral v1.8.0 · Atualizado em 10/07/2026",
+      pageVersion: "Página de visão geral v1.9.0 · Atualizado em 10/07/2026",
       langLabel: "Idioma",
       toolsWord: "ferramentas",
       favEyebrow: "Favorito",
@@ -862,7 +864,7 @@
     uk: {
       subtitle: "Власні браузерні інструменти — аналіз Lotto та EuroJackpot, Skip-Bo, калькулятор трикутників для майстерні та перевірка опалення для власного дому. Усе працює прямо у браузері, без встановлення.",
       footerNote: "Інструменти Lotto та EuroJackpot аналізують дані тиражів і допомагають у виборі чисел — вони не передбачають жодного тиражу.",
-      pageVersion: "Оглядова сторінка v1.8.0 · Станом на 10.07.2026",
+      pageVersion: "Оглядова сторінка v1.9.0 · Станом на 10.07.2026",
       langLabel: "Мова",
       toolsWord: "інструментів",
       favEyebrow: "Обране",
@@ -896,6 +898,7 @@
     gear:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.5v2M12 17.5v2M4.5 12h2M17.5 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4"/></svg>',
     triangle:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 20 19H4L12 4.5Z"/><path d="M4 19h16M9 19v1.6M15 19v1.6M12 4.5v-1.6"/></svg>',
     screw:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3.4h6l1.5 2.7L15 8.8H9L7.5 6.1 9 3.4Z"/><path d="M10.2 8.8v8.2a1.8 1.8 0 0 0 3.6 0V8.8"/><path d="M10.4 11.3h3.2M10.4 13.6h3.2M10.4 15.9h3.2"/></svg>',
+    database:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.6" rx="7" ry="2.8"/><path d="M5 5.6v12.8c0 1.55 3.13 2.8 7 2.8s7-1.25 7-2.8V5.6"/><path d="M5 12c0 1.55 3.13 2.8 7 2.8s7-1.25 7-2.8"/></svg>',
     thermo:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 14.5V5.5a1.5 1.5 0 0 1 3 0v9a3 3 0 1 1-3 0Z"/><path d="M12.5 8h2.5M12.5 11h2.5"/><circle cx="12.5" cy="16.5" r="1.3" fill="currentColor" stroke="none"/></svg>'
   };
 
@@ -907,7 +910,8 @@
     { key: "skipbo",  color: "var(--skipbo)",  label: { de: "Skip-Bo",              en: "Skip-Bo",              pt: "Skip-Bo",                     uk: "Skip-Bo" } },
     { key: "dreieck", color: "var(--dreieck)", label: { de: "DT-ProfiDreieck",      en: "DT-ProfiDreieck",      pt: "DT-ProfiDreieck",             uk: "DT-ProfiDreieck" } },
     { key: "schraube",color: "var(--schraube)",label: { de: "DT-ProfiSchraube",     en: "DT-ProfiSchraube",     pt: "DT-ProfiSchraube",            uk: "DT-ProfiSchraube" } },
-    { key: "heizung", color: "var(--heizung)", label: { de: "Wärmeverlust-Analyse", en: "Heat-loss analysis",   pt: "Análise de perdas de calor",  uk: "Аналіз тепловтрат" } }
+    { key: "heizung", color: "var(--heizung)", label: { de: "Wärmeverlust-Analyse", en: "Heat-loss analysis",   pt: "Análise de perdas de calor",  uk: "Аналіз тепловтрат" } },
+    { key: "speicher",color: "var(--speicher)",label: { de: "Speicher-Studio",      en: "Speicher-Studio",      pt: "Speicher-Studio",             uk: "Speicher-Studio" } }
   ];
 
   // Tools. Sprachunabhängig: id, family, icon, version, link.
@@ -1300,6 +1304,36 @@
           auszeichnet: "Калібрування змішувача навчається безпосередньо з власної системи, а не з теоретичних припущень — що більше точок вимірювання з різними положеннями змішувача, то точнішою стає рекомендація. Кома або крапка як десятковий роздільник, усі введені дані автоматично зберігаються локально у браузері, без підключення до хмари, без потреби встановлення."
         }
       }
+    },
+    {
+      id: "speicher-studio", family: "speicher", icon: "database", version: "",
+      link: "https://dietertepe.github.io/Ordner1/speicher-studio_aktuell.html",
+      i18n: {
+        de: {
+          title: "Speicher-Studio — Browser-Speicher einsehen und verwalten",
+          teaser: "Zeigt, bearbeitet und überträgt die Daten, die Web-Programme lokal im Browser ablegen — offline und ohne Installation.",
+          kann: "Macht sichtbar, was Web-Programme im Browser ablegen (localStorage und sessionStorage): alle Einträge übersichtlich, automatisch nach Programm gruppiert, mit Suche und JSON-Formatierung samt Gültigkeitsprüfung. Einträge lassen sich bearbeiten, neu anlegen, überschreiben und gezielt löschen — einzeln, gruppenweise oder komplett, jeweils mit Sicherheitsabfrage. Ganze Konfigurationen können als JSON-Datei gesichert und wieder geladen werden, um sie zu übertragen — etwa zwischen Chrome und Edge, die getrennte Speicher haben.",
+          auszeichnet: "Das Besondere ist die „Brücke“: zwei Lesezeichen-Werkzeuge, mit denen sich Daten aus anderen Tabs oder echten Websites erfassen und nach dem Bearbeiten wieder zurückschreiben lassen — über Tab-, Website- und Browsergrenzen hinweg. So wird aus einem reinen Betrachter ein Werkzeug, das Konfigurationen dorthin bringt, wo man sie braucht. Läuft als einzelne, offline funktionierende Datei auf PC, Handy und Tablet."
+        },
+        en: {
+          title: "Speicher-Studio — view and manage browser storage",
+          teaser: "Views, edits and transfers the data that web apps store locally in the browser — offline and without installation.",
+          kann: "Makes visible what web apps store in the browser (localStorage and sessionStorage): all entries clearly laid out, automatically grouped by program, with search and JSON formatting including a validity check. Entries can be edited, created, overwritten and selectively deleted — individually, by group or all at once, each with a confirmation prompt. Whole configurations can be saved as a JSON file and loaded again to transfer them — for example between Chrome and Edge, which keep separate storage.",
+          auszeichnet: "The special part is the “bridge”: two bookmarklet tools that capture data from other tabs or real websites and write it back after editing — across tab, website and browser boundaries. This turns a mere viewer into a tool that brings configurations to where you need them. Runs as a single, offline-capable file on PC, phone and tablet."
+        },
+        pt: {
+          title: "Speicher-Studio — ver e gerir o armazenamento do navegador",
+          teaser: "Vê, edita e transfere os dados que as aplicações web guardam localmente no navegador — offline e sem instalação.",
+          kann: "Torna visível o que as aplicações web guardam no navegador (localStorage e sessionStorage): todas as entradas apresentadas de forma clara, agrupadas automaticamente por programa, com pesquisa e formatação JSON, incluindo verificação de validade. As entradas podem ser editadas, criadas, substituídas e apagadas de forma seletiva — individualmente, por grupo ou na totalidade, sempre com uma confirmação de segurança. Configurações inteiras podem ser guardadas como ficheiro JSON e carregadas novamente para as transferir — por exemplo, entre o Chrome e o Edge, que mantêm armazenamentos separados.",
+          auszeichnet: "O que a distingue é a «ponte»: duas ferramentas de marcador (bookmarklets) que captam dados de outros separadores ou de sites reais e os reescrevem após a edição — para além das fronteiras de separador, site e navegador. Assim, um simples visualizador transforma-se numa ferramenta que leva as configurações para onde são precisas. Funciona como um ficheiro único, capaz de funcionar offline, em PC, telemóvel e tablet."
+        },
+        uk: {
+          title: "Speicher-Studio — перегляд і керування сховищем браузера",
+          teaser: "Переглядає, редагує та переносить дані, які веб-програми зберігають локально в браузері — офлайн і без встановлення.",
+          kann: "Показує те, що веб-програми зберігають у браузері (localStorage і sessionStorage): усі записи впорядковано, автоматично згруповано за програмою, із пошуком і форматуванням JSON разом із перевіркою правильності. Записи можна редагувати, створювати, перезаписувати та вибірково видаляти — поодинці, групами чи повністю, щоразу з підтвердженням. Цілі конфігурації можна зберегти у файл JSON і знову завантажити, щоб перенести їх — наприклад, між Chrome та Edge, які мають окремі сховища.",
+          auszeichnet: "Особливість — «міст»: два інструменти-закладки (bookmarklet), якими можна зібрати дані з інших вкладок чи справжніх вебсайтів і після редагування записати їх назад — попри межі вкладок, сайтів і браузерів. Так звичайний переглядач стає інструментом, що доставляє конфігурації туди, де вони потрібні. Працює як єдиний файл, здатний працювати офлайн, на ПК, телефоні та планшеті."
+        }
+      }
     }
   ];
 
@@ -1468,14 +1502,16 @@
 
     var top = el("div", { class: "card-top", children: [ iconBox(tool.icon, fam.color), starBtn ] });
 
-    var versionChip = el("span", { class: "version-chip", text: "v" + tool.version });
     var titleEl = el("h3", { text: tx.title });
     var teaserEl = el("p", { class: "teaser", text: tx.teaser });
     var moreEl = el("span", { class: "more", text: ui(lang).more });
+    var mainChildren = [];
+    if (tool.version) mainChildren.push(el("span", { class: "version-chip", text: "v" + tool.version }));
+    mainChildren.push(titleEl, teaserEl, moreEl);
     var main = el("button", {
       class: "card-main",
       attrs: { type: "button" },
-      children: [ versionChip, titleEl, teaserEl, moreEl ]
+      children: mainChildren
     });
     main.addEventListener("click", function(){ openModal(tool, fam); });
 
@@ -1668,7 +1704,13 @@
     modalIcon.innerHTML = ICONS[tool.icon] || ""; // statisches SVG
 
     modalTitle.textContent = tx.title;
-    modalVersion.textContent = "v" + tool.version;
+    if (tool.version) {
+      modalVersion.textContent = "v" + tool.version;
+      modalVersion.classList.remove("is-hidden");
+    } else {
+      modalVersion.textContent = "";
+      modalVersion.classList.add("is-hidden");
+    }
 
     modalLabelKann.textContent = t.labelKann;
     modalKann.textContent = tx.kann;

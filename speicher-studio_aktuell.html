@@ -116,6 +116,16 @@ textarea.editor:focus{border-color:var(--violet)}
 .bmnote{font-size:.82rem;line-height:1.5;color:#bfe9ff;background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.3);border-radius:12px;padding:11px 13px;margin-bottom:12px}
 .codebox{background:rgba(10,10,30,.5);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 12px;overflow:auto}
 .codebox code{font-family:var(--mono);font-size:.72rem;color:var(--ink-dim);word-break:break-all;white-space:pre-wrap}
+.feat{margin:0 0 16px}
+.feat-t{font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan);margin-bottom:8px}
+.feat ul{list-style:none;margin:0}
+.feat li{position:relative;padding:0 0 8px 20px;font-size:.88rem;line-height:1.5;color:var(--ink)}
+.feat li::before{content:"›";position:absolute;left:4px;top:-1px;color:var(--violet);font-weight:700}
+.online{background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.3);border-radius:14px;padding:14px;margin-bottom:16px}
+.online p{font-size:.85rem;color:var(--ink-dim)}
+.online-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.urlpill{background:linear-gradient(120deg,var(--cyan),var(--violet));color:#04122a;font-weight:700;padding:8px 14px;border-radius:10px;text-decoration:none;font-size:.82rem;cursor:grab}
+.urlpill:active{cursor:grabbing}
 #toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:80;width:min(92vw,420px)}
 .toast{background:rgba(24,22,54,.92);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:12px;padding:12px 16px;font-size:.84rem;backdrop-filter:blur(12px);animation:toastIn .4s cubic-bezier(.22,1.3,.36,1) both;box-shadow:0 12px 40px rgba(0,0,0,.4)}
 .toast.err{border-left-color:var(--magenta)}
@@ -161,6 +171,7 @@ footer{margin-top:40px;color:var(--ink-dim);font-size:.76rem;line-height:1.6;tex
       <button class="btn" id="btnExport">⤓ Sichern</button>
       <button class="btn" id="btnImport">⤒ Laden</button>
       <button class="btn" id="btnRefresh" title="Neu einlesen">⟳</button>
+      <button class="btn" id="btnAbout" title="Über das Programm">ℹ️ Über</button>
       <button class="btn danger" id="btnWipe">Alles löschen</button>
     </div>
   </div>
@@ -201,6 +212,34 @@ footer{margin-top:40px;color:var(--ink-dim);font-size:.76rem;line-height:1.6;tex
       <button class="btn" id="bridgeClose">Schließen</button>
       <button class="btn primary" id="btnPaste">Erfassung einfügen</button>
     </div>
+  </div>
+</div>
+
+<!-- Über / Info -->
+<div class="overlay" id="ovAbout" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h2>Über Speicher-Studio</h2>
+    <p>Speicher-Studio ist eine einzelne HTML-Datei, die komplett offline auf PC, Handy und Tablet läuft. Sie zeigt die Konfigurationen, die Web-Programme lokal im Browser ablegen (localStorage und sessionStorage), macht sie als Text lesbar und lässt Sie sie bearbeiten, überschreiben und gezielt löschen – einzeln, gruppenweise oder komplett.</p>
+    <div class="feat">
+      <div class="feat-t">Kernfunktionen</div>
+      <ul>
+        <li>Alle Einträge übersichtlich, automatisch nach Programm gruppiert, mit Suche und JSON-Formatierung samt Gültigkeitsprüfung.</li>
+        <li>Bearbeiten, neu anlegen, überschreiben und löschen – mit Sicherheitsabfrage.</li>
+        <li>Sichern und Laden als JSON-Datei, um Konfigurationen zu übertragen – etwa zwischen Chrome und Edge, die getrennte Speicher haben.</li>
+        <li>Die <b>Brücke</b>: zwei Lesezeichen-Werkzeuge, um Daten aus anderen Tabs oder echten Websites zu erfassen und nach dem Bearbeiten zurückzuschreiben – über Tab-, Website- und Browsergrenzen hinweg.</li>
+      </ul>
+    </div>
+    <div class="online">
+      <div class="feat-t">Online-Version</div>
+      <p style="margin:0 0 10px">Von jedem Gerät erreichbar. Als Lesezeichen einfach den Link ziehen oder – wenn online geöffnet – mit <b id="ddHint">Strg</b>+D speichern.</p>
+      <div class="codebox"><code id="studioUrl"></code></div>
+      <div class="online-actions">
+        <a class="drag urlpill" id="studioDrag" href="#">🔖 Speicher-Studio (online)</a>
+        <a class="btn small" id="studioOpen" target="_blank" rel="noopener" href="#">↗ Online öffnen</a>
+        <button class="btn small" id="studioCopy">Link kopieren</button>
+      </div>
+    </div>
+    <div class="row"><button class="btn primary" id="aboutClose">Schließen</button></div>
   </div>
 </div>
 
@@ -558,6 +597,17 @@ $("ovGuide").onclick=function(e){if(e.target===$("ovGuide"))$("ovGuide").classLi
 
 $("addExport").onclick=function(){setupBookmark("Speicher erfassen",BM_EXPORT);};
 $("addWrite").onclick=function(){setupBookmark("Speicher schreiben",BM_WRITE);};
+
+/* ---------- Über / Online-Version ---------- */
+var STUDIO_URL="https://dietertepe.github.io/Ordner1/speicher-studio_aktuell.html";
+$("studioUrl").textContent=STUDIO_URL;
+$("studioDrag").href=STUDIO_URL;
+$("studioOpen").href=STUDIO_URL;
+$("ddHint").textContent=isMac?"Cmd":"Strg";
+$("studioCopy").onclick=function(){copyText(STUDIO_URL,"Link kopiert");};
+$("btnAbout").onclick=function(){$("ovAbout").classList.add("show");};
+$("aboutClose").onclick=function(){$("ovAbout").classList.remove("show");};
+$("ovAbout").onclick=function(e){if(e.target===$("ovAbout"))$("ovAbout").classList.remove("show");};
 
 function openBridge(){$("ovBridge").classList.add("show");}
 $("btnBridge").onclick=openBridge;
