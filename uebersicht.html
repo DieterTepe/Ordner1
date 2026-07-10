@@ -1,25 +1,27 @@
 <!DOCTYPE html>
 <!--
   Dieter Tepe — Tool-Werkstatt: Start-/Übersichtsseite
-  Version: 1.7.0
-  Stand: 2026-06-28
+  Version: 1.8.0
+  Stand: 2026-07-10
   Changelog:
-    1.7.0 – Bugfix Auto-Übersetzung + Flaggen + Filter-Speicherung:
-            • BUGFIX: Manche Browser haben die Seite bei nicht-deutscher
-              Sprache automatisch übersetzt (z. B. „UK“ → „Vereinigtes
-              Königreich") und dabei mit der eigenen Umschaltung kollidiert
-              („alles durcheinander", Umschalten ging nicht mehr). Jetzt
-              unterbunden über <html translate="no"> + Meta „notranslate" —
-              die Seite bringt ihre Übersetzung ja selbst mit. Das
-              <html lang> bleibt für Vorlesehilfen erhalten.
-            • Sprach-Schalter mit kleinen, selbst gezeichneten Flaggen
-              (SVG, damit auf jedem Gerät gleich — Flaggen-Emojis erscheinen
-              auf Windows nur als Buchstaben). Ukrainisch-Kürzel von „UK"
-              auf „UA" geändert, damit es nicht wie United Kingdom wirkt
-              (interner Sprachcode bleibt „uk").
-            • Familien-Filter (ein-/ausgeblendete Gruppen) wird jetzt lokal
-              gespeichert und beim nächsten Start wiederhergestellt — wie
-              Sprache und Favorit.
+    1.8.0 – Zwei neue Tools/Aufteilungen + dezente Optik:
+            • DT-ProfiDreieck ist jetzt in zwei Kacheln aufgeteilt:
+              Testversion (alle Standardfälle, freier Export) und
+              Pro-Version (zusätzlich Spezialfälle Umkreis/Inkreis/Fläche/
+              Höhen, Lizenz-Wasserzeichen).
+            • Neue Familie „DT-ProfiSchraube" (eigene Akzentfarbe + Icon):
+              Schraubenauslegung nach VDI 2230 Blatt 1 mit fünf Sicherheits-
+              Nachweisen und Ampel-Bewertung. Test- und Vollversion; die
+              Testversion rechnet alles, kann aber nicht exportieren/laden/
+              speichern.
+            • Alle neuen Texte in allen vier Sprachen (DE/EN/PT/UK).
+            • Dezente Optik: Kacheln heben sich beim Überfahren leicht an
+              (Desktop); ein einmaliger Glanz-Streif läuft über das
+              Favoriten-Display, sobald ein Favorit gesetzt ist. Beides
+              reduced-motion-abgesichert.
+    1.7.0 – Bugfix Auto-Übersetzung (<html translate=no> + Meta) + kleine
+            SVG-Flaggen je Sprache + Familien-Filter wird lokal gespeichert.
+            Ukrainisch-Kürzel „UK" → „UA" (interner Code bleibt „uk").
     1.6.0 – Mehrsprachigkeit (Deutsch · Englisch · Portugiesisch · Ukrainisch):
             vier Sprach-Schalter, ALLE Texte übersetzt (Oberfläche und
             komplette Tool-Beschreibungen), Sprache lokal gespeichert,
@@ -79,6 +81,7 @@
     --euro: #3fc1c9;
     --skipbo: #d6455a;
     --dreieck: #7c93a8;
+    --schraube: #9b82d6;
     --heizung: #d9622e;
 
     --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Consolas", "Roboto Mono", monospace;
@@ -95,6 +98,7 @@
       radial-gradient(ellipse 800px 460px at 12% -8%, color-mix(in srgb, var(--lotto) 9%, transparent), transparent 60%),
       radial-gradient(ellipse 800px 460px at 88% 0%, color-mix(in srgb, var(--euro) 9%, transparent), transparent 60%),
       radial-gradient(ellipse 700px 420px at 50% 38%, color-mix(in srgb, var(--skipbo) 5%, transparent), transparent 65%),
+      radial-gradient(ellipse 620px 380px at 48% 72%, color-mix(in srgb, var(--schraube) 6%, transparent), transparent 62%),
       radial-gradient(ellipse 800px 460px at 90% 95%, color-mix(in srgb, var(--heizung) 7%, transparent), transparent 60%),
       radial-gradient(ellipse 700px 420px at 5% 90%, color-mix(in srgb, var(--dreieck) 7%, transparent), transparent 60%);
     color: var(--text);
@@ -119,6 +123,11 @@
   @keyframes cardIn{
     0%   { opacity: 0; transform: translateY(10px); }
     100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes favSheen{
+    0%        { transform: translateX(-140%) skewX(-18deg); opacity: 0; }
+    12%       { opacity: .55; }
+    60%, 100% { transform: translateX(360%) skewX(-18deg); opacity: 0; }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -308,6 +317,19 @@
     background: radial-gradient(circle, color-mix(in srgb, var(--c) 30%, transparent), transparent 70%);
     pointer-events: none;
   }
+  /* Einmaliger Glanz-Streif, sobald ein Favorit gesetzt ist (nicht bei leer).
+     Läuft beim Laden bzw. beim Setzen eines Favoriten genau einmal. */
+  .fav-bar:not(.is-empty)::before{
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 45%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
+    transform: translateX(-140%) skewX(-18deg);
+    animation: favSheen 2.4s ease-out .7s 1 both;
+    pointer-events: none;
+    z-index: 2;
+  }
   .fav-bar.is-empty{
     border-style: dashed;
     background: var(--bg-card);
@@ -406,7 +428,7 @@
     gap: 10px;
     min-height: 100%;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -2px 6px rgba(0,0,0,0.35);
-    transition: background .15s, border-color .15s, box-shadow .2s;
+    transition: background .15s, border-color .15s, box-shadow .2s, transform .2s ease;
   }
   .card::before, .card::after{
     content: "";
@@ -421,7 +443,8 @@
   .card::after{ right: 9px; }
   .card:hover{
     background: var(--bg-card-hover);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -2px 6px rgba(0,0,0,0.35), 0 4px 18px -6px color-mix(in srgb, var(--c) 50%, transparent), 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent);
+    transform: translateY(-3px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -2px 6px rgba(0,0,0,0.35), 0 8px 22px -8px color-mix(in srgb, var(--c) 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent);
   }
   .card.is-favorite{
     background: var(--bg-card-hover);
@@ -782,7 +805,7 @@
     de: {
       subtitle: "Eigene Browser-Tools — Lotto- & EuroJackpot-Analyse, Skip-Bo, ein Werkstatt-Dreiecksrechner und ein Heizungs-Check fürs eigene Zuhause. Alles läuft direkt im Browser, ohne Installation.",
       footerNote: "Die Lotto- und EuroJackpot-Tools werten Ziehungsdaten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.",
-      pageVersion: "Übersichtsseite v1.7.0 · Stand 28.06.2026",
+      pageVersion: "Übersichtsseite v1.8.0 · Stand 10.07.2026",
       langLabel: "Sprache",
       toolsWord: "Tools",
       favEyebrow: "Favorit",
@@ -801,7 +824,7 @@
     en: {
       subtitle: "Personal browser tools — Lotto & EuroJackpot analysis, Skip-Bo, a workshop triangle calculator and a heating check for your own home. Everything runs right in the browser, no installation.",
       footerNote: "The Lotto and EuroJackpot tools analyse draw data and support your number selection — they do not predict any draw.",
-      pageVersion: "Overview page v1.7.0 · As of 28 Jun 2026",
+      pageVersion: "Overview page v1.8.0 · As of 10 Jul 2026",
       langLabel: "Language",
       toolsWord: "tools",
       favEyebrow: "Favourite",
@@ -820,7 +843,7 @@
     pt: {
       subtitle: "Ferramentas próprias para o navegador — análise da Lotto e do EuroJackpot, Skip-Bo, uma calculadora de triângulos para a oficina e uma verificação do aquecimento para a própria casa. Tudo funciona diretamente no navegador, sem instalação.",
       footerNote: "As ferramentas da Lotto e do EuroJackpot analisam os dados dos sorteios e ajudam na escolha dos números — não preveem nenhum sorteio.",
-      pageVersion: "Página de visão geral v1.7.0 · Atualizado em 28/06/2026",
+      pageVersion: "Página de visão geral v1.8.0 · Atualizado em 10/07/2026",
       langLabel: "Idioma",
       toolsWord: "ferramentas",
       favEyebrow: "Favorito",
@@ -839,7 +862,7 @@
     uk: {
       subtitle: "Власні браузерні інструменти — аналіз Lotto та EuroJackpot, Skip-Bo, калькулятор трикутників для майстерні та перевірка опалення для власного дому. Усе працює прямо у браузері, без встановлення.",
       footerNote: "Інструменти Lotto та EuroJackpot аналізують дані тиражів і допомагають у виборі чисел — вони не передбачають жодного тиражу.",
-      pageVersion: "Оглядова сторінка v1.7.0 · Станом на 28.06.2026",
+      pageVersion: "Оглядова сторінка v1.8.0 · Станом на 10.07.2026",
       langLabel: "Мова",
       toolsWord: "інструментів",
       favEyebrow: "Обране",
@@ -872,6 +895,7 @@
     cardsshine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="5.5" width="10" height="14" rx="1.5" transform="rotate(-8 9.5 12.5)"/><rect x="9.5" y="4.5" width="10" height="14" rx="1.5"/><path d="M19 2.4l.6 1.3 1.4.2-1 .9.2 1.4-1.2-.7-1.2.7.2-1.4-1-.9 1.4-.2.6-1.3Z"/></svg>',
     gear:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.5v2M12 17.5v2M4.5 12h2M17.5 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4"/></svg>',
     triangle:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 20 19H4L12 4.5Z"/><path d="M4 19h16M9 19v1.6M15 19v1.6M12 4.5v-1.6"/></svg>',
+    screw:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3.4h6l1.5 2.7L15 8.8H9L7.5 6.1 9 3.4Z"/><path d="M10.2 8.8v8.2a1.8 1.8 0 0 0 3.6 0V8.8"/><path d="M10.4 11.3h3.2M10.4 13.6h3.2M10.4 15.9h3.2"/></svg>',
     thermo:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 14.5V5.5a1.5 1.5 0 0 1 3 0v9a3 3 0 1 1-3 0Z"/><path d="M12.5 8h2.5M12.5 11h2.5"/><circle cx="12.5" cy="16.5" r="1.3" fill="currentColor" stroke="none"/></svg>'
   };
 
@@ -882,6 +906,7 @@
     { key: "euro",    color: "var(--euro)",    label: { de: "EuroJackpot",          en: "EuroJackpot",          pt: "EuroJackpot",                 uk: "EuroJackpot" } },
     { key: "skipbo",  color: "var(--skipbo)",  label: { de: "Skip-Bo",              en: "Skip-Bo",              pt: "Skip-Bo",                     uk: "Skip-Bo" } },
     { key: "dreieck", color: "var(--dreieck)", label: { de: "DT-ProfiDreieck",      en: "DT-ProfiDreieck",      pt: "DT-ProfiDreieck",             uk: "DT-ProfiDreieck" } },
+    { key: "schraube",color: "var(--schraube)",label: { de: "DT-ProfiSchraube",     en: "DT-ProfiSchraube",     pt: "DT-ProfiSchraube",            uk: "DT-ProfiSchraube" } },
     { key: "heizung", color: "var(--heizung)", label: { de: "Wärmeverlust-Analyse", en: "Heat-loss analysis",   pt: "Análise de perdas de calor",  uk: "Аналіз тепловтрат" } }
   ];
 
@@ -1099,32 +1124,122 @@
       }
     },
     {
-      id: "dreieck", family: "dreieck", icon: "triangle", version: "Test 1.1.0 & Pro 1.1.0 (Engine 3.0.0)",
+      id: "dreieck-test", family: "dreieck", icon: "triangle", version: "Test 1.1.0 (Engine 3.0.0)",
       link: "https://www.dt-profidreieck.de/",
       i18n: {
         de: {
-          title: "DT-ProfiDreieck — Profi-Dreiecksrechner für Werkstatt & CNC",
-          teaser: "Löst jedes Dreieck und liefert die fertige CAD-Zeichnung — für CNC & Werkstatt.",
-          kann: "Alle gängigen Eingabefälle (SSS, SWS, WSW, SWW, SSW) sowie die fortgeschrittenen Spezialfälle mit Umkreis, Inkreis, Fläche oder Höhen — inklusive numerischer Lösungen mit Plausibilitätsprüfung (z. B. Euler-Ungleichung R≥2r). Jedes Ergebnis kommt mit vollständigem, nachvollziehbarem Rechenweg sowie einer maßstäblichen CAD-Zeichnung. Export als PNG, SVG, PDF und — als Alleinstellung — direkt verwertbares DXF für die CNC-Maschine. Die Testversion rechnet alle Standardfälle und exportiert frei; die Pro-Version schaltet zusätzlich die Spezial-Eingabefälle frei und trägt ein persönliches Lizenz-Wasserzeichen.",
-          auszeichnet: "Ehrlichkeit und Nachvollziehbarkeit — der Rechenweg wird unabhängig vom eigentlichen Lösungsprozess neu berechnet, damit jede angezeigte Formel sich selbst bestätigt. Die Spezialfälle sind der eigentliche Burggraben, den kaum ein anderes frei verfügbares Tool abdeckt. Dazu kommt der direkte DXF-Export, der die Geometrie ohne Umwege an die Werkstatt-Maschine bringt. Beide Versionen laufen als einzelne, offline funktionierende Datei ohne Cloud-Anbindung und ohne laufende Kosten."
+          title: "DT-ProfiDreieck — Testversion",
+          teaser: "Löst alle Standard-Dreiecke und liefert die CAD-Zeichnung — kostenlos, mit freiem Export.",
+          kann: "Alle gängigen Eingabefälle (SSS, SWS, WSW, SWW, SSW) mit vollständigem, nachvollziehbarem Rechenweg und maßstäblicher CAD-Zeichnung. Export als PNG, SVG, PDF und — als Alleinstellung — direkt verwertbares DXF für die CNC-Maschine, alles frei nutzbar. Die fortgeschrittenen Spezialfälle (Umkreis, Inkreis, Fläche, Höhen) bleiben der Pro-Version vorbehalten.",
+          auszeichnet: "Ein ehrlicher Einstieg ohne Kosten: Die Testversion rechnet alle Standardfälle vollständig durch und exportiert frei — ideal, um Bedienung, Rechenweg und CAD-/DXF-Ausgabe in Ruhe auszuprobieren. Läuft als einzelne, offline funktionierende Datei im Browser, auf Handy, Tablet und PC."
         },
         en: {
-          title: "DT-ProfiDreieck — Professional Triangle Calculator for Workshop & CNC",
-          teaser: "Solves any triangle and delivers the finished CAD drawing — for CNC & workshop.",
-          kann: "All common input cases (SSS, SAS, ASA, AAS, SSA) as well as the advanced special cases with circumcircle, incircle, area or heights — including numerical solutions with a plausibility check (e.g. Euler's inequality R≥2r). Every result comes with a complete, traceable calculation path and a scaled CAD drawing. Export as PNG, SVG, PDF and — as a unique feature — directly usable DXF for the CNC machine. The test version computes all standard cases and exports freely; the Pro version additionally unlocks the special input cases and carries a personal licence watermark.",
-          auszeichnet: "Honesty and traceability — the calculation path is recomputed independently of the actual solving process, so that every formula shown confirms itself. The special cases are the real moat that hardly any other freely available tool covers. On top of that comes the direct DXF export, which brings the geometry to the workshop machine without detours. Both versions run as a single, offline-capable file without cloud connection and without ongoing costs."
+          title: "DT-ProfiDreieck — Test Version",
+          teaser: "Solves all standard triangles and delivers the CAD drawing — free, with unrestricted export.",
+          kann: "All common input cases (SSS, SAS, ASA, AAS, SSA) with a complete, traceable calculation path and a scaled CAD drawing. Export as PNG, SVG, PDF and — as a unique feature — directly usable DXF for the CNC machine, all freely usable. The advanced special cases (circumcircle, incircle, area, heights) are reserved for the Pro version.",
+          auszeichnet: "An honest, cost-free entry point: the test version computes all standard cases in full and exports freely — ideal for calmly trying out the operation, the calculation path and the CAD/DXF output. Runs as a single, offline-capable file in the browser, on phone, tablet and PC."
         },
         pt: {
-          title: "DT-ProfiDreieck — Calculadora Profissional de Triângulos para Oficina e CNC",
-          teaser: "Resolve qualquer triângulo e fornece o desenho CAD pronto — para CNC e oficina.",
-          kann: "Todos os casos de entrada comuns (LLL, LAL, ALA, AAL, LLA) bem como os casos especiais avançados com circunferência circunscrita, circunferência inscrita, área ou alturas — incluindo soluções numéricas com verificação de plausibilidade (por exemplo, a desigualdade de Euler R≥2r). Cada resultado vem com um percurso de cálculo completo e rastreável, bem como um desenho CAD à escala. Exportação em PNG, SVG, PDF e — como característica exclusiva — DXF diretamente utilizável para a máquina CNC. A versão de teste calcula todos os casos padrão e exporta livremente; a versão Pro desbloqueia adicionalmente os casos de entrada especiais e inclui uma marca de água de licença pessoal.",
-          auszeichnet: "Honestidade e rastreabilidade — o percurso de cálculo é recalculado independentemente do processo de resolução em si, para que cada fórmula apresentada se confirme a si própria. Os casos especiais são o verdadeiro fosso que quase nenhuma outra ferramenta gratuita cobre. A isto junta-se a exportação direta em DXF, que leva a geometria à máquina da oficina sem desvios. Ambas as versões funcionam como um ficheiro único, capaz de funcionar offline, sem ligação à nuvem e sem custos recorrentes."
+          title: "DT-ProfiDreieck — Versão de Teste",
+          teaser: "Resolve todos os triângulos padrão e fornece o desenho CAD — gratuito, com exportação livre.",
+          kann: "Todos os casos de entrada comuns (LLL, LAL, ALA, AAL, LLA) com um percurso de cálculo completo e rastreável e um desenho CAD à escala. Exportação em PNG, SVG, PDF e — como característica exclusiva — DXF diretamente utilizável para a máquina CNC, tudo de utilização livre. Os casos especiais avançados (circunferência circunscrita, circunferência inscrita, área, alturas) ficam reservados para a versão Pro.",
+          auszeichnet: "Um ponto de partida honesto e gratuito: a versão de teste calcula todos os casos padrão por completo e exporta livremente — ideal para experimentar com calma a utilização, o percurso de cálculo e a saída CAD/DXF. Funciona como um ficheiro único, capaz de funcionar offline, no navegador, no telemóvel, tablet e PC."
         },
         uk: {
-          title: "DT-ProfiDreieck — Професійний калькулятор трикутників для майстерні та ЧПК",
-          teaser: "Розв’язує будь-який трикутник і видає готове CAD-креслення — для ЧПК і майстерні.",
-          kann: "Усі поширені випадки введення (SSS, SAS, ASA, AAS, SSA) та розширені спеціальні випадки з описаним колом, вписаним колом, площею чи висотами — разом із числовими розв’язками та перевіркою правдоподібності (наприклад, нерівність Ейлера R≥2r). Кожен результат супроводжується повним, простежуваним ходом обчислення та масштабним CAD-кресленням. Експорт у PNG, SVG, PDF і — як унікальна можливість — придатний для прямого використання DXF для верстата ЧПК. Тестова версія обчислює всі стандартні випадки й експортує без обмежень; версія Pro додатково відкриває спеціальні випадки введення та містить персональний ліцензійний водяний знак.",
-          auszeichnet: "Чесність і простежуваність — хід обчислення перераховується незалежно від самого процесу розв’язання, тож кожна показана формула підтверджує сама себе. Спеціальні випадки — це справжній «рів», який майже жоден інший безкоштовний інструмент не покриває. До цього додається прямий експорт DXF, що доставляє геометрію до верстата майстерні без зайвих кроків. Обидві версії працюють як єдиний файл, здатний працювати офлайн, без підключення до хмари та без поточних витрат."
+          title: "DT-ProfiDreieck — Тестова версія",
+          teaser: "Розв’язує всі стандартні трикутники й видає CAD-креслення — безкоштовно, з вільним експортом.",
+          kann: "Усі поширені випадки введення (SSS, SAS, ASA, AAS, SSA) з повним, простежуваним ходом обчислення та масштабним CAD-кресленням. Експорт у PNG, SVG, PDF і — як унікальна можливість — придатний для прямого використання DXF для верстата ЧПК, усе доступне без обмежень. Розширені спеціальні випадки (описане коло, вписане коло, площа, висоти) залишаються для версії Pro.",
+          auszeichnet: "Чесний і безкоштовний початок: тестова версія повністю обчислює всі стандартні випадки й вільно експортує — ідеально, щоб спокійно випробувати керування, хід обчислення та вивід CAD/DXF. Працює як єдиний файл, здатний працювати офлайн, у браузері — на телефоні, планшеті та ПК."
+        }
+      }
+    },
+    {
+      id: "dreieck-pro", family: "dreieck", icon: "triangle", version: "Pro 1.1.0 (Engine 3.0.0)",
+      link: "https://dietertepe.github.io/Ordner1/DT-ProfiDreieck_Pro_1-1-0.html",
+      i18n: {
+        de: {
+          title: "DT-ProfiDreieck — Pro-Version",
+          teaser: "Volle Engine mit Spezialfällen (Umkreis, Inkreis, Fläche, Höhen) — für CNC & Werkstatt.",
+          kann: "Alles aus der Testversion plus die fortgeschrittenen Spezialfälle mit Umkreis, Inkreis, Fläche oder Höhen — inklusive numerischer Lösungen mit Plausibilitätsprüfung (z. B. Euler-Ungleichung R≥2r). Jedes Ergebnis kommt mit vollständigem, nachvollziehbarem Rechenweg und maßstäblicher CAD-Zeichnung; Export als PNG, SVG, PDF und direkt verwertbares DXF. Die Pro-Version trägt ein persönliches Lizenz-Wasserzeichen (Name + Digistore24-Lizenzschlüssel).",
+          auszeichnet: "Ehrlichkeit und Nachvollziehbarkeit — der Rechenweg wird unabhängig vom eigentlichen Lösungsprozess neu berechnet, damit jede angezeigte Formel sich selbst bestätigt. Die Spezialfälle (Umkreis/Inkreis/Fläche/Höhe als Eingabe) sind der eigentliche Burggraben, den kaum ein anderes frei verfügbares Tool abdeckt, ergänzt durch den direkten DXF-Export an die Werkstatt-Maschine. Läuft als einzelne, offline funktionierende Datei ohne Cloud-Anbindung — einmal kaufen, dauerhaft nutzen."
+        },
+        en: {
+          title: "DT-ProfiDreieck — Pro Version",
+          teaser: "Full engine with special cases (circumcircle, incircle, area, heights) — for CNC & workshop.",
+          kann: "Everything from the test version plus the advanced special cases with circumcircle, incircle, area or heights — including numerical solutions with a plausibility check (e.g. Euler's inequality R≥2r). Every result comes with a complete, traceable calculation path and a scaled CAD drawing; export as PNG, SVG, PDF and directly usable DXF. The Pro version carries a personal licence watermark (name + Digistore24 licence key).",
+          auszeichnet: "Honesty and traceability — the calculation path is recomputed independently of the actual solving process, so that every formula shown confirms itself. The special cases (circumcircle/incircle/area/height as input) are the real moat that hardly any other freely available tool covers, complemented by the direct DXF export to the workshop machine. Runs as a single, offline-capable file without cloud connection — buy once, use forever."
+        },
+        pt: {
+          title: "DT-ProfiDreieck — Versão Pro",
+          teaser: "Motor completo com casos especiais (circunscrita, inscrita, área, alturas) — para CNC e oficina.",
+          kann: "Tudo o que a versão de teste oferece, mais os casos especiais avançados com circunferência circunscrita, circunferência inscrita, área ou alturas — incluindo soluções numéricas com verificação de plausibilidade (por exemplo, a desigualdade de Euler R≥2r). Cada resultado vem com um percurso de cálculo completo e rastreável e um desenho CAD à escala; exportação em PNG, SVG, PDF e DXF diretamente utilizável. A versão Pro inclui uma marca de água de licença pessoal (nome + chave de licença Digistore24).",
+          auszeichnet: "Honestidade e rastreabilidade — o percurso de cálculo é recalculado independentemente do processo de resolução em si, para que cada fórmula apresentada se confirme a si própria. Os casos especiais (circunscrita/inscrita/área/altura como entrada) são o verdadeiro fosso que quase nenhuma outra ferramenta gratuita cobre, complementados pela exportação direta em DXF para a máquina da oficina. Funciona como um ficheiro único, capaz de funcionar offline, sem ligação à nuvem — comprar uma vez, usar para sempre."
+        },
+        uk: {
+          title: "DT-ProfiDreieck — Версія Pro",
+          teaser: "Повний рушій зі спеціальними випадками (описане/вписане коло, площа, висоти) — для ЧПК і майстерні.",
+          kann: "Усе з тестової версії плюс розширені спеціальні випадки з описаним колом, вписаним колом, площею чи висотами — разом із числовими розв’язками та перевіркою правдоподібності (наприклад, нерівність Ейлера R≥2r). Кожен результат супроводжується повним, простежуваним ходом обчислення та масштабним CAD-кресленням; експорт у PNG, SVG, PDF і придатний для прямого використання DXF. Версія Pro містить персональний ліцензійний водяний знак (ім’я + ліцензійний ключ Digistore24).",
+          auszeichnet: "Чесність і простежуваність — хід обчислення перераховується незалежно від самого процесу розв’язання, тож кожна показана формула підтверджує сама себе. Спеціальні випадки (описане/вписане коло, площа/висота як вхідні дані) — це справжній «рів», який майже жоден інший безкоштовний інструмент не покриває, доповнений прямим експортом DXF до верстата майстерні. Працює як єдиний файл, здатний працювати офлайн, без підключення до хмари — придбати один раз, користуватися завжди."
+        }
+      }
+    },
+    {
+      id: "schraube-test", family: "schraube", icon: "screw", version: "Test",
+      link: "https://dietertepe.github.io/dt-profischraube-web/DT-ProfiSchraube_Test.html",
+      i18n: {
+        de: {
+          title: "DT-ProfiSchraube — Testversion",
+          teaser: "Schraubenauslegung nach VDI 2230 Blatt 1 — alle Nachweise rechnen, ohne Export.",
+          kann: "Die komplette Schraubenauslegung nach VDI 2230 Blatt 1: von der Klemmkraft bis zur Einschraubtiefe fünf Sicherheits-Nachweise mit Ampel-Bewertung. Jeder Rechenschritt ist dokumentiert — mit Formel, eingesetzten Werten und Normverweis, also vollständig nachvollziehbar. Die Testversion rechnet alles vollständig durch; nur Export sowie Laden und Speichern bleiben der Vollversion vorbehalten.",
+          auszeichnet: "Nachvollziehbarkeit statt Blackbox: Jeder der fünf Nachweise wird mit Formel, Zahlenwerten und Verweis auf die Norm gezeigt und per Ampel (grün/gelb/rot) bewertet. So sieht man nicht nur das Ergebnis, sondern auch den Weg dorthin. Läuft vollständig im Browser, ohne Installation, auf Handy, Tablet und PC."
+        },
+        en: {
+          title: "DT-ProfiSchraube — Test Version",
+          teaser: "Bolt design to VDI 2230 Part 1 — run all verifications, without export.",
+          kann: "The complete bolted-joint design to VDI 2230 Part 1: from clamping force to thread engagement length, five safety verifications with a traffic-light rating. Every calculation step is documented — with formula, inserted values and standard reference, so it is fully traceable. The test version computes everything in full; only export as well as loading and saving are reserved for the full version.",
+          auszeichnet: "Traceability instead of a black box: each of the five verifications is shown with its formula, numerical values and reference to the standard, rated by traffic light (green/amber/red). So you see not just the result but also the path to it. Runs entirely in the browser, without installation, on phone, tablet and PC."
+        },
+        pt: {
+          title: "DT-ProfiSchraube — Versão de Teste",
+          teaser: "Dimensionamento de parafusos segundo a VDI 2230 Parte 1 — calcular todas as verificações, sem exportação.",
+          kann: "O dimensionamento completo de uniões aparafusadas segundo a VDI 2230 Parte 1: da força de aperto até à profundidade de aparafusamento, cinco verificações de segurança com avaliação por semáforo. Cada passo de cálculo está documentado — com fórmula, valores utilizados e referência à norma, portanto totalmente rastreável. A versão de teste calcula tudo por completo; apenas a exportação, bem como o carregamento e o guardar, ficam reservados para a versão completa.",
+          auszeichnet: "Rastreabilidade em vez de caixa negra: cada uma das cinco verificações é apresentada com a sua fórmula, os valores numéricos e a referência à norma, avaliada por semáforo (verde/amarelo/vermelho). Assim, vê-se não só o resultado, mas também o caminho até ele. Funciona inteiramente no navegador, sem instalação, no telemóvel, tablet e PC."
+        },
+        uk: {
+          title: "DT-ProfiSchraube — Тестова версія",
+          teaser: "Розрахунок різьбових з’єднань за VDI 2230 Частина 1 — усі перевірки, без експорту.",
+          kann: "Повний розрахунок різьбового з’єднання за VDI 2230 Частина 1: від сили затиску до глибини загвинчування — п’ять перевірок безпеки з оцінкою «світлофор». Кожен крок обчислення задокументовано — з формулою, підставленими значеннями та посиланням на норму, тож він повністю простежуваний. Тестова версія повністю все обчислює; лише експорт, а також завантаження та збереження зарезервовані для повної версії.",
+          auszeichnet: "Простежуваність замість «чорної скриньки»: кожну з п’яти перевірок показано з формулою, числовими значеннями та посиланням на норму, з оцінкою за принципом світлофора (зелений/жовтий/червоний). Тож видно не лише результат, а й шлях до нього. Працює повністю у браузері, без встановлення — на телефоні, планшеті та ПК."
+        }
+      }
+    },
+    {
+      id: "schraube-voll", family: "schraube", icon: "screw", version: "4.9.5",
+      link: "https://dietertepe.github.io/dt-profischraube-web/DT-ProfiSchraube-4-9-5.html",
+      i18n: {
+        de: {
+          title: "DT-ProfiSchraube — Vollversion",
+          teaser: "Volle Schraubenauslegung nach VDI 2230 Blatt 1 — mit Export, Laden und Speichern.",
+          kann: "Die komplette Schraubenauslegung nach VDI 2230 Blatt 1: von der Klemmkraft bis zur Einschraubtiefe fünf Sicherheits-Nachweise mit Ampel-Bewertung, jeder Rechenschritt dokumentiert mit Formel, eingesetzten Werten und Normverweis. Die Vollversion schaltet zusätzlich den Export sowie das Laden und Speichern von Berechnungen frei, sodass sich Auslegungen sichern und weitergeben lassen.",
+          auszeichnet: "Nachvollziehbarkeit statt Blackbox: Jeder der fünf Nachweise wird mit Formel, Zahlenwerten und Normverweis gezeigt und per Ampel (grün/gelb/rot) bewertet — plus vollständiger Export und das Speichern/Laden eigener Auslegungen. Läuft vollständig im Browser, ohne Installation, auf Handy, Tablet und PC."
+        },
+        en: {
+          title: "DT-ProfiSchraube — Full Version",
+          teaser: "Full bolt design to VDI 2230 Part 1 — with export, loading and saving.",
+          kann: "The complete bolted-joint design to VDI 2230 Part 1: from clamping force to thread engagement length, five safety verifications with a traffic-light rating, every calculation step documented with formula, inserted values and standard reference. The full version additionally unlocks export as well as loading and saving of calculations, so designs can be preserved and shared.",
+          auszeichnet: "Traceability instead of a black box: each of the five verifications is shown with its formula, numerical values and standard reference, rated by traffic light (green/amber/red) — plus full export and the saving/loading of your own designs. Runs entirely in the browser, without installation, on phone, tablet and PC."
+        },
+        pt: {
+          title: "DT-ProfiSchraube — Versão Completa",
+          teaser: "Dimensionamento completo de parafusos segundo a VDI 2230 Parte 1 — com exportação, carregamento e guardar.",
+          kann: "O dimensionamento completo de uniões aparafusadas segundo a VDI 2230 Parte 1: da força de aperto até à profundidade de aparafusamento, cinco verificações de segurança com avaliação por semáforo, cada passo de cálculo documentado com fórmula, valores utilizados e referência à norma. A versão completa desbloqueia adicionalmente a exportação, bem como o carregamento e o guardar de cálculos, para que os dimensionamentos possam ser preservados e partilhados.",
+          auszeichnet: "Rastreabilidade em vez de caixa negra: cada uma das cinco verificações é apresentada com a sua fórmula, os valores numéricos e a referência à norma, avaliada por semáforo (verde/amarelo/vermelho) — além da exportação completa e do guardar/carregar dos próprios dimensionamentos. Funciona inteiramente no navegador, sem instalação, no telemóvel, tablet e PC."
+        },
+        uk: {
+          title: "DT-ProfiSchraube — Повна версія",
+          teaser: "Повний розрахунок різьбових з’єднань за VDI 2230 Частина 1 — з експортом, завантаженням і збереженням.",
+          kann: "Повний розрахунок різьбового з’єднання за VDI 2230 Частина 1: від сили затиску до глибини загвинчування — п’ять перевірок безпеки з оцінкою «світлофор», кожен крок обчислення задокументовано з формулою, підставленими значеннями та посиланням на норму. Повна версія додатково відкриває експорт, а також завантаження та збереження розрахунків, тож проєкти можна зберігати й передавати.",
+          auszeichnet: "Простежуваність замість «чорної скриньки»: кожну з п’яти перевірок показано з формулою, числовими значеннями та посиланням на норму, з оцінкою за принципом світлофора (зелений/жовтий/червоний) — плюс повний експорт і збереження/завантаження власних розрахунків. Працює повністю у браузері, без встановлення — на телефоні, планшеті та ПК."
         }
       }
     },
