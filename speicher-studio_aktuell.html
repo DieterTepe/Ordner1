@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Speicher-Studio · Browser-Konfigurationen verwalten</title>
+<style>
+:root{
+  --bg-1:#1b1e3c;--bg-2:#2a1b4a;--ink:#eef0ff;--ink-dim:#a9aed4;
+  --glass:rgba(255,255,255,.07);--glass-strong:rgba(255,255,255,.12);--line:rgba(255,255,255,.14);
+  --cyan:#4cc9f0;--violet:#9d6bff;--magenta:#f72585;--ok:#3ddc97;--warn:#ffb454;
+  --radius:18px;--radius-s:12px;
+  --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+  --sans:"Segoe UI Variable Text","Segoe UI",-apple-system,"SF Pro Text",Roboto,system-ui,sans-serif;
+  --display:"Segoe UI Variable Display","Avenir Next","Segoe UI",-apple-system,system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);color:var(--ink);background:linear-gradient(160deg,var(--bg-1),var(--bg-2) 65%,#1a2440);min-height:100vh;overflow-x:hidden}
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;filter:blur(70px) saturate(1.2)}
+.blob{position:absolute;border-radius:50%;opacity:.5;mix-blend-mode:screen}
+.blob.b1{width:55vmax;height:55vmax;left:-15vmax;top:-20vmax;background:radial-gradient(circle,#4cc9f0,transparent 65%);animation:d1 26s ease-in-out infinite alternate}
+.blob.b2{width:50vmax;height:50vmax;right:-18vmax;top:10vmax;background:radial-gradient(circle,#7209b7,transparent 65%);animation:d2 32s ease-in-out infinite alternate}
+.blob.b3{width:45vmax;height:45vmax;left:20vmax;bottom:-25vmax;background:radial-gradient(circle,#b5179e,transparent 65%);animation:d3 38s ease-in-out infinite alternate}
+@keyframes d1{to{transform:translate(12vmax,10vmax) scale(1.15)}}
+@keyframes d2{to{transform:translate(-10vmax,14vmax) scale(.9)}}
+@keyframes d3{to{transform:translate(-8vmax,-12vmax) scale(1.1)}}
+.wrap{max-width:900px;margin:0 auto;padding:clamp(16px,4vw,36px) clamp(14px,4vw,28px) 90px}
+header{margin-bottom:24px;animation:rise .6s cubic-bezier(.22,1,.36,1) both}
+.eyebrow{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);font-weight:600;margin-bottom:8px}
+h1{font-family:var(--display);font-size:clamp(1.7rem,5.5vw,2.6rem);font-weight:700;letter-spacing:-.02em;line-height:1.08}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--ink-dim);margin-top:10px;font-size:.95rem;max-width:60ch;line-height:1.55}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:.78rem;color:var(--ink-dim);backdrop-filter:blur(8px)}
+.chip strong{color:var(--ink);font-variant-numeric:tabular-nums}
+.banner{display:none;border-radius:var(--radius-s);padding:12px 16px;font-size:.85rem;line-height:1.5;margin-bottom:16px}
+.banner.show{display:block;animation:rise .5s both}
+.banner.warn{background:rgba(255,180,84,.12);border:1px solid rgba(255,180,84,.4);color:#ffd9a0}
+.banner.info{background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.35);color:#bfe9ff}
+.toolbar{position:sticky;top:10px;z-index:20;background:rgba(30,26,66,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:var(--radius);padding:12px;display:flex;flex-direction:column;gap:10px;margin-bottom:22px;animation:rise .6s .08s cubic-bezier(.22,1,.36,1) both;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{flex:1;min-width:120px;border:1px solid transparent;background:transparent;color:var(--ink-dim);font:inherit;font-size:.8rem;font-weight:600;padding:9px 8px;border-radius:10px;cursor:pointer;transition:all .25s}
+.tab.active{background:var(--glass-strong);color:var(--ink);border-color:var(--line)}
+.tab.accent.active{border-color:rgba(76,201,240,.5);color:#bfe9ff}
+.searchrow{display:flex;gap:8px}
+.search{flex:1;background:var(--glass);border:1px solid var(--line);border-radius:10px;color:var(--ink);font:inherit;font-size:.9rem;padding:10px 14px;outline:none;transition:border-color .2s}
+.search::placeholder{color:var(--ink-dim)}
+.search:focus{border-color:var(--cyan)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:var(--glass);color:var(--ink);font:inherit;font-size:.8rem;font-weight:600;padding:9px 14px;border-radius:10px;cursor:pointer;transition:transform .15s,background .2s,border-color .2s;display:inline-flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;text-decoration:none}
+.btn:hover{background:var(--glass-strong);transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.97)}
+.btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.btn.primary{background:linear-gradient(120deg,rgba(76,201,240,.25),rgba(157,107,255,.25));border-color:rgba(76,201,240,.5)}
+.btn.bridge{background:linear-gradient(120deg,rgba(61,220,151,.22),rgba(76,201,240,.22));border-color:rgba(61,220,151,.5);color:#c9ffe8}
+.btn.danger{color:#ff9ec4;border-color:rgba(247,37,133,.45)}
+.btn.danger:hover{background:rgba(247,37,133,.15)}
+.btn.small{padding:6px 11px;font-size:.74rem;border-radius:8px}
+.group{margin-bottom:22px;animation:rise .5s cubic-bezier(.22,1,.36,1) both}
+.group-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:0 4px;flex-wrap:wrap}
+.group-name{font-family:var(--display);font-weight:700;font-size:1rem;letter-spacing:.01em}
+.group-sub{font-size:.72rem;color:var(--ink-dim);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.group-count{font-size:.72rem;color:var(--ink-dim);background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.group-head .btn{margin-left:auto}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:border-color .25s,box-shadow .25s}
+.card.open{border-color:rgba(76,201,240,.5);box-shadow:0 8px 32px rgba(76,201,240,.1)}
+.card-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:none;border:none;width:100%;text-align:left;color:inherit;font:inherit}
+.card-head:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+.key-icon{width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;font-family:var(--mono);font-size:.85rem;font-weight:700;background:linear-gradient(135deg,rgba(76,201,240,.3),rgba(157,107,255,.3));border:1px solid var(--line)}
+.key-meta{min-width:0;flex:1}
+.key-name{font-family:var(--mono);font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.key-preview{font-size:.74rem;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;font-family:var(--mono)}
+.badge{flex:none;font-size:.66rem;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:6px;border:1px solid var(--line);color:var(--ink-dim)}
+.badge.json{color:var(--cyan);border-color:rgba(76,201,240,.4)}
+.badge.sess{color:var(--warn);border-color:rgba(255,180,84,.4)}
+.chev{flex:none;transition:transform .3s cubic-bezier(.22,1,.36,1);color:var(--ink-dim);font-size:.75rem}
+.card.open .chev{transform:rotate(180deg)}
+.card-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.22,1,.36,1)}
+.card.open .card-body{grid-template-rows:1fr}
+.card-body-inner{overflow:hidden}
+.editor-zone{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
+textarea.editor{width:100%;min-height:150px;max-height:55vh;resize:vertical;background:rgba(10,10,30,.5);border:1px solid var(--line);border-radius:var(--radius-s);color:var(--ink);font-family:var(--mono);font-size:.82rem;line-height:1.55;padding:12px 14px;outline:none;transition:border-color .2s}
+textarea.editor:focus{border-color:var(--violet)}
+.editor-status{display:flex;align-items:center;gap:8px;font-size:.74rem;color:var(--ink-dim);flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ink-dim)}
+.dot.ok{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.dot.bad{background:var(--magenta);box-shadow:0 0 8px var(--magenta)}
+.dot.changed{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.editor-actions{display:flex;flex-wrap:wrap;gap:8px}
+.editor-actions .spacer{flex:1}
+.empty{text-align:center;padding:60px 20px;color:var(--ink-dim);animation:rise .5s both}
+.empty .big{font-size:2.6rem;margin-bottom:14px}
+.empty p{max-width:48ch;margin:0 auto 14px;line-height:1.6;font-size:.92rem}
+.overlay{position:fixed;inset:0;background:rgba(8,8,24,.6);backdrop-filter:blur(6px);display:none;place-items:center;z-index:50;padding:18px}
+.overlay.show{display:grid;animation:fade .25s both}
+.modal{background:linear-gradient(160deg,#252850,#2b2050);border:1px solid var(--line);border-radius:var(--radius);padding:24px;max-width:560px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 24px 80px rgba(0,0,0,.5);animation:pop .35s cubic-bezier(.22,1.3,.36,1) both}
+.modal h2{font-family:var(--display);font-size:1.2rem;margin-bottom:8px}
+.modal p{color:var(--ink-dim);font-size:.88rem;line-height:1.55;margin-bottom:16px;word-break:break-word}
+.modal .field{margin-bottom:14px}
+.modal label{display:block;font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:6px}
+.modal input[type=text],.modal textarea{width:100%;background:rgba(10,10,30,.5);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-family:var(--mono);font-size:.85rem;padding:10px 12px;outline:none}
+.modal input:focus,.modal textarea:focus{border-color:var(--cyan)}
+.modal textarea{min-height:120px;resize:vertical}
+.modal .row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
+.steps{counter-reset:s;list-style:none;margin:0 0 18px}
+.steps li{position:relative;padding:0 0 14px 40px;color:var(--ink);font-size:.9rem;line-height:1.5}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:-2px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.8rem;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#04122a}
+.steps li b{color:var(--cyan)}
+.bm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(10,10,30,.4);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.bm .bmlabel{font-size:.78rem;color:var(--ink-dim);flex-basis:100%}
+.bm .drag{background:linear-gradient(120deg,var(--cyan),var(--violet));color:#04122a;font-weight:700;padding:9px 16px;border-radius:10px;cursor:grab;text-decoration:none;font-size:.85rem;border:0}
+.bm .drag:active{cursor:grabbing}
+.bm .drag{animation:pulse 2.4s ease-in-out infinite;box-shadow:0 0 0 0 rgba(76,201,240,.5)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,201,240,.45)}50%{box-shadow:0 0 0 7px rgba(76,201,240,0)}}
+.bmnote{font-size:.82rem;line-height:1.5;color:#bfe9ff;background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.3);border-radius:12px;padding:11px 13px;margin-bottom:12px}
+.codebox{background:rgba(10,10,30,.5);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 12px;overflow:auto}
+.codebox code{font-family:var(--mono);font-size:.72rem;color:var(--ink-dim);word-break:break-all;white-space:pre-wrap}
+#toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:80;width:min(92vw,420px)}
+.toast{background:rgba(24,22,54,.92);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:12px;padding:12px 16px;font-size:.84rem;backdrop-filter:blur(12px);animation:toastIn .4s cubic-bezier(.22,1.3,.36,1) both;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.toast.err{border-left-color:var(--magenta)}
+.toast.warn{border-left-color:var(--warn)}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px) scale(.95)}}
+footer{margin-top:40px;color:var(--ink-dim);font-size:.76rem;line-height:1.6;text-align:center;animation:rise .6s .2s both}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:scale(.9)}}
+@media (min-width:680px){.toolbar{flex-direction:row;align-items:center;flex-wrap:wrap}.tabs{flex:1 1 100%}.searchrow{flex:1}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Lokaler Browser-Speicher</div>
+    <h1>Speicher-<em>Studio</em></h1>
+    <p class="sub">Konfigurationen anzeigen, als Text bearbeiten, überschreiben und gezielt löschen. Mit der <b>Brücke</b> holen Sie sogar die Daten von Programmen aus anderen Tabs und anderen Websites herein – über Tab- und Browsergrenzen hinweg.</p>
+    <div class="chips">
+      <span class="chip">Browser: <strong id="chipBrowser">–</strong></span>
+      <span class="chip">Ansicht: <strong id="chipView">Dauerhaft</strong></span>
+      <span class="chip">Einträge: <strong id="chipCount">0</strong></span>
+      <span class="chip">Belegt: <strong id="chipSize">0 B</strong></span>
+    </div>
+  </header>
+
+  <div class="banner warn" id="bannerStorage">⚠️ Der Browser-Speicher ist in dieser Umgebung nicht erreichbar (z.&nbsp;B. eingebettete Vorschau). Bitte die Datei herunterladen und direkt im Browser öffnen.</div>
+  <div class="banner info" id="bannerBridge">🔗 <b>Warum sehe ich meine Daten aus dem anderen Tab nicht?</b> Jede Website und jede Datei hat ihren <b>eigenen, abgeschotteten Speicher</b> – ein Browser darf aus Sicherheitsgründen nicht in den Speicher einer anderen Herkunft schauen. Der „Neu einlesen“-Knopf liest daher nur den Speicher <b>dieser</b> Seite. Um Daten aus einem anderen Programm zu holen, nutzen Sie <b>„＋ Programm erfassen“</b> (die Brücke). <button class="btn small" id="dismissBridge" style="margin-top:8px">Verstanden</button></div>
+
+  <div class="toolbar">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="local" role="tab">Dauerhaft</button>
+      <button class="tab" data-tab="session" role="tab">Sitzung</button>
+      <button class="tab accent" data-tab="captured" role="tab">🔗 Erfasste Programme</button>
+    </div>
+    <div class="searchrow"><input class="search" id="search" type="search" placeholder="Suchen nach Name oder Inhalt …" autocomplete="off"></div>
+    <div class="actions">
+      <button class="btn bridge" id="btnBridge">＋ Programm erfassen</button>
+      <button class="btn primary" id="btnNew">＋ Eintrag</button>
+      <button class="btn" id="btnExport">⤓ Sichern</button>
+      <button class="btn" id="btnImport">⤒ Laden</button>
+      <button class="btn" id="btnRefresh" title="Neu einlesen">⟳</button>
+      <button class="btn danger" id="btnWipe">Alles löschen</button>
+    </div>
+  </div>
+
+  <main id="list" aria-live="polite"></main>
+
+  <footer>
+    Ein Browser kann nur den Speicher des eigenen Ursprungs lesen (Same-Origin-Regel). Deshalb sieht diese Seite direkt nur ihre eigenen Daten – für alles andere gibt es die Brücke.<br>
+    Chrome und Edge haben getrennte Speicher: Erfassen Sie ein Programm im einen Browser und schreiben Sie es per Brücke im anderen wieder zurück.
+  </footer>
+</div>
+
+<!-- Brücke -->
+<div class="overlay" id="ovBridge" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h2>🔗 Programm erfassen (Brücke)</h2>
+    <p>Der Browser lässt diese Seite nicht in den Speicher eines anderen Programms sehen. Diese zwei Mini-Werkzeuge (Lesezeichen) laufen dagegen <b>direkt im Tab des Programms</b> und dürfen dort alles lesen und schreiben. Einmal einrichten – für alle Programme nutzbar.</p>
+    <ol class="steps">
+      <li><b>Einrichten:</b> Ziehen Sie die beiden Schaltflächen unten in Ihre <b>Lesezeichen-Leiste</b> (am PC). Auf Handy/Tablet: „Code kopieren“ und als Lesezeichen mit diesem Text speichern.</li>
+      <li><b>Erfassen:</b> Öffnen Sie den Tab Ihres Programms und klicken Sie dort auf <b>„Speicher erfassen“</b>. Die Daten werden kopiert.</li>
+      <li><b>Einfügen:</b> Zurück hier auf <b>„Erfassung einfügen“</b> klicken und mit Strg/Cmd+V einfügen.</li>
+      <li><b>Zurückschreiben (optional):</b> Nach dem Bearbeiten hier „Rückschreib-Daten kopieren“, dann im Programm-Tab auf <b>„Speicher schreiben“</b> und einfügen.</li>
+    </ol>
+    <div class="bmnote">Ein Browser lässt keine Webseite selbst Lesezeichen anlegen (Sicherheitsschutz). Am schnellsten: die Schaltfläche in die Lesezeichen-Leiste <b>ziehen</b>. Geht das nicht (z.&nbsp;B. am Handy), nutzen Sie <b>„Als Lesezeichen einrichten“</b> – der Code wird kopiert und Sie bekommen die Schritte für Ihren Browser.</div>
+    <div class="bm">
+      <span class="bmlabel">① Liest den Speicher eines Programms:</span>
+      <a class="drag" id="bmExport" href="#" title="In die Lesezeichen-Leiste ziehen">⤢ Speicher erfassen</a>
+      <button class="btn small primary" id="addExport">＋ Als Lesezeichen einrichten</button>
+      <button class="btn small" id="copyExport">Nur Code kopieren</button>
+    </div>
+    <div class="bm">
+      <span class="bmlabel">② Schreibt bearbeitete Daten zurück:</span>
+      <a class="drag" id="bmWrite" href="#" title="In die Lesezeichen-Leiste ziehen">⤢ Speicher schreiben</a>
+      <button class="btn small primary" id="addWrite">＋ Als Lesezeichen einrichten</button>
+      <button class="btn small" id="copyWrite">Nur Code kopieren</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="bridgeClose">Schließen</button>
+      <button class="btn primary" id="btnPaste">Erfassung einfügen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lesezeichen-Anleitung -->
+<div class="overlay" id="ovGuide" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h2 id="guideTitle">Als Lesezeichen einrichten</h2>
+    <p id="guideIntro"></p>
+    <ol class="steps" id="guideSteps"></ol>
+    <div class="codebox"><code id="guideName"></code></div>
+    <div class="row">
+      <button class="btn" id="guideCopy">Code erneut kopieren</button>
+      <span style="flex:1"></span>
+      <button class="btn primary" id="guideClose">Fertig</button>
+    </div>
+  </div>
+</div>
+
+<!-- Erfassung einfügen -->
+<div class="overlay" id="ovPaste" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h2>Erfassung einfügen</h2>
+    <p>Fügen Sie hier den Text ein, den „Speicher erfassen“ kopiert hat (Strg/Cmd+V).</p>
+    <div class="field"><textarea id="pasteArea" placeholder='{"typ":"speicher-studio-erfassung", ...}'></textarea></div>
+    <div class="row">
+      <button class="btn" id="pasteFromClip">Aus Zwischenablage</button>
+      <span style="flex:1"></span>
+      <button class="btn" id="pasteCancel">Abbrechen</button>
+      <button class="btn primary" id="pasteSave">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Neuer Eintrag -->
+<div class="overlay" id="ovNew" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h2>Neuer Eintrag</h2>
+    <p>Tipp: Ein Präfix wie <code>meinprogramm:einstellung</code> sorgt für automatische Gruppierung.</p>
+    <div class="field"><label for="newKey">Name (Schlüssel)</label><input type="text" id="newKey" placeholder="z. B. rechner:config"></div>
+    <div class="field"><label for="newVal">Inhalt</label><textarea id="newVal" placeholder='z. B. {"farbe":"blau"}'></textarea></div>
+    <div class="row"><button class="btn" id="newCancel">Abbrechen</button><button class="btn primary" id="newSave">Speichern</button></div>
+  </div>
+</div>
+
+<!-- Bestätigen -->
+<div class="overlay" id="ovConfirm" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h2 id="cfTitle">Löschen bestätigen</h2>
+    <p id="cfText"></p>
+    <div class="row"><button class="btn" id="cfNo">Abbrechen</button><button class="btn danger" id="cfYes">Ja, löschen</button></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+<input type="file" id="fileInput" accept=".json,application/json" hidden>
+
+<script>
+(function(){
+"use strict";
+var CAPKEY="__speicherstudio_captures__";
+
+/* ---- Speicher testen ---- */
+var storageOK=true;
+try{localStorage.setItem("__t__","1");localStorage.removeItem("__t__");}catch(e){storageOK=false;}
+
+var $=function(id){return document.getElementById(id);};
+var list=$("list"),search=$("search");
+var currentTab="local";
+function store(){return currentTab==="session"?sessionStorage:localStorage;}
+
+if(!storageOK)$("bannerStorage").classList.add("show");
+if(storageOK && !localStorage.getItem("__ss_bridge_seen__"))$("bannerBridge").classList.add("show");
+$("dismissBridge").onclick=function(){try{localStorage.setItem("__ss_bridge_seen__","1");}catch(e){}$("bannerBridge").classList.remove("show");};
+
+/* ---- Browser ---- */
+(function(){var ua=navigator.userAgent,b="Browser";
+  if(ua.indexOf("Edg/")>-1)b="Microsoft Edge";
+  else if(ua.indexOf("SamsungBrowser")>-1)b="Samsung Internet";
+  else if(ua.indexOf("OPR/")>-1)b="Opera";
+  else if(ua.indexOf("Firefox/")>-1)b="Firefox";
+  else if(ua.indexOf("Chrome/")>-1)b="Google Chrome";
+  else if(ua.indexOf("Safari/")>-1)b="Safari";
+  $("chipBrowser").textContent=b;})();
+
+/* ---- Helfer ---- */
+function bytes(s){try{return new Blob([s]).size;}catch(e){return (s||"").length;}}
+function fmtBytes(n){if(n<1024)return n+" B";if(n<1048576)return (n/1024).toFixed(1)+" KB";return (n/1048576).toFixed(2)+" MB";}
+function isJSON(v){if(typeof v!=="string")return false;var s=v.trim();if(!s)return false;var c=s.charAt(0);if(!(c==="{"||c==="["||c==='"'||/^-?\d/.test(s)||s==="true"||s==="false"||s==="null"))return false;try{JSON.parse(s);return true;}catch(e){return false;}}
+function tryPretty(v){try{return JSON.stringify(JSON.parse(v),null,2);}catch(e){return v;}}
+function esc(t){return (t||"").replace(/[<>&]/g,function(c){return c==="<"?"&lt;":c===">"?"&gt;":"&amp;";});}
+
+/* Programmname genauer bestimmen */
+function programName(key){
+  var k=String(key);
+  var rd=k.match(/^(?:com|org|net|io|de|app|dev|co)\.([A-Za-z0-9]+)\.([A-Za-z0-9]+)/);
+  if(rd)return rd[2]||rd[1];
+  var m=k.match(/^([A-Za-z0-9]{2,})[:._\/|@-]/);
+  if(m)return m[1];
+  var c=k.match(/^([a-z]{2,})(?=[A-Z])/);
+  if(c)return c[1];
+  return "Allgemein";
+}
+function hostOf(url){try{return new URL(url).host;}catch(e){return url||"unbekannt";}}
+
+function toast(msg,type){var t=document.createElement("div");t.className="toast"+(type?(" "+type):"");t.textContent=msg;$("toasts").appendChild(t);setTimeout(function(){t.style.transition="opacity .4s,transform .4s";t.style.opacity="0";t.style.transform="translateY(10px)";setTimeout(function(){t.remove();},420);},2600);}
+function copyText(txt,okMsg){
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){toast(okMsg||"Kopiert");},function(){fallback();});}
+  else fallback();
+  function fallback(){var t=document.createElement("textarea");t.value=txt;t.style.position="fixed";t.style.left="-9999px";document.body.appendChild(t);t.select();try{document.execCommand("copy");toast(okMsg||"Kopiert");}catch(e){toast("Kopieren nicht möglich","err");}document.body.removeChild(t);}
+}
+
+function confirmDlg(title,text,yes){return new Promise(function(res){$("cfTitle").textContent=title;$("cfText").textContent=text;$("cfYes").textContent=yes||"Ja, löschen";var ov=$("ovConfirm");ov.classList.add("show");function done(v){ov.classList.remove("show");$("cfYes").onclick=$("cfNo").onclick=ov.onclick=null;res(v);}$("cfYes").onclick=function(){done(true);};$("cfNo").onclick=function(){done(false);};ov.onclick=function(e){if(e.target===ov)done(false);};});}
+
+/* ---- Captures ---- */
+function loadCaps(){if(!storageOK)return {};try{var r=localStorage.getItem(CAPKEY);return r?JSON.parse(r):{};}catch(e){return {};}}
+function saveCaps(c){try{localStorage.setItem(CAPKEY,JSON.stringify(c));}catch(e){toast("Speichern der Erfassung fehlgeschlagen","err");}}
+
+/* ---- Daten dieses Ursprungs ---- */
+function readAll(){var out=[];if(!storageOK)return out;var s=store();for(var i=0;i<s.length;i++){var k=s.key(i);if(k==="__ss_bridge_seen__"||k===CAPKEY)continue;out.push({key:k,value:s.getItem(k)});}out.sort(function(a,b){return a.key.localeCompare(b.key,"de");});return out;}
+
+var openKeys={};
+
+/* ---------- RENDER ---------- */
+function render(){
+  $("chipView").textContent=currentTab==="local"?"Dauerhaft":currentTab==="session"?"Sitzung":"Erfasst";
+  document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.getAttribute("data-tab")===currentTab);});
+  if(currentTab==="captured")return renderCaptured();
+  renderLocal();
+}
+
+function renderLocal(){
+  var q=search.value.trim().toLowerCase();
+  var all=readAll();
+  var items=all.filter(function(it){return !q||it.key.toLowerCase().indexOf(q)>-1||(it.value||"").toLowerCase().indexOf(q)>-1;});
+  $("chipCount").textContent=all.length;
+  $("chipSize").textContent=fmtBytes(all.reduce(function(n,it){return n+bytes(it.key)+bytes(it.value);},0));
+  list.innerHTML="";
+  if(items.length===0){return showEmpty(q, storageOK?"Dieser Speicher ist leer. Öffnen Sie zuerst Ihre Programme in diesem Browser – oder erfassen Sie ein Programm aus einem anderen Tab über die Brücke.":"Speicher nicht verfügbar. Datei herunterladen und direkt im Browser öffnen.");}
+  var groups={};items.forEach(function(it){var g=programName(it.key);(groups[g]=groups[g]||[]).push(it);});
+  var names=Object.keys(groups).sort(function(a,b){if(a==="Allgemein")return 1;if(b==="Allgemein")return -1;return a.localeCompare(b,"de");});
+  var gi=0;
+  names.forEach(function(name){
+    var arr=groups[name];
+    var sec=el("section","group");sec.style.animationDelay=(gi++*0.05)+"s";
+    var head=el("div","group-head");
+    head.appendChild(txt("span","group-name",name));
+    head.appendChild(txt("span","group-count",arr.length+(arr.length===1?" Eintrag":" Einträge")));
+    var gd=btn("Gruppe löschen","btn danger small",function(){delGroup(name,arr);});head.appendChild(gd);
+    sec.appendChild(head);
+    arr.forEach(function(it){sec.appendChild(localCard(it));});
+    list.appendChild(sec);
+  });
+}
+async function delGroup(name,arr){var ok=await confirmDlg('Gruppe „'+name+'“ löschen?',"Es werden "+arr.length+" Eintrag/Einträge dauerhaft entfernt.");if(!ok)return;arr.forEach(function(x){store().removeItem(x.key);});toast('Gruppe „'+name+'“ gelöscht');render();}
+
+function localCard(it){
+  var json=isJSON(it.value);
+  var card=el("article","card");if(openKeys[currentTab+"§"+it.key])card.classList.add("open");
+  var head=cardHead(it.key,it.value,json,card);
+  card.appendChild(head);
+  var body=el("div","card-body"),inner=el("div","card-body-inner"),zone=el("div","editor-zone");
+  var ta=document.createElement("textarea");ta.className="editor";ta.spellcheck=false;ta.value=json?tryPretty(it.value):(it.value||"");
+  var status=statusRow(ta,json?tryPretty(it.value):(it.value||""));
+  var acts=el("div","editor-actions");
+  acts.appendChild(btn("💾 Speichern","btn primary small",function(){try{var v=ta.value;store().setItem(it.key,isJSON(v)?JSON.stringify(JSON.parse(v)):v);toast('„'+it.key+'“ gespeichert');render();}catch(e){toast("Fehler: "+e.message,"err");}}));
+  acts.appendChild(btn("{ } Formatieren","btn small",function(){if(isJSON(ta.value)){ta.value=tryPretty(ta.value);ta.dispatchEvent(new Event("input"));}else toast("Kein gültiges JSON","warn");}));
+  acts.appendChild(btn("⧉ Kopieren","btn small",function(){copyText(ta.value,"In Zwischenablage kopiert");}));
+  acts.appendChild(el("span","spacer"));
+  acts.appendChild(btn("🗑 Löschen","btn danger small",async function(){var ok=await confirmDlg("Eintrag löschen?",'„'+it.key+'“ wird dauerhaft entfernt.');if(!ok)return;store().removeItem(it.key);delete openKeys[currentTab+"§"+it.key];toast('„'+it.key+'“ gelöscht');render();}));
+  zone.appendChild(ta);zone.appendChild(status);zone.appendChild(acts);inner.appendChild(zone);body.appendChild(inner);card.appendChild(body);
+  return card;
+}
+
+/* ---- Erfasste Programme ---- */
+function renderCaptured(){
+  var caps=loadCaps();
+  var sources=Object.keys(caps);
+  var q=search.value.trim().toLowerCase();
+  var totalEntries=0,totalSize=0;
+  sources.forEach(function(u){var c=caps[u];["local","session"].forEach(function(kind){var o=c[kind]||{};Object.keys(o).forEach(function(k){totalEntries++;totalSize+=bytes(k)+bytes(o[k]);});});});
+  $("chipCount").textContent=totalEntries;$("chipSize").textContent=fmtBytes(totalSize);
+  list.innerHTML="";
+  if(sources.length===0){
+    var d=el("div","empty");d.innerHTML='<div class="big">🔗</div>';
+    var p=document.createElement("p");p.innerHTML='Noch keine Programme erfasst. Mit der <b>Brücke</b> holen Sie Daten aus anderen Tabs oder von echten Websites herein – auch aus dem jeweils anderen Browser.';
+    var b=btn("＋ Programm erfassen","btn bridge",openBridge);
+    d.appendChild(p);d.appendChild(b);list.appendChild(d);return;
+  }
+  var gi=0;
+  sources.sort(function(a,b){return (caps[a].titel||a).localeCompare(caps[b].titel||b,"de");}).forEach(function(url){
+    var c=caps[url];
+    var entries=[];
+    ["local","session"].forEach(function(kind){var o=c[kind]||{};Object.keys(o).forEach(function(k){entries.push({kind:kind,key:k,value:o[k]});});});
+    var shown=entries.filter(function(e){return !q||e.key.toLowerCase().indexOf(q)>-1||(String(e.value)).toLowerCase().indexOf(q)>-1;});
+    if(q&&shown.length===0)return;
+    var sec=el("section","group");sec.style.animationDelay=(gi++*0.05)+"s";
+    var head=el("div","group-head");
+    head.appendChild(txt("span","group-name",c.titel||hostOf(url)));
+    head.appendChild(txt("span","group-sub",hostOf(url)));
+    head.appendChild(txt("span","group-count",entries.length+" Einträge"));
+    var wrap=el("div","");wrap.style.cssText="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap";
+    wrap.appendChild(btn("↩ Rückschreib-Daten kopieren","btn bridge small",function(){copyWriteback(c);}));
+    wrap.appendChild(btn("Quelle entfernen","btn danger small",async function(){var ok=await confirmDlg("Erfasstes Programm entfernen?",'„'+(c.titel||url)+'“ wird nur aus dieser Ansicht entfernt. Die Daten im Programm selbst bleiben unberührt.',"Ja, entfernen");if(!ok)return;var cc=loadCaps();delete cc[url];saveCaps(cc);toast("Quelle entfernt");render();}));
+    head.appendChild(wrap);
+    sec.appendChild(head);
+    shown.forEach(function(e){sec.appendChild(capturedCard(url,e));});
+    list.appendChild(sec);
+  });
+  if(!list.children.length)showEmpty(q,"");
+}
+
+function capturedCard(url,e){
+  var json=isJSON(e.value);
+  var card=el("article","card");var oid="cap§"+url+"§"+e.kind+"§"+e.key;if(openKeys[oid])card.classList.add("open");
+  var head=cardHead(e.key,e.value,json,card,e.kind);
+  card.appendChild(head);head.setAttribute("data-oid",oid);
+  var body=el("div","card-body"),inner=el("div","card-body-inner"),zone=el("div","editor-zone");
+  var ta=document.createElement("textarea");ta.className="editor";ta.spellcheck=false;ta.value=json?tryPretty(e.value):(e.value||"");
+  var status=statusRow(ta,json?tryPretty(e.value):(e.value||""));
+  var acts=el("div","editor-actions");
+  acts.appendChild(btn("💾 Übernehmen","btn primary small",function(){var v=ta.value;var caps=loadCaps();if(!caps[url])return;caps[url][e.kind][e.key]=isJSON(v)?JSON.stringify(JSON.parse(v)):v;saveCaps(caps);toast("Änderung gespeichert (in der Erfassung)");render();}));
+  acts.appendChild(btn("{ } Formatieren","btn small",function(){if(isJSON(ta.value)){ta.value=tryPretty(ta.value);ta.dispatchEvent(new Event("input"));}else toast("Kein gültiges JSON","warn");}));
+  acts.appendChild(btn("⧉ Kopieren","btn small",function(){copyText(ta.value,"Kopiert");}));
+  acts.appendChild(el("span","spacer"));
+  acts.appendChild(btn("🗑 Löschen","btn danger small",async function(){var ok=await confirmDlg("Eintrag aus Erfassung löschen?",'„'+e.key+'“ wird entfernt. Zum echten Löschen im Programm danach „Rückschreiben“ mit Option „exakt ersetzen“ nutzen.');if(!ok)return;var caps=loadCaps();delete caps[url][e.kind][e.key];saveCaps(caps);delete openKeys[oid];toast("Aus Erfassung gelöscht");render();}));
+  zone.appendChild(ta);zone.appendChild(status);zone.appendChild(acts);inner.appendChild(zone);body.appendChild(inner);card.appendChild(body);
+  return card;
+}
+
+function copyWriteback(c){
+  var payload={typ:"speicher-studio-rueckschreiben",quelle:c.quelle,local:c.local||{},session:c.session||{}};
+  copyText(JSON.stringify(payload),"Rückschreib-Daten kopiert – jetzt im Programm-Tab „Speicher schreiben“ öffnen und einfügen");
+}
+
+/* gemeinsame Bausteine */
+function cardHead(key,value,json,card,kind){
+  var head=document.createElement("button");head.className="card-head";head.setAttribute("aria-expanded",card.classList.contains("open"));
+  var icon=el("div","key-icon");icon.textContent=(String(key).charAt(0)||"?").toUpperCase();
+  var meta=el("div","key-meta");
+  meta.appendChild(txt("div","key-name",key));
+  meta.appendChild(txt("div","key-preview",(String(value)||"").replace(/\s+/g," ").slice(0,120)||"(leer)"));
+  var badge=el("span","badge"+(json?" json":""));badge.textContent=json?"JSON":"TEXT";
+  head.appendChild(icon);head.appendChild(meta);
+  if(kind==="session"){var sb=el("span","badge sess");sb.textContent="SITZ";head.appendChild(sb);}
+  head.appendChild(badge);
+  var sz=el("span","badge");sz.textContent=fmtBytes(bytes(value));head.appendChild(sz);
+  var chev=el("span","chev");chev.textContent="▼";head.appendChild(chev);
+  head.onclick=function(){var id=head.getAttribute("data-oid")||(currentTab+"§"+key);card.classList.toggle("open");head.setAttribute("aria-expanded",card.classList.contains("open"));if(card.classList.contains("open"))openKeys[id]=1;else delete openKeys[id];};
+  if(!kind)head.setAttribute("data-oid",currentTab+"§"+key);
+  return head;
+}
+function statusRow(ta,orig){
+  var status=el("div","editor-status");var dot=el("span","dot ok");var st=txt("span","",""); st.textContent="Unverändert";
+  status.appendChild(dot);status.appendChild(st);
+  function refresh(){var changed=ta.value!==orig;if(isJSON(ta.value)){dot.className="dot "+(changed?"changed":"ok");st.textContent=(changed?"Geändert · ":"")+"Gültiges JSON";}else if(/^\s*[\{\[]/.test(ta.value)){dot.className="dot bad";st.textContent="JSON fehlerhaft – prüfen";}else{dot.className="dot "+(changed?"changed":"ok");st.textContent=changed?"Geändert":"Unverändert";}}
+  ta.addEventListener("input",refresh);return status;
+}
+function showEmpty(q,msg){var d=el("div","empty");d.innerHTML='<div class="big">🗂️</div>';var p=document.createElement("p");p.textContent=q?"Keine Einträge passen zur Suche.":msg;d.appendChild(p);list.appendChild(d);}
+function el(tag,cls){var e=document.createElement(tag);if(cls)e.className=cls;return e;}
+function txt(tag,cls,t){var e=el(tag,cls);e.textContent=t;return e;}
+function btn(label,cls,fn){var b=document.createElement("button");b.className=cls;b.textContent=label;b.onclick=fn;return b;}
+
+/* ---------- Toolbar ---------- */
+document.querySelectorAll(".tab").forEach(function(t){t.onclick=function(){currentTab=t.getAttribute("data-tab");render();};});
+var st;search.addEventListener("input",function(){clearTimeout(st);st=setTimeout(render,150);});
+$("btnRefresh").onclick=function(){render();toast("Neu eingelesen");};
+window.addEventListener("storage",function(){render();});
+
+/* Neuer Eintrag */
+$("btnNew").onclick=function(){if(currentTab==="captured"){toast("Neue Einträge nur im lokalen Speicher","warn");return;}$("newKey").value="";$("newVal").value="";$("ovNew").classList.add("show");setTimeout(function(){$("newKey").focus();},80);};
+$("newCancel").onclick=function(){$("ovNew").classList.remove("show");};
+$("ovNew").onclick=function(e){if(e.target===$("ovNew"))$("ovNew").classList.remove("show");};
+$("newSave").onclick=function(){var k=$("newKey").value.trim();if(!k){toast("Bitte einen Namen angeben","warn");return;}if(store().getItem(k)!==null&&!confirm('„'+k+'“ existiert bereits. Überschreiben?'))return;try{store().setItem(k,$("newVal").value);$("ovNew").classList.remove("show");toast('„'+k+'“ angelegt');render();}catch(e){toast("Fehler: "+e.message,"err");}};
+
+/* Alles löschen */
+$("btnWipe").onclick=async function(){
+  if(currentTab==="captured"){var caps=loadCaps();var n=Object.keys(caps).length;if(!n){toast("Keine Erfassungen vorhanden","warn");return;}var ok=await confirmDlg("Alle Erfassungen löschen?",n+" erfasste Programme werden aus dieser Ansicht entfernt.");if(!ok)return;saveCaps({});toast("Alle Erfassungen gelöscht");render();return;}
+  var cnt=readAll().length;if(cnt===0){toast("Speicher ist bereits leer","warn");return;}var ok2=await confirmDlg("Wirklich ALLES löschen?",cnt+" Einträge werden dauerhaft entfernt. Tipp: vorher „Sichern“.");if(!ok2)return;var s=store(),keep={};if(s.getItem("__ss_bridge_seen__"))keep.a=1;s.clear();if(currentTab==="local"&&keep.a){try{s.setItem("__ss_bridge_seen__","1");}catch(e){}}openKeys={};toast("Alle Einträge gelöscht");render();
+};
+
+/* Export/Import (dieser Ursprung) */
+$("btnExport").onclick=function(){var entries={};readAll().forEach(function(it){entries[it.key]=it.value;});var data={typ:"speicher-studio-export",ursprung:location.origin,speicher:currentTab==="session"?"session":"local",datum:new Date().toISOString(),entries:entries};var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="speicher-sicherung-"+new Date().toISOString().slice(0,10)+".json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},4000);toast("Sicherung heruntergeladen");};
+$("btnImport").onclick=function(){$("fileInput").click();};
+$("fileInput").addEventListener("change",function(e){var f=e.target.files[0];e.target.value="";if(!f)return;var r=new FileReader();r.onload=async function(){try{var data=JSON.parse(r.result);var entries=(data.entries&&typeof data.entries==="object")?data.entries:data;var keys=Object.keys(entries);if(!keys.length){toast("Datei enthält keine Einträge","warn");return;}var ok=await confirmDlg("Sicherung laden?",keys.length+" Einträge werden in den aktuellen Speicher übernommen. Gleichnamige werden überschrieben.","Ja, laden");if(!ok)return;var tgt=currentTab==="session"?sessionStorage:localStorage;keys.forEach(function(k){tgt.setItem(k,typeof entries[k]==="string"?entries[k]:JSON.stringify(entries[k]));});toast(keys.length+" Einträge geladen");render();}catch(err){toast("Datei konnte nicht gelesen werden: "+err.message,"err");}};r.readAsText(f);});
+
+/* ---------- Brücke ---------- */
+var BM_EXPORT='javascript:(function(){try{function g(s){var o={},i,k;for(i=0;i<s.length;i++){k=s.key(i);o[k]=s.getItem(k);}return o;}var d={typ:"speicher-studio-erfassung",quelle:location.href,titel:document.title,datum:new Date().toISOString(),local:g(localStorage),session:g(sessionStorage)};var j=JSON.stringify(d);var t=document.createElement("textarea");t.value=j;t.style.position="fixed";t.style.left="-9999px";document.body.appendChild(t);t.focus();t.select();var ok=false;try{ok=document.execCommand("copy");}catch(e){}document.body.removeChild(t);var nl=Object.keys(d.local).length,ns=Object.keys(d.session).length;if(ok){alert("Kopiert: "+nl+" dauerhafte + "+ns+" Sitzungs-Eintraege. Jetzt im Speicher-Studio: Erfassung einfuegen und Strg+V.");}else{window.prompt("Bitte Text kopieren (Strg+C):",j);}}catch(e){alert("Fehler: "+e.message);}})();';
+var BM_WRITE='javascript:(function(){if(document.getElementById("ssbw"))return;var w=document.createElement("div");w.id="ssbw";w.style.cssText="position:fixed;inset:0;z-index:2147483647;background:rgba(5,5,20,.65);display:flex;align-items:center;justify-content:center;font-family:sans-serif";var h="<div style=\'background:#1e1a42;color:#eef;padding:18px;border-radius:14px;width:min(92vw,470px);box-shadow:0 20px 70px #000\'>";h+="<div style=\'font-weight:700;font-size:15px\'>Speicher-Studio: Daten schreiben</div>";h+="<div style=\'font-size:12px;opacity:.75;margin:6px 0 10px\'>JSON aus dem Studio einfuegen und uebernehmen.</div>";h+="<textarea id=\'sstx\' style=\'width:100%;height:150px;background:#0c0c22;color:#eef;border:1px solid #445;border-radius:8px;padding:8px;font-family:monospace;font-size:12px;box-sizing:border-box\'></textarea>";h+="<label style=\'display:flex;gap:6px;align-items:center;font-size:12px;margin:8px 0\'><input type=\'checkbox\' id=\'ssrep\'>Vorhandene Eintraege zuerst loeschen (exakt ersetzen)</label>";h+="<div style=\'display:flex;gap:8px;justify-content:flex-end\'><button id=\'ssno\' style=\'padding:8px 12px;border-radius:8px;border:1px solid #556;background:#2a2a4a;color:#eef\'>Abbrechen</button><button id=\'ssok\' style=\'padding:8px 12px;border-radius:8px;border:0;background:#4cc9f0;color:#012;font-weight:700\'>Uebernehmen</button></div></div>";w.innerHTML=h;document.body.appendChild(w);document.getElementById("sstx").focus();document.getElementById("ssno").onclick=function(){w.remove();};document.getElementById("ssok").onclick=function(){try{var o=JSON.parse(document.getElementById("sstx").value);var L=o.local||o.entries||{},S=o.session||{},rep=document.getElementById("ssrep").checked,n=0,k;if(rep){localStorage.clear();sessionStorage.clear();}for(k in L){localStorage.setItem(k,typeof L[k]=="string"?L[k]:JSON.stringify(L[k]));n++;}for(k in S){sessionStorage.setItem(k,typeof S[k]=="string"?S[k]:JSON.stringify(S[k]));n++;}alert("Geschrieben: "+n+" Eintraege. Seite wird neu geladen.");location.reload();}catch(e){alert("Fehler: "+e.message);}};})();';
+
+$("bmExport").href=BM_EXPORT;
+$("bmWrite").href=BM_WRITE;
+$("copyExport").onclick=function(){copyText(BM_EXPORT,"Code kopiert – als Lesezeichen speichern");};
+$("copyWrite").onclick=function(){copyText(BM_WRITE,"Code kopiert – als Lesezeichen speichern");};
+
+/* ---- Umgebung erkennen ---- */
+var UA=navigator.userAgent;
+var isMac=/Mac|iPhone|iPad|iPod/.test(navigator.platform||UA);
+var isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(UA)||(('ontouchstart' in window)&&innerWidth<820);
+var isIOS=/iPhone|iPad|iPod/.test(UA);
+var isEdge=UA.indexOf("Edg/")>-1;
+var isFirefox=UA.indexOf("Firefox/")>-1;
+var mod=isMac?"Cmd":"Strg";
+
+/* Versucht (nur alte Browser) das Lesezeichen direkt zu setzen, sonst Anleitung */
+function setupBookmark(name,url){
+  copyText(url,"Code kopiert – bereit zum Einfügen");
+  var done=false;
+  try{ if(window.external&&typeof window.external.AddFavorite==="function"){window.external.AddFavorite(url,name);done=true;} }catch(e){}
+  try{ if(!done&&window.sidebar&&typeof window.sidebar.addPanel==="function"){window.sidebar.addPanel(name,url,"");done=true;} }catch(e){}
+  if(done){toast('„'+name+'“ wurde als Lesezeichen hinzugefügt');return;}
+  openGuide(name,url);
+}
+
+function openGuide(name,url){
+  $("guideTitle").textContent='„'+name+'“ als Lesezeichen';
+  $("guideName").textContent=url;
+  var steps=[];
+  var intro;
+  if(isMobile){
+    intro="Der Code ist bereits kopiert. So legen Sie das Lesezeichen auf dem Handy/Tablet an:";
+    if(isIOS){
+      steps=[
+        "Tippen Sie unten auf <b>Teilen</b> ▵ und dann auf <b>Lesezeichen hinzufügen</b> – irgendeine Seite genügt, Name z.&nbsp;B. „"+name+"“.",
+        "Öffnen Sie <b>Lesezeichen</b> ▾, tippen auf <b>Bearbeiten</b> und dann auf dieses Lesezeichen.",
+        "Löschen Sie die Adresse und fügen Sie den <b>kopierten Code</b> ein (langes Tippen → Einsetzen). Speichern.",
+        "Aufrufen: Lesezeichen antippen, während das Programm im Tab offen ist."
+      ];
+    }else{
+      steps=[
+        "Tippen Sie oben rechts auf <b>⋮</b> und auf den <b>Stern ☆</b> – diese Seite wird als Lesezeichen gespeichert.",
+        "Öffnen Sie <b>⋮ → Lesezeichen</b>, tippen lange auf das eben erstellte und wählen <b>Bearbeiten</b>.",
+        "Ersetzen Sie die Adresse/URL durch den <b>kopierten Code</b> (langes Tippen → Einfügen) und benennen es „"+name+"“. Speichern.",
+        "Aufrufen: Lesezeichen öffnen, während das Programm im Tab läuft."
+      ];
+    }
+  }else{
+    intro="Der Code ist bereits kopiert. Zwei Wege am PC – der erste ist am schnellsten:";
+    steps=[
+      "<b>Ziehen</b> Sie die blaue Schaltfläche „"+name+"“ einfach in Ihre Lesezeichen-Leiste. Fertig.",
+      "<b>Oder manuell:</b> Rechtsklick auf die Lesezeichen-Leiste → <b>"+(isFirefox?"Lesezeichen hinzufügen…":"Seite hinzufügen…")+"</b>. Bei <b>Name</b> „"+name+"“ eintragen, bei <b>"+(isFirefox?"Adresse":"URL")+"</b> den kopierten Code einfügen ("+mod+"+V). Speichern.",
+      "Leiste nicht sichtbar? Mit <b>"+mod+"+Umschalt+B</b> einblenden.",
+      "Aufrufen: im Tab des Programms auf das Lesezeichen klicken."
+    ];
+  }
+  intro+=" &nbsp;<span style='opacity:.75'>Entfernen später: Rechtsklick bzw. langes Tippen auf das Lesezeichen → Löschen.</span>";
+  $("guideIntro").innerHTML=intro;
+  var ol=$("guideSteps");ol.innerHTML="";
+  steps.forEach(function(s){var li=document.createElement("li");li.innerHTML=s;ol.appendChild(li);});
+  $("guideCopy").onclick=function(){copyText(url,"Code erneut kopiert");};
+  $("ovBridge").classList.remove("show");
+  $("ovGuide").classList.add("show");
+}
+$("guideClose").onclick=function(){$("ovGuide").classList.remove("show");};
+$("ovGuide").onclick=function(e){if(e.target===$("ovGuide"))$("ovGuide").classList.remove("show");};
+
+$("addExport").onclick=function(){setupBookmark("Speicher erfassen",BM_EXPORT);};
+$("addWrite").onclick=function(){setupBookmark("Speicher schreiben",BM_WRITE);};
+
+function openBridge(){$("ovBridge").classList.add("show");}
+$("btnBridge").onclick=openBridge;
+$("bridgeClose").onclick=function(){$("ovBridge").classList.remove("show");};
+$("ovBridge").onclick=function(e){if(e.target===$("ovBridge"))$("ovBridge").classList.remove("show");};
+
+/* Erfassung einfügen */
+$("btnPaste").onclick=function(){$("ovBridge").classList.remove("show");openPaste();};
+function openPaste(){$("pasteArea").value="";$("ovPaste").classList.add("show");setTimeout(function(){$("pasteArea").focus();},80);}
+$("pasteCancel").onclick=function(){$("ovPaste").classList.remove("show");};
+$("ovPaste").onclick=function(e){if(e.target===$("ovPaste"))$("ovPaste").classList.remove("show");};
+$("pasteFromClip").onclick=function(){if(navigator.clipboard&&navigator.clipboard.readText){navigator.clipboard.readText().then(function(t){$("pasteArea").value=t;toast("Eingefügt");},function(){toast("Bitte manuell mit Strg/Cmd+V einfügen","warn");});}else toast("Bitte manuell mit Strg/Cmd+V einfügen","warn");};
+$("pasteSave").onclick=function(){
+  var raw=$("pasteArea").value.trim();if(!raw){toast("Nichts eingefügt","warn");return;}
+  var d;try{d=JSON.parse(raw);}catch(e){toast("Kein gültiger Text: "+e.message,"err");return;}
+  var url=d.quelle||("erfassung-"+Date.now());
+  var caps=loadCaps();
+  caps[url]={quelle:url,titel:d.titel||hostOf(url),datum:d.datum||new Date().toISOString(),local:d.local||{},session:d.session||{}};
+  saveCaps(caps);
+  var n=Object.keys(caps[url].local).length+Object.keys(caps[url].session).length;
+  $("ovPaste").classList.remove("show");
+  currentTab="captured";render();
+  toast('„'+(caps[url].titel)+'“ erfasst · '+n+" Einträge");
+};
+
+render();
+})();
+</script>
+</body>
+</html>
