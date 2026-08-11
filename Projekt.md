@@ -11,7 +11,7 @@
 
 ---
 
-## 1. Projekt-Familien — Stand 20.07.2026
+## 1. Projekt-Familien — Stand 11.08.2026
 
 | Projekt | Version | Struktur | Link |
 |---|---|---|---|
@@ -26,10 +26,12 @@
 | DT-ProfiDreieck — Pro-Version | Pro 1.1.0 (Engine 3.0.0) | Einzeldatei | dietertepe.github.io/Ordner1/DT-ProfiDreieck_Pro_1-1-0.html |
 | DT-ProfiSchraube — Testversion | Test | Einzeldatei | dietertepe.github.io/dt-profischraube-web/DT-ProfiSchraube_Test.html |
 | DT-ProfiSchraube — Vollversion | 4.9.5 | Einzeldatei | dietertepe.github.io/dt-profischraube-web/DT-ProfiSchraube-4-9-5.html |
+| DT-ProfiSchweissnaht — Testversion | — | Einzeldatei | dietertepe.github.io/dt-profischweissnaht-web/DT-ProfiSchweissnaht_Testversion.html |
+| DT-ProfiSchweissnaht — Vollversion | — | Einzeldatei | dietertepe.github.io/dt-profischweissnaht-web/DT-ProfiSchweissnaht_Vollversion.html |
 | DT-ProfiPassung — Testversion | — | Einzeldatei | dietertepe.github.io/dt-profipassung-web/DT-ProfiPassung_Testversion.html |
 | DT-ProfiPassung — Vollversion | — | Einzeldatei | dietertepe.github.io/dt-profipassung-web/DT-ProfiPassung_Vollversion.html |
-| Speicher-Studio (Browser-Speicher verwalten) | — | Einzeldatei | dietertepe.github.io/Ordner1/speicher-studio_aktuell.html |
 | Wärmeverlust- & Gebäude-Analyse (Heizungs-Check) | 1.0 | Einzeldatei | dietertepe.github.io/Heizungsanlage/waermeverlust.html |
+| Speicher-Studio (Browser-Speicher verwalten) | — | Einzeldatei | dietertepe.github.io/Ordner1/speicher-studio_aktuell.html |
 
 Volltexte (Was es kann / Was es auszeichnet) zu jedem dieser Tools stehen in
 `info_1.md` — dort bei Bedarf nachschlagen, nicht hier duplizieren.
@@ -57,20 +59,21 @@ Lotto/Skip-Bo/Dreieck/Heizungs-Tool, sondern die zentrale Startseite für alle.
 
 - **Datei:** `uebersicht.html` — eine selbst-enthaltene HTML (Grundregel 1:
   Einzeldatei, läuft auf Handy/Tablet/PC ohne Installation).
-- **Design:** Dunkles Konsolen-/Schaltpult-Design. Acht Akzentfarben nach
+- **Design:** Dunkles Konsolen-/Schaltpult-Design. Neun Akzentfarben nach
   Projektfamilie (Lotto = Gold, EuroJackpot = Türkis, Skip-Bo = Karmesinrot,
   DT-ProfiDreieck = Stahlblau-Grau, DT-ProfiSchraube = Amethyst-Violett,
-  DT-ProfiPassung = Beere/Magenta, Wärmeverlust-Analyse = Ember-Orange,
+  DT-ProfiSchweissnaht = Kupfer/Bernstein, DT-ProfiPassung = Beere/Magenta,
+  Wärmeverlust-Analyse = Ember-Orange,
   Speicher-Studio = Smaragdgrün).
-- **Stand v1.10.0 (fertig):**
-  - Alle 15 Tools als Kacheln in 8 Familien, gruppiert (inkl. Heizungs-Check).
+- **Stand v1.11.0 (fertig):**
+  - Alle 17 Tools als Kacheln in 9 Familien, gruppiert (inkl. Heizungs-Check).
     DT-ProfiDreieck als zwei Kacheln (Test + Pro); Familie DT-ProfiSchraube
-    (Test + Vollversion, VDI 2230 Blatt 1); Familie DT-ProfiPassung
-    (Test + Vollversion, ISO 286 / DIN 7190 / ISO 2768, thematisch bei den
-    DT-Profi-Werkzeugen); Familie Speicher-Studio (Browser-Speicher, ans Ende
-    gestellt).
+    (Test + Vollversion, VDI 2230 Blatt 1); Familie DT-ProfiSchweissnaht
+    (Test + Vollversion, EN 1993-1-8 u. a., direkt nach der Schraube);
+    Familie DT-ProfiPassung (Test + Vollversion, ISO 286 / DIN 7190 /
+    ISO 2768); Familie Speicher-Studio (Browser-Speicher, ans Ende gestellt).
   - **Versions-Chip optional (seit v1.9.0):** Tools ohne Versionsnummer (aktuell
-    Speicher-Studio sowie DT-ProfiPassung Test/Voll) zeigen weder auf der Kachel
+    Speicher-Studio, DT-ProfiPassung und DT-ProfiSchweissnaht) zeigen weder auf der Kachel
     noch im Overlay einen Chip.
     Sobald eine echte Nummer vorliegt, einfach ins `version`-Feld eintragen.
   - Familien-Filter-Schalter oben (Kippschalter-Optik, LED-Puls)
@@ -125,21 +128,47 @@ Lotto/Skip-Bo/Dreieck/Heizungs-Tool, sondern die zentrale Startseite für alle.
 
 ## 3. Notizen / offene Fragen
 
-- **Speicher-Studio hat noch keine Versionsnummer** (Dateiname endet auf
-  `_aktuell`). Läuft daher ohne Versions-Chip. Sobald Dieter eine Nummer
-  nennt, ins `version`-Feld des Tools eintragen — der Chip erscheint dann
-  automatisch wieder.
-- **DT-ProfiPassung (Test + Voll) hat noch keine öffentliche Versionsnummer** —
-  wird laut Werbe-Grundlage (Werbung.md) erst kurz vor Verkauf festgelegt.
-  Läuft daher ebenfalls ohne Versions-Chip; Nummer bei Bedarf nachtragen.
-- **Offen fürs nächste .md-Update:** GitHub-Namensschema dokumentieren — Dieter
-  benennt die jeweils neueste Datei beim Hochladen auf einen stabilen Namen um
-  (z. B. `speicher-studio_aktuell.html`, `uebersicht.html`), damit Verknüpfungen
-  nicht brechen; lokal verwaltet er sie versioniert unter dem richtigen Namen.
-  Das Umbenennen macht er selbst.
+### Namensschema lokal ↔ GitHub (feste Regel)
+
+Zwei Namen für dieselbe Datei, bewusst getrennt:
+
+| | Name | Zweck |
+|---|---|---|
+| **Lokal / Auslieferung** | versioniert, z. B. `uebersicht_1-11-0.html` | Verwaltung und Sicherung; die Versionsnummer ist am Dateinamen ablesbar |
+| **Auf GitHub** | stabil, z. B. `uebersicht.html`, `speicher-studio_aktuell.html` | Der Link bleibt konstant, damit bestehende Verknüpfungen nicht brechen |
+
+- Das **Umbenennen macht Dieter selbst** beim Hochladen — Claude liefert immer
+  unter dem versionierten Namen aus und benennt nichts um.
+- Aktuell gilt: ausgeliefertes `uebersicht_1-11-0.html` = `uebersicht.html`
+  auf GitHub; die jeweils neueste Speicher-Studio-Datei liegt dort als
+  `speicher-studio_aktuell.html`.
+- In `info_1.md` und in der Übersichtsseite stehen daher immer die **stabilen
+  GitHub-Namen** als Link, nicht die lokalen Versionsnamen.
+
+### Tools ohne öffentliche Versionsnummer
+
+Zeigen weder auf der Kachel noch im Overlay einen Versions-Chip (seit v1.9.0
+ist der Chip optional). Sobald eine Nummer feststeht, einfach ins `version`-Feld
+des Tools eintragen — der Chip erscheint dann automatisch wieder.
+
+- **Speicher-Studio** — Dateiname endet auf `_aktuell`; lokal als v1.9.0 geführt.
+- **DT-ProfiPassung (Test + Voll)** — wird laut Werbe-Grundlage erst kurz vor
+  Verkauf festgelegt.
+- **DT-ProfiSchweissnaht (Test + Voll)** — interner Programmstand N12 / Plan 2.70;
+  öffentliche Nummer noch offen.
+
+### Weitere Notizen
+
 - Reihenfolge der Familien auf der Übersichtsseite aktuell: Lotto →
   EuroJackpot → Skip-Bo → DT-ProfiDreieck → DT-ProfiSchraube →
-  DT-ProfiPassung → Wärmeverlust-Analyse → Speicher-Studio. Bislang keine
-  Rückmeldung, dass das geändert werden soll.
+  DT-ProfiSchweissnaht → DT-ProfiPassung → Wärmeverlust-Analyse →
+  Speicher-Studio. Bislang keine Rückmeldung, dass das geändert werden soll.
+- **Werbe-Grundlage DT-ProfiSchweissnaht (Werbung.md, Stand 07.08.2026):** Die
+  Kacheltexte halten sich an die dortige Verbotsliste. Nicht beworben werden
+  Ermüdungsnachweis und Verzug/Schrumpfung (folgen als kostenpflichtiges Update);
+  nicht verwendet werden normkonform, normgerecht, geprüft, zertifiziert,
+  zugelassen, „ersetzt den Statiker", „vollständiger Nachweis" (er ist vollständig
+  für die Naht, nicht für das Bauteil) und „kostenloses Update". Bei künftigen
+  Textänderungen erneut dagegen prüfen.
 - Keine bekannten offenen Bugs in den Einzeltools selbst (Stand dieser Notiz);
   diese Datei verfolgt nur die Übersichtsseite als aktuell aktives Projekt.

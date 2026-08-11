@@ -1,14 +1,23 @@
-# info.md — Beschreibungstexte für die Programm-Übersichtsseite
+# info_1.md — Beschreibungstexte für die Programm-Übersichtsseite
 
-> Vorlagen-Texte zum Einbinden neben den GitHub-Links. Für jedes der Programme
-> ein eigener Block (aktuelle Version · was es kann · was es auszeichnet · Link).
+> Vorlagen-Texte zum Einbinden neben den GitHub-Links. Für jedes Programm ein
+> eigener Block (aktuelle Version · was es kann · was es auszeichnet · Link).
 > Die Blöcke sind durch Trennlinien und mehrere Leerzeilen voneinander abgesetzt,
 > damit sie sich einzeln herauskopieren lassen — der Link steht dabei immer
 > als eigene Zeile unterhalb des Beschreibungstextes, nicht im Fließtext.
 > Formulierungen bewusst gut lesbar und ehrlich gehalten: Die Analyse-Tools
 > werten aus und unterstützen die Spielauswahl — sie sagen keine Ziehung voraus.
-
-
+>
+> **Stand: 11.08.2026 · passend zu Übersichtsseite v1.11.0 (17 Tools, 9 Familien)**
+>
+> **Reihenfolge der Blöcke = Reihenfolge der Familien auf der Übersichtsseite:**
+> Lotto → EuroJackpot → Skip-Bo → DT-ProfiDreieck → DT-ProfiSchraube →
+> DT-ProfiSchweissnaht → DT-ProfiPassung → Wärmeverlust-Analyse → Speicher-Studio.
+>
+> **Hinweis zu den Links:** Angegeben ist jeweils der *stabile GitHub-Name*, unter
+> dem die Datei dort liegt (z. B. `speicher-studio_aktuell.html`). Dieter verwaltet
+> die Dateien lokal versioniert unter dem richtigen Namen und benennt sie beim
+> Hochladen selbst auf den stabilen Namen um, damit Verknüpfungen nicht brechen.
 
 ═══════════════════════════════════════════════════════════════════════
 
@@ -212,56 +221,6 @@ vollständig im Browser, ohne Installation oder Cloud-Anbindung.
 
 ═══════════════════════════════════════════════════════════════════════
 
-## Wärmeverlust- & Gebäude-Analyse — Heizungs-Check fürs eigene Zuhause
-**Aktuelle Version: 1.0**
-
-Ein persönliches Analyse-Werkzeug, das anhand realer Temperatur- und Durchflussmessungen
-zeigt, wie gut ein Haus gedämmt ist und wie effizient die Heizungsanlage arbeitet. Anders
-als die übrigen Tools dieser Übersicht ist es kein eigenständig veröffentlichtes Projekt,
-sondern für eine konkrete eigene Heizungsanlage gebaut — mit mehreren Heizkreisen
-(Fußbodenheizung, Heizkörper, Warmwasser-Puffer) und einem manuell bedienten Mischer.
-
-**Was es kann:** Aus einer Messreihe berechnet die Konsole den UA-Wert
-(Wärmeverlust-Koeffizient) des Gebäudes und ordnet das Ergebnis einer
-Energieeffizienzklasse (A+ bis H) zu. Dazu kommen Normheizlast und eine Jahresprognose
-über die Heizgradtage-Methode, abgestimmt auf elf deutsche Klimaregionen oder eine frei
-definierbare. Nutzungsprofile für Lüftungsverhalten und Sonneneinstrahlung fließen als
-Korrekturfaktoren mit ein. Ein Szenario-Rechner („Was wäre, wenn?") zeigt für jede
-gewünschte Innen-/Außentemperatur die nötige Vorlauftemperatur, die passende
-Mischer-Stellung, den Durchfluss und die zu erwartenden Tageskosten — ergänzt durch eine
-vollständige Heizkurven-Tabelle von −15 °C bis +15 °C mit Vorlauf, Rücklauf, Spreizung,
-Durchfluss, Mischer-Stufe und Kosten pro Tag. Bei mehreren Messpunkten mit
-unterschiedlichen Mischerstellungen kalibriert sich die Mischer-Skala automatisch und
-zunehmend genauer, inklusive Plausibilitäts-Hinweis bei stark abweichenden Werten.
-Optional lässt sich zusätzlich der Leitungsverlust zwischen Kessel und
-Heizkreis-Verteiler berechnen, sobald Kessel-Temperaturen vorliegen.
-
-**So wird es genutzt:**
-1. Messwerte eintragen — Außentemperatur, Innentemperatur, Vor- und Rücklauf am
-   Verteiler sowie der Durchfluss; optional ergänzt um Kessel-Vor-/Rücklauf und die
-   aktuelle Mischer-Stufe
-2. Auf „Messreihe & Gebäude auswerten" klicken — die Konsole berechnet daraus UA-Wert,
-   Effizienzklasse und Jahresprognose
-3. Im Szenario-Rechner eine Wunsch-Innentemperatur und eine Außentemperatur eingeben,
-   um die passende Mischereinstellung und die Tageskosten für genau diese Situation zu
-   sehen
-4. Die Heizkurven-Tabelle durchsehen, um die optimale Mischerstellung für verschiedene
-   Außentemperaturen abzulesen
-5. Bei wiederholten Messungen mit unterschiedlichen Mischerstellungen wird die
-   Mischer-Skala mit jedem weiteren Messpunkt präziser
-
-**Was es auszeichnet:** Die Mischer-Kalibrierung lernt direkt aus der eigenen Anlage
-statt aus theoretischen Annahmen — je mehr Messpunkte mit unterschiedlicher
-Mischerstellung vorliegen, desto genauer wird die Empfehlung. Komma oder Punkt als
-Dezimaltrennzeichen, alle Eingaben werden automatisch lokal im Browser gespeichert,
-keine Cloud-Anbindung, keine Installation nötig.
-
-**Link:** https://dietertepe.github.io/Heizungsanlage/waermeverlust.html
-
-
-
-═══════════════════════════════════════════════════════════════════════
-
 ## DT-ProfiDreieck — Profi-Dreiecksrechner für Werkstatt & CNC
 **Aktuelle Version: Test 1.1.0 & Pro 1.1.0 (Engine 3.0.0)**
 
@@ -336,33 +295,69 @@ Tablet und PC.
 
 
 ═══════════════════════════════════════════════════════════════════════
+## DT-ProfiSchweissnaht — Schweißnahtberechnung mit vollem Rechenweg
+**Aktuelle Version: Testversion & Vollversion (öffentliche Nummer noch offen;
+interner Programmstand N12 / Plan 2.70, Stand der Werbe-Grundlage 07.08.2026)**
 
-## Speicher-Studio — Browser-Speicher einsehen und verwalten
-**Aktuelle Version: (noch keine Nummer vergeben — Dateiname „…_aktuell")**
+> Auf der Übersichtsseite als eigene Familie mit zwei Kacheln, direkt nach
+> DT-ProfiSchraube: **Testversion** (rechnet alles vollständig, gesperrt sind nur
+> die Ausgaben) und **Vollversion** (mit Drucken/PDF, Word und eigenem
+> Speicherformat). Vertrieb und Updates über Digistore24. Das Programm selbst ist
+> dreisprachig (DE/EN/PT).
 
-Ein Werkzeug, das den lokalen Browser-Speicher sichtbar und bearbeitbar macht.
-Speicher-Studio ist eine einzelne HTML-Datei, die komplett offline auf PC, Handy
-und Tablet läuft. Sie zeigt die Konfigurationen, die Web-Programme lokal im
-Browser ablegen (localStorage und sessionStorage), macht sie als Text lesbar und
-lässt sie bearbeiten, überschreiben und gezielt löschen — einzeln, gruppenweise
-oder komplett.
+Rechnet Schweißnähte im Stahlbau nach EN 1993-1-8 und im klassischen Maschinenbau
+— und zeigt dabei jeden einzelnen Schritt: vom Nahtbild über Schwerpunkt,
+Flächenmomente und Hauptachsen bis zur Vergleichsspannung am maßgebenden Punkt.
+Kein Nachweis ohne Rechenweg, keine Zahl ohne Quelle. Läuft im Browser, ohne
+Installation, ohne Internet und ohne dass eine Eingabe das Gerät verlässt.
 
-**Was es kann:** Macht sichtbar, was Web-Programme im Browser ablegen
-(localStorage und sessionStorage): alle Einträge übersichtlich, automatisch nach
-Programm gruppiert, mit Suche und JSON-Formatierung samt Gültigkeitsprüfung.
-Einträge lassen sich bearbeiten, neu anlegen, überschreiben und gezielt löschen —
-einzeln, gruppenweise oder komplett, jeweils mit Sicherheitsabfrage. Ganze
-Konfigurationen können als JSON-Datei gesichert und wieder geladen werden, um sie
-zu übertragen — etwa zwischen Chrome und Edge, die getrennte Speicher haben.
+**Was es kann:** Bemessung nach EN 1993-1-8 (richtungsbezogenes und vereinfachtes
+Verfahren), nichtrostende Stähle nach EN 1993-1-4, Aluminium nach EN 1999-1-1 und
+klassischer Maschinenbau nach Roloff/Matek und Decker — getrennt gehalten, nie
+vermischt. Zwei Rechenrichtungen: Nachweis (a-Maß gegeben, Ausnutzung gesucht)
+und Auslegung (erforderliches a-Maß gesucht). Kehl- und Stumpfnaht, umlaufend
+oder abschnittsweise, an Profilen von Blech und Flachstahl über Winkel, U und I
+bis Rohr und Rechteckrohr; ausgewählt wird, welche Kanten wirklich geschweißt
+sind, samt Endkraterabzug, Mindest- und Höchst-a-Maß und wirksamer Nahtlänge.
+Lasten N, Q_y, Q_z, M_y, M_z und T, direkt oder aus Kraft und Hebelarm; Beiwerte
+(γ_M2, β_w, Sicherheitsbeiwert, Nahtgütefaktor) je Tabellenwert überschreibbar mit
+sichtbarer Kennzeichnung. Dazu Wärmeführung und Vorwärmung nach EN 1011-2
+(Methode B) als eigene Rechnung — CET, CEV, Pcm, kombinierte Dicke,
+Wärmeeinbringen, Mindest-Vorwärmtemperatur und Abkühlzeit t8/5 mit Zielfenster —
+sowie Kosten, Zeit und Drahtbedarf und Zeichnungssymbole nach EN ISO 2553.
 
-**Was es auszeichnet:** Das Besondere ist die „Brücke": zwei Lesezeichen-
-Werkzeuge (Bookmarklets), mit denen sich Daten aus anderen Tabs oder echten
-Websites erfassen und nach dem Bearbeiten wieder zurückschreiben lassen — über
-Tab-, Website- und Browsergrenzen hinweg. So wird aus einem reinen Betrachter ein
-Werkzeug, das Konfigurationen dorthin bringt, wo man sie braucht. Läuft als
-einzelne, offline funktionierende Datei auf PC, Handy und Tablet.
+**Was es auszeichnet:** Gerechnet wird mit dem echten Nahtbild statt mit einer
+angesetzten Nahtlänge: aus Profil und geschweißten Kanten entstehen Segmente,
+Schwerpunkt, Flächenmomente I_y, I_z und I_yz, polares Flächenmoment,
+Hauptachsen und Widerstandsmomente, daraus wird der maßgebende Punkt gesucht;
+unsymmetrische Nahtbilder werden mit allgemeiner schiefer Biegung gerechnet, nicht
+genähert. Über dreißig Rechenschritte nennen Formel, eingesetzte Zahlen, Ergebnis
+und Quelle — Norm, Fachbuch oder ausdrücklich ein Praxisrichtwert ohne normative
+Regelung. Neunzehn Rechenproben laufen bei jeder Berechnung mit (etwa: sind die
+statischen Momente um den Schwerpunkt null, ergibt I_p wirklich I_y + I_z); ein
+fehlendes Häkchen bedeutet einen Rechenfehler im Programm und wird getrennt von
+einem nicht erfüllten Nachweis ausgewiesen. Jede Ausgabe trägt zudem eine Liste
+von dreizehn Punkten, die das Programm bewusst nicht prüft — nicht im
+Kleingedruckten, sondern im Nachweis selbst.
 
-**Link:** https://dietertepe.github.io/Ordner1/speicher-studio_aktuell.html
+**Unterschied Test / Vollversion:** Die Testversion rechnet alles vollständig, mit
+dem kompletten Rechenweg am Bildschirm; gesperrt sind ausschließlich die Ausgaben
+— Speichern, Öffnen, Drucken und Word. Die Vollversion schaltet diese frei:
+Drucken und PDF mit vollständigem Rechenweg, Nahtbild und Lückenliste, Word (.rtf)
+mit eingebettetem Nahtbild sowie ein eigenes Dateiformat (.dts) zum Speichern und
+Weiterarbeiten — es sichert die Eingaben und nicht die Ergebnisse, damit darin
+keine Zahl veralten kann.
+
+**Ehrliche Einordnung (Vorgabe aus Werbung.md):** Das Programm ersetzt nicht den
+Fachingenieur. Die fachliche Verantwortung für Lastannahmen, Werkstoffwahl,
+Ausführung und Abnahme bleibt beim Anwender; jedes Ergebnis ist gegen die
+Originalnormen und die eigene Abnahme zu prüfen. Der Nachweis ist vollständig für
+die Naht, nicht für das Bauteil. **Nicht bewerben:** Ermüdungsnachweis und
+Verzug/Schrumpfung (folgen in einem späteren, kostenpflichtigen Update) sowie die
+Wörter normkonform, normgerecht, geprüft, zertifiziert oder zugelassen.
+
+**Link (Testversion):** https://dietertepe.github.io/dt-profischweissnaht-web/DT-ProfiSchweissnaht_Testversion.html
+**Link (Vollversion):** https://dietertepe.github.io/dt-profischweissnaht-web/DT-ProfiSchweissnaht_Vollversion.html
 
 
 ═══════════════════════════════════════════════════════════════════════
@@ -406,3 +401,84 @@ DIN 7190-1, ISO 2768-1), Ergebnisse mit Rechenweg belegt.
 
 **Link (Testversion):** https://dietertepe.github.io/dt-profipassung-web/DT-ProfiPassung_Testversion.html
 **Link (Vollversion):** https://dietertepe.github.io/dt-profipassung-web/DT-ProfiPassung_Vollversion.html
+═══════════════════════════════════════════════════════════════════════
+
+## Wärmeverlust- & Gebäude-Analyse — Heizungs-Check fürs eigene Zuhause
+**Aktuelle Version: 1.0**
+
+Ein persönliches Analyse-Werkzeug, das anhand realer Temperatur- und Durchflussmessungen
+zeigt, wie gut ein Haus gedämmt ist und wie effizient die Heizungsanlage arbeitet. Anders
+als die übrigen Tools dieser Übersicht ist es kein eigenständig veröffentlichtes Projekt,
+sondern für eine konkrete eigene Heizungsanlage gebaut — mit mehreren Heizkreisen
+(Fußbodenheizung, Heizkörper, Warmwasser-Puffer) und einem manuell bedienten Mischer.
+
+**Was es kann:** Aus einer Messreihe berechnet die Konsole den UA-Wert
+(Wärmeverlust-Koeffizient) des Gebäudes und ordnet das Ergebnis einer
+Energieeffizienzklasse (A+ bis H) zu. Dazu kommen Normheizlast und eine Jahresprognose
+über die Heizgradtage-Methode, abgestimmt auf elf deutsche Klimaregionen oder eine frei
+definierbare. Nutzungsprofile für Lüftungsverhalten und Sonneneinstrahlung fließen als
+Korrekturfaktoren mit ein. Ein Szenario-Rechner („Was wäre, wenn?") zeigt für jede
+gewünschte Innen-/Außentemperatur die nötige Vorlauftemperatur, die passende
+Mischer-Stellung, den Durchfluss und die zu erwartenden Tageskosten — ergänzt durch eine
+vollständige Heizkurven-Tabelle von −15 °C bis +15 °C mit Vorlauf, Rücklauf, Spreizung,
+Durchfluss, Mischer-Stufe und Kosten pro Tag. Bei mehreren Messpunkten mit
+unterschiedlichen Mischerstellungen kalibriert sich die Mischer-Skala automatisch und
+zunehmend genauer, inklusive Plausibilitäts-Hinweis bei stark abweichenden Werten.
+Optional lässt sich zusätzlich der Leitungsverlust zwischen Kessel und
+Heizkreis-Verteiler berechnen, sobald Kessel-Temperaturen vorliegen.
+
+**So wird es genutzt:**
+1. Messwerte eintragen — Außentemperatur, Innentemperatur, Vor- und Rücklauf am
+   Verteiler sowie der Durchfluss; optional ergänzt um Kessel-Vor-/Rücklauf und die
+   aktuelle Mischer-Stufe
+2. Auf „Messreihe & Gebäude auswerten" klicken — die Konsole berechnet daraus UA-Wert,
+   Effizienzklasse und Jahresprognose
+3. Im Szenario-Rechner eine Wunsch-Innentemperatur und eine Außentemperatur eingeben,
+   um die passende Mischereinstellung und die Tageskosten für genau diese Situation zu
+   sehen
+4. Die Heizkurven-Tabelle durchsehen, um die optimale Mischerstellung für verschiedene
+   Außentemperaturen abzulesen
+5. Bei wiederholten Messungen mit unterschiedlichen Mischerstellungen wird die
+   Mischer-Skala mit jedem weiteren Messpunkt präziser
+
+**Was es auszeichnet:** Die Mischer-Kalibrierung lernt direkt aus der eigenen Anlage
+statt aus theoretischen Annahmen — je mehr Messpunkte mit unterschiedlicher
+Mischerstellung vorliegen, desto genauer wird die Empfehlung. Komma oder Punkt als
+Dezimaltrennzeichen, alle Eingaben werden automatisch lokal im Browser gespeichert,
+keine Cloud-Anbindung, keine Installation nötig.
+
+**Link:** https://dietertepe.github.io/Heizungsanlage/waermeverlust.html
+
+
+
+═══════════════════════════════════════════════════════════════════════
+
+## Speicher-Studio — Browser-Speicher einsehen und verwalten
+**Aktuelle Version: (noch keine Nummer vergeben — Dateiname „…_aktuell")**
+
+Ein Werkzeug, das den lokalen Browser-Speicher sichtbar und bearbeitbar macht.
+Speicher-Studio ist eine einzelne HTML-Datei, die komplett offline auf PC, Handy
+und Tablet läuft. Sie zeigt die Konfigurationen, die Web-Programme lokal im
+Browser ablegen (localStorage und sessionStorage), macht sie als Text lesbar und
+lässt sie bearbeiten, überschreiben und gezielt löschen — einzeln, gruppenweise
+oder komplett.
+
+**Was es kann:** Macht sichtbar, was Web-Programme im Browser ablegen
+(localStorage und sessionStorage): alle Einträge übersichtlich, automatisch nach
+Programm gruppiert, mit Suche und JSON-Formatierung samt Gültigkeitsprüfung.
+Einträge lassen sich bearbeiten, neu anlegen, überschreiben und gezielt löschen —
+einzeln, gruppenweise oder komplett, jeweils mit Sicherheitsabfrage. Ganze
+Konfigurationen können als JSON-Datei gesichert und wieder geladen werden, um sie
+zu übertragen — etwa zwischen Chrome und Edge, die getrennte Speicher haben.
+
+**Was es auszeichnet:** Das Besondere ist die „Brücke": zwei Lesezeichen-
+Werkzeuge (Bookmarklets), mit denen sich Daten aus anderen Tabs oder echten
+Websites erfassen und nach dem Bearbeiten wieder zurückschreiben lassen — über
+Tab-, Website- und Browsergrenzen hinweg. So wird aus einem reinen Betrachter ein
+Werkzeug, das Konfigurationen dorthin bringt, wo man sie braucht. Läuft als
+einzelne, offline funktionierende Datei auf PC, Handy und Tablet.
+
+**Link:** https://dietertepe.github.io/Ordner1/speicher-studio_aktuell.html
+
+
+═══════════════════════════════════════════════════════════════════════
