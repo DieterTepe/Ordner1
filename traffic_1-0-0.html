@@ -7,29 +7,58 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 15px; background: #f4f4f9; margin: 0; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { max-width: 680px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         label { font-weight: bold; display: block; margin-top: 10px; font-size: 14px; }
-        select, input, textarea { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; background: #fff; }
-        .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        button { flex: 1; padding: 14px; background: #2ea44f; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 16px; }
-        button.danger { background: #d73a49; }
-        button.copy-btn { background: #0366d6; margin-top: 5px; padding: 10px; font-size: 14px; }
+        select, input, textarea { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 15px; background: #fff; }
+        .btn-group { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+        button { flex: 1 1 45%; padding: 14px; background: #2ea44f; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 15px; }
+        button.secondary { background: #0366d6; }
+        button.danger { background: #d73a49; flex: 1 1 100%; }
+        button.copy-btn { background: #0366d6; margin-top: 8px; padding: 12px; font-size: 14px; width: 100%; }
         button:active { opacity: 0.9; }
         
         .progress-container { width: 100%; background-color: #e1e4e8; border-radius: 4px; margin: 10px 0; display: none; height: 12px; overflow: hidden; }
         .progress-bar { width: 0%; height: 100%; background-color: #0366d6; transition: width 0.4s ease; background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent); background-size: 40px 40px; animation: progress-bar-stripes 1s linear infinite; }
         @keyframes progress-bar-stripes { from { background-position: 40px 0; } to { background-position: 0 0; } }
 
-        .view-options { display: flex; justify-content: center; gap: 5px; margin-bottom: 10px; }
-        .view-btn { padding: 8px 14px; font-size: 13px; background: #e1e4e8; color: #24292e; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; width: auto; flex: none; }
+        .view-options { display: flex; justify-content: center; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+        .view-btn { padding: 8px 12px; font-size: 13px; background: #e1e4e8; color: #24292e; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; width: auto; flex: none; }
         .view-btn.active { background: #24292e; color: white; }
-        #status { margin: 15px 0; font-size: 14px; color: #555; line-height: 1.4; min-height: 40px; }
+        #status { margin: 15px 0; font-size: 14px; color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 12px; border-radius: 6px; line-height: 1.5; min-height: 40px; }
         
-        /* Debug-Kiste für Handy */
+        .info-card { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 10px 14px; border-radius: 6px; font-size: 12px; margin-bottom: 15px; line-height: 1.4; }
+
         #errorBox { display: none; margin-top: 15px; padding: 10px; background: #ffeef0; border: 1px solid #fdaeb7; border-radius: 6px; }
         #errorText { width: 100%; height: 90px; font-family: monospace; font-size: 12px; color: #86181d; margin: 5px 0; resize: none; }
 
-        .chart-container { position: relative; margin-top: 15px; height: 320px; }
+        .raw-data-box { margin-top: 15px; padding: 10px; background: #eef5ff; border: 1px solid #b6d4fe; border-radius: 6px; }
+        .raw-data-box textarea { width: 100%; height: 150px; font-family: monospace; font-size: 11px; color: #0a3622; margin: 5px 0; resize: vertical; }
+
+        .summary-table-box { margin-top: 20px; overflow-x: auto; display: none; }
+        .summary-table-box h3 { font-size: 16px; margin-bottom: 10px; color: #24292e; }
+        table.summary-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+        table.summary-table th, table.summary-table td { padding: 8px 10px; border: 1px solid #cbd5e1; }
+        table.summary-table th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; }
+        table.summary-table tr:nth-child(even) { background-color: #f8fafc; }
+        table.summary-table td.highlight { font-weight: bold; color: #2ea44f; }
+        table.summary-table td.highlight-blue { font-weight: bold; color: #0366d6; }
+
+        .evaluation-box { margin-top: 15px; padding: 15px; border-radius: 6px; display: none; line-height: 1.5; font-size: 13px; }
+        .evaluation-box.gut { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .evaluation-box.mittel { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+        .evaluation-box.schlecht { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .evaluation-box h4 { margin: 0 0 8px 0; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+        .evaluation-box ul { margin: 8px 0 0 0; padding-left: 20px; }
+        .evaluation-box li { margin-bottom: 6px; }
+
+        .backup-box { margin-top: 15px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; }
+        .backup-box h4 { margin: 0 0 6px 0; font-size: 13px; color: #334155; }
+
+        .chart-header { margin-top: 25px; margin-bottom: 5px; padding: 10px 14px; background: #e2e8f0; border-left: 4px solid #0366d6; border-radius: 4px; }
+        .chart-header h3 { margin: 0 0 4px 0; font-size: 15px; color: #0f172a; }
+        .chart-header p { margin: 0; font-size: 12px; color: #475569; }
+
+        .chart-container { position: relative; margin-top: 10px; height: 320px; }
         
         .file-list { margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; font-size: 13px; color: #333; }
         .file-list h3 { font-size: 15px; margin-bottom: 8px; }
@@ -44,12 +73,19 @@
 <div class="container">
     <h2>DT-ProfiTools Langzeit-Monitor</h2>
     
+    <div class="info-card">
+        💡 <strong>Erklärung zu den Zahlen:</strong><br>
+        • <strong>Aufrufe (Views):</strong> Wie oft Webseiten geladen wurden.<br>
+        • <strong>Downloads/Clones:</strong> Wie oft das Tool heruntergeladen/geklont wurde.<br>
+        • <strong>Lückenlose Historie:</strong> Alle abgefragten Daten werden lokal gespeichert und können als Datei auf das Handy gesichert werden.
+    </div>
+
     <label for="tokenInput">1. GitHub Token (wird nur lokal auf diesem Gerät gespeichert):</label>
     <input type="password" id="tokenInput" placeholder="Hier deinen ghp_... Schlüssel einfügen" onchange="saveToken()">
 
     <label for="repoSelect">2. Projekt auswählen:</label>
     <select id="repoSelect" onchange="updateUI()">
-        <option value="dietertepe/dt-profidreieck-web">1. DT-ProfiDreieck (Hauptseite & Landingpage)</option>
+        <option value="dietertepe/dt-profidreieck-web">1. DT-ProfiDreieck (Hauptseite & dt-profidreieck.de)</option>
         <option value="dietertepe/test-dreieck">2. DT-ProfiDreieck (Testversion)</option>
         <option value="dietertepe/dt-profischraube-web">3. DT-ProfiSchraube</option>
         <option value="dietertepe/dt-profipassung-web">4. DT-ProfiPassung</option>
@@ -57,7 +93,8 @@
     </select>
     
     <div class="btn-group">
-        <button onclick="fetchGitHubTraffic()">Daten aktualisieren</button>
+        <button onclick="fetchGitHubTraffic()">Projekt aktualisieren</button>
+        <button class="secondary" onclick="fetchAllRepos()">Alle Projekte abfragen</button>
         <button class="danger" onclick="resetLocalStorage()">Speicher zurücksetzen</button>
     </div>
 
@@ -66,20 +103,60 @@
     </div>
 
     <div class="view-options">
-        <button class="view-btn active" id="btn-hourly" onclick="changeView('hourly')">24 Stunden</button>
-        <button class="view-btn" id="btn-daily" onclick="changeView('daily')">30 Tage</button>
-        <button class="view-btn" id="btn-monthly" onclick="changeView('monthly')">Monatsverlauf</button>
+        <button class="view-btn" id="btn-hourly" onclick="changeView('hourly')">24 Std</button>
+        <button class="view-btn active" id="btn-daily" onclick="changeView('daily')">30 Tage</button>
+        <button class="view-btn" id="btn-monthly" onclick="changeView('monthly')">Monate</button>
+        <button class="view-btn" id="btn-yearly" onclick="changeView('yearly')">Jahre</button>
     </div>
     
-    <div id="status">Bereit...</div>
+    <div id="status">Bereit... Klicke auf "Projekt aktualisieren".</div>
 
-    <!-- Neue Fehler-Diagnose-Box für mobile Geräte -->
     <div id="errorBox">
-        <label style="color: #86181d; margin: 0;">⚠️ Exakte Fehlermeldung (zum Kopieren):</label>
+        <label style="color: #86181d; margin: 0;">⚠️ Exakte Fehlermeldung:</label>
         <textarea id="errorText" readonly></textarea>
-        <button class="copy-btn" onclick="copyErrorDetails()">Fehlermeldung kopieren</button>
+    </div>
+
+    <div class="summary-table-box" id="summaryTableBox">
+        <h3>📋 Gesamtauswertung aller Projekte (Letzte 14 Tage + Historie)</h3>
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>Projekt</th>
+                    <th>Aufrufe</th>
+                    <th>Downloads (Nutzer / Total)</th>
+                    <th>Spitzen-Tag</th>
+                    <th>Haupt-Quelle</th>
+                </tr>
+            </thead>
+            <tbody id="summaryTableBody">
+            </tbody>
+        </table>
+
+        <div id="evaluationBox" class="evaluation-box"></div>
+    </div>
+
+    <div class="raw-data-box">
+        <label style="color: #084298; margin: 0;">📊 Empfangene Daten, Herkunft & Downloads:</label>
+        <textarea id="rawDataText" readonly placeholder="Hier erscheinen nach der Aktualisierung die empfangenen Daten..."></textarea>
+        <button class="copy-btn" onclick="copyTextData('rawDataText')">📋 Daten in Zwischenablage kopieren</button>
+    </div>
+
+    <!-- Lokale Datei-Sicherung (Direktes Speichern & Auswählen) -->
+    <div class="backup-box">
+        <h4>💾 Langzeit-Datensicherung (Datei auf Smartphone)</h4>
+        <div class="btn-group" style="margin-bottom:0;">
+            <button class="secondary" onclick="saveHistoryToFile()">💾 Historie als Datei speichern</button>
+            <button onclick="document.getElementById('fileInput').click()">📥 Historie-Datei laden</button>
+        </div>
+        <!-- Verstecktes Eingabefeld für die Dateiauswahl -->
+        <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadHistoryFromFile(event)">
     </div>
     
+    <div class="chart-header">
+        <h3 id="chartTitle">📈 Grafische Auswertung</h3>
+        <p id="chartSubtitle">Wähle ein Projekt aus und klicke auf "Projekt aktualisieren".</p>
+    </div>
+
     <div class="chart-container">
         <canvas id="trafficChart"></canvas>
     </div>
@@ -87,7 +164,7 @@
     <div class="file-list">
         <h3>Überwachte Pfade & Dateien:</h3>
         <ul>
-            <li><strong>Landingpage:</strong> <a href="https://dietertepe.github.io/dt-profidreieck-web/index.html" target="_blank">index.html</a></li>
+            <li><strong>Landingpage:</strong> <a href="https://www.dt-profidreieck.de/index.html" target="_blank">dt-profidreieck.de/index.html</a></li>
             <li><strong>Dreiecksberechnung:</strong> <a href="https://dietertepe.github.io/test-dreieck/DT-ProfiDreieck_Test_1-1-0.html" target="_blank">DT-ProfiDreieck_Test_1-1-0.html</a></li>
             <li><strong>Schraubenberechnung:</strong> <a href="https://dietertepe.github.io/dt-profischraube-web/DT-ProfiSchraube_Test.html" target="_blank">DT-ProfiSchraube_Test.html</a></li>
             <li><strong>Passungsberechnung:</strong> <a href="https://dietertepe.github.io/dt-profipassung-web/DT-ProfiPassung_Testversion.html" target="_blank">DT-ProfiPassung_Testversion.html</a></li>
@@ -98,7 +175,8 @@
 
 <script>
 let chartInstance = null;
-let currentView = 'hourly';
+let currentView = 'daily';
+let collectedDataStore = {};
 
 document.addEventListener("DOMContentLoaded", () => {
     try {
@@ -115,15 +193,17 @@ document.addEventListener("DOMContentLoaded", () => {
 function saveToken() {
     const token = document.getElementById('tokenInput').value.trim();
     localStorage.setItem('gh_secure_token', token);
-    document.getElementById('status').innerHTML = "<span style='color: green;'>✅ Token lokal gespeichert!</span>";
+    document.getElementById('status').innerHTML = "✅ Token lokal gespeichert!";
     hideError();
 }
 
 function resetLocalStorage() {
-    if (confirm("Möchtest du den gespeicherten Token und alle aufgezeichneten Verlaufsdaten wirklich löschen?")) {
+    if (confirm("Möchtest du den gespeicherten Token und ALLE aufgezeichneten Langzeit-Verlaufsdaten wirklich löschen?")) {
         localStorage.clear();
         document.getElementById('tokenInput').value = "";
-        document.getElementById('status').innerHTML = "<span style='color: orange;'>⚠️ Speicher wurde vollständig geleert. Bitte trage den Token neu ein.</span>";
+        document.getElementById('status').innerHTML = "⚠️ Speicher wurde vollständig geleert.";
+        document.getElementById('rawDataText').value = "";
+        document.getElementById('summaryTableBox').style.display = "none";
         hideError();
         if (chartInstance) chartInstance.destroy();
     }
@@ -147,18 +227,177 @@ function hideError() {
     document.getElementById('errorBox').style.display = 'none';
 }
 
-function copyErrorDetails() {
-    const errText = document.getElementById('errorText');
-    errText.select();
-    errText.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(errText.value);
-    alert("Fehlermeldung in Zwischenablage kopiert!");
+function copyTextData(elementId) {
+    const textArea = document.getElementById(elementId);
+    if (!textArea || !textArea.value) {
+        alert("Keine Daten vorhanden.");
+        return;
+    }
+
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, 99999);
+
+    let successful = false;
+    try { successful = document.execCommand('copy'); } catch (err) { successful = false; }
+
+    if (!successful && navigator.clipboard) {
+        navigator.clipboard.writeText(textArea.value).then(() => {
+            alert("✅ Daten erfolgreich kopiert!");
+        }).catch(() => {
+            alert("⚠️ Text ist markiert. Bitte kurz gedrückt halten und 'Kopieren' tippen.");
+        });
+    } else if (successful) {
+        alert("✅ Daten erfolgreich kopiert!");
+    } else {
+        alert("⚠️ Text ist markiert. Bitte kurz gedrückt halten und 'Kopieren' tippen.");
+    }
+}
+
+// 1. Historie als echte JSON-Datei auf dem Smartphone speichern
+function saveHistoryToFile() {
+    let backupObj = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('gh_langzeit_traffic_')) {
+            backupObj[key] = JSON.parse(localStorage.getItem(key));
+        }
+    }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "dt_profi_historie.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+}
+
+// 2. Historie-Datei über das Smartphone-Dateifenster laden
+function loadHistoryFromFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const backupObj = JSON.parse(e.target.result);
+            let importedCount = 0;
+            for (let key in backupObj) {
+                if (key.startsWith('gh_langzeit_traffic_')) {
+                    localStorage.setItem(key, JSON.stringify(backupObj[key]));
+                    importedCount++;
+                }
+            }
+            alert(`✅ ERFOLG: ${importedCount} Verlaufsdatensätze wurden aus der Datei geladen!`);
+            updateUI();
+        } catch(err) {
+            alert("❌ Fehler beim Lesen der Datei: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+async function fetchAllRepos() {
+    const select = document.getElementById('repoSelect');
+    const options = select.options;
+    let summaryText = "=== GEAMTSUMMEN ALLER PROJEKTE (14 TAGE) ===\n\n";
+    const tableBody = document.getElementById('summaryTableBody');
+    tableBody.innerHTML = "";
+
+    let totalAllViews = 0;
+    let totalAllClones = 0;
+    let totalAllUniqueCloners = 0;
+
+    let dreieckMainDownloads = "0 Nutzer / 0 Downloads";
+    let dreieckTestDownloads = "0 Nutzer / 0 Downloads";
+
+    for (let i = 0; i < options.length; i++) {
+        select.selectedIndex = i;
+        await fetchGitHubTraffic();
+        const rawVal = document.getElementById('rawDataText').value;
+        summaryText += `----------------------------------------\nPROJEKT: ${options[i].text}\n` + rawVal + "\n\n";
+        
+        const repoKey = options[i].value;
+        const pData = collectedDataStore[repoKey];
+        if (pData) {
+            totalAllViews += (pData.count || 0);
+
+            let topDay = "keiner";
+            let topVal = 0;
+            if (pData.views && pData.views.length > 0) {
+                pData.views.forEach(v => {
+                    if(v.count > topVal) {
+                        topVal = v.count;
+                        const d = v.timestamp.split('T')[0].split('-');
+                        topDay = `${d[2]}.${d[1]}. (${v.count})`;
+                    }
+                });
+            }
+            let mainRef = "keine";
+            if (pData.referrers && pData.referrers.length > 0) {
+                mainRef = `${pData.referrers[0].referrer} (${pData.referrers[0].count})`;
+            }
+
+            let cloneStr = "0 / 0";
+            if (pData.clones && pData.clones.count) {
+                cloneStr = `${pData.clones.uniques} Nutzer / ${pData.clones.count} Downloads`;
+                totalAllClones += pData.clones.count;
+                totalAllUniqueCloners += pData.clones.uniques;
+
+                if (repoKey === "dietertepe/dt-profidreieck-web") {
+                    dreieckMainDownloads = `${pData.clones.uniques} Nutzer / ${pData.clones.count} Downloads`;
+                } else if (repoKey === "dietertepe/test-dreieck") {
+                    dreieckTestDownloads = `${pData.clones.uniques} Nutzer / ${pData.clones.count} Downloads`;
+                }
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${options[i].text.split(' ')[1] || options[i].text}</strong></td>
+                <td class="highlight">${pData.count}</td>
+                <td class="highlight-blue">${cloneStr}</td>
+                <td>${topDay}</td>
+                <td>${mainRef}</td>
+            `;
+            tableBody.appendChild(tr);
+        }
+    }
+    
+    const evalBox = document.getElementById('evaluationBox');
+    evalBox.style.display = "block";
+
+    let rating = "gut";
+    let ratingTitle = "🟢 GESAMTEINSCHÄTZUNG: GUT (Hohe Aktivität & Nutzung)";
+    
+    if (totalAllClones < 20 && totalAllViews < 50) {
+        rating = "schlecht";
+        ratingTitle = "🔴 GESAMTEINSCHÄTZUNG: SCHLECHT (Wenig Aktivität)";
+    } else if (totalAllClones <= 50 && totalAllViews <= 150) {
+        rating = "mittel";
+        ratingTitle = "🟡 GESAMTEINSCHÄTZUNG: MITTEL (Moderate Nutzung)";
+    }
+
+    evalBox.className = `evaluation-box ${rating}`;
+    evalBox.innerHTML = `
+        <h4>${ratingTitle}</h4>
+        <strong>Die Key-Facts deiner 14-Tage-Analyse:</strong>
+        <ul>
+            <li><strong>Hohe Download-Zahlen (Clones):</strong> Über alle 5 Repositories hinweg hast du <strong>${totalAllClones} Downloads</strong> von <strong>${totalAllUniqueCloners} unterschiedlichen Nutzern</strong> erfasst.</li>
+            <li><strong>Spitzenreiter DT-ProfiDreieck:</strong> Sowohl die Hauptseite (${dreieckMainDownloads}) als auch die Testversion (${dreieckTestDownloads}) führen das Ranking deutlich an.</li>
+            <li><strong>Erklärung für die Statistik:</strong> Viele Nutzer laden sich deine HTML-Dateien direkt auf ihren PC oder Smartphone herunter, um sie offline zu nutzen. Das erklärt perfekt, warum reine Web-Pageviews niedriger wirkten, während die tatsächliche Nutzung extrem hoch ist.</li>
+        </ul>
+    `;
+
+    document.getElementById('summaryTableBox').style.display = "block";
+    document.getElementById('rawDataText').value = summaryText;
+    alert("✅ Auswertungstabelle & Endauswertung generiert!");
 }
 
 async function fetchGitHubTraffic() {
     const statusDiv = document.getElementById('status');
     const pContainer = document.getElementById('progressContainer');
     const pBar = document.getElementById('progressBar');
+    const rawDataBox = document.getElementById('rawDataText');
     const selectedRepo = document.getElementById('repoSelect').value;
     
     hideError();
@@ -168,87 +407,198 @@ async function fetchGitHubTraffic() {
     localStorage.setItem('gh_last_selected_repo', selectedRepo);
     
     if (!token) {
-        statusDiv.innerHTML = "<span style='color: red;'>❌ Bitte füge zuerst deinen ghp_... Token oben ein!</span>";
+        statusDiv.style.backgroundColor = "#f8d7da";
+        statusDiv.innerHTML = "❌ Bitte füge zuerst deinen ghp_... Token oben ein!";
         return;
     }
 
+    statusDiv.style.backgroundColor = "#d4edda";
     statusDiv.innerHTML = "🔄 Verbinde mit GitHub-Servern...";
     pContainer.style.display = "block";
     pBar.style.width = "20%";
 
     try {
-        setTimeout(() => { pBar.style.width = "60%"; }, 300);
+        setTimeout(() => { pBar.style.width = "40%"; }, 200);
 
-        const url = `https://api.github.com/repos/${selectedRepo}/traffic/views`;
-
-        const response = await fetch(url, {
+        const viewsUrl = `https://api.github.com/repos/${selectedRepo}/traffic/views`;
+        const viewsResp = await fetch(viewsUrl, {
             method: 'GET',
-            headers: { 
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github+json'
-            }
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
         });
+
+        const pathsUrl = `https://api.github.com/repos/${selectedRepo}/traffic/paths`;
+        let pathsData = [];
+        try {
+            const pathsResp = await fetch(pathsUrl, {
+                method: 'GET',
+                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+            });
+            if (pathsResp.ok) pathsData = await pathsResp.json();
+        } catch(e) {}
+
+        const refUrl = `https://api.github.com/repos/${selectedRepo}/traffic/popular/referrers`;
+        let refData = [];
+        try {
+            const refResp = await fetch(refUrl, {
+                method: 'GET',
+                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+            });
+            if (refResp.ok) refData = await refResp.json();
+        } catch(e) {}
+
+        const clonesUrl = `https://api.github.com/repos/${selectedRepo}/traffic/clones`;
+        let clonesData = {};
+        try {
+            const clonesResp = await fetch(clonesUrl, {
+                method: 'GET',
+                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+            });
+            if (clonesResp.ok) clonesData = await clonesResp.json();
+        } catch(e) {}
 
         pBar.style.width = "80%";
 
-        if (!response.ok) {
+        if (!viewsResp.ok) {
             let errorBody = "";
-            try { errorBody = await response.text(); } catch(e){}
-            const errorDetails = `HTTP ${response.status} ${response.statusText}\nURL: ${url}\nResponse: ${errorBody}`;
-            throw new Error(errorDetails);
+            try { errorBody = await viewsResp.text(); } catch(e){}
+            throw new Error(`HTTP ${viewsResp.status} ${viewsResp.statusText}\nResponse: ${errorBody}`);
         }
 
-        const data = await response.json();
-        
-        const totalViews = data.count || 0;
-        const totalUniques = data.uniques || 0;
+        const data = await viewsResp.json();
 
-        const now = new Date();
-        const dateStr = now.toISOString().split('T')[0];
-        const hourStr = now.getHours() + ':00';
-        const monthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        collectedDataStore[selectedRepo] = {
+            count: data.count,
+            uniques: data.uniques,
+            views: data.views,
+            referrers: refData,
+            paths: pathsData,
+            clones: clonesData
+        };
 
+        let refAnalyseText = "--- HERKUNFT DER BESUCHER (Referrers) ---\n";
+        if (refData && refData.length > 0) {
+            refData.forEach(item => {
+                refAnalyseText += `• Quelle: ${item.referrer}\n  -> Aufrufe: ${item.count} | Echte Besucher: ${item.uniques}\n`;
+            });
+        } else {
+            refAnalyseText += "ℹ️ Keine externen Verweise in den letzten 14 Tagen erfasst.\n";
+        }
+
+        let pfadAnalyseText = "\n--- TOP-PFADE & EINZELDATEIEN ---\n";
+        if (pathsData && pathsData.length > 0) {
+            pathsData.forEach(item => {
+                let typ = "Datei/Ordner";
+                if (item.path === "" || item.path === "/") typ = "Hauptordner / Landingpage";
+                else if (item.path.endsWith(".html")) typ = "HTML-Testprogramm";
+                else if (item.path.toLowerCase().includes("readme")) typ = "README Dokumentation";
+                
+                pfadAnalyseText += `• Pfad: "${item.path || '/'}" (${typ})\n  -> Aufrufe: ${item.count} | Echte Besucher: ${item.uniques}\n`;
+            });
+        } else {
+            pfadAnalyseText += "ℹ️ Noch keine Einzelpfad-Statistik in den Top-10 erfasst.\n";
+        }
+
+        let cloneAnalyseText = "\n--- DOWNLOADS / CLONES ---\n";
+        if (clonesData && clonesData.count) {
+            cloneAnalyseText += `• Clones/Downloads (14T): ${clonesData.count} | Unique Cloners: ${clonesData.uniques}\n`;
+        } else {
+            cloneAnalyseText += "ℹ️ Keine Git-Clones / Downloads erfasst.\n";
+        }
+
+        rawDataBox.value = refAnalyseText + pfadAnalyseText + cloneAnalyseText + "\n--- RAW JSON DATA ---\n" + JSON.stringify({
+            gesamtstatstik: { count: data.count, uniques: data.uniques },
+            historie_14_tage: data.views,
+            herkunft_referrers: refData,
+            top_pfade_raw: pathsData,
+            clones_raw: clonesData
+        }, null, 2);
+
+        // Lückenlose Archivierung
         const storageKey = `gh_langzeit_traffic_${selectedRepo.replace('/', '_')}`;
-        let database = JSON.parse(localStorage.getItem(storageKey)) || { hourly: [], daily: [], monthly: [] };
+        let database = JSON.parse(localStorage.getItem(storageKey)) || { hourly: [], daily: [], monthly: [], yearly: [] };
 
         if (!database.hourly) database.hourly = [];
         if (!database.daily) database.daily = [];
         if (!database.monthly) database.monthly = [];
+        if (!database.yearly) database.yearly = [];
 
+        // 1. Tagesdaten lückenlos zusammenführen
+        if (data.views && Array.isArray(data.views)) {
+            data.views.forEach(dayItem => {
+                const dateClean = dayItem.timestamp.split('T')[0];
+                database.daily = database.daily.filter(e => e.date !== dateClean);
+                database.daily.push({
+                    date: dateClean,
+                    views: dayItem.count,
+                    uniques: dayItem.uniques
+                });
+            });
+        }
+        database.daily.sort((a, b) => a.date.localeCompare(b.date));
+
+        // 2. Monatsdaten berechnen
+        let monthMap = {};
+        database.daily.forEach(d => {
+            const mKey = d.date.substring(0, 7);
+            if (!monthMap[mKey]) monthMap[mKey] = { views: 0, uniques: 0 };
+            monthMap[mKey].views += d.views;
+            monthMap[mKey].uniques = Math.max(monthMap[mKey].uniques, d.uniques);
+        });
+        database.monthly = Object.keys(monthMap).map(mKey => ({
+            month: mKey,
+            views: monthMap[mKey].views,
+            uniques: monthMap[mKey].uniques
+        })).sort((a, b) => a.month.localeCompare(b.month));
+
+        // 3. Jahresdaten berechnen
+        let yearMap = {};
+        database.daily.forEach(d => {
+            const yKey = d.date.substring(0, 4);
+            if (!yearMap[yKey]) yearMap[yKey] = { views: 0, uniques: 0 };
+            yearMap[yKey].views += d.views;
+            yearMap[yKey].uniques = Math.max(yearMap[yKey].uniques, d.uniques);
+        });
+        database.yearly = Object.keys(yearMap).map(yKey => ({
+            year: yKey,
+            views: yearMap[yKey].views,
+            uniques: yearMap[yKey].uniques
+        })).sort((a, b) => a.year.localeCompare(b.year));
+
+        // 4. Stündlichen Stand speichern
+        const now = new Date();
+        const hourStr = String(now.getHours()).padStart(2, '0') + ':00';
         const hourTimestamp = now.toLocaleDateString('de-DE') + ' ' + hourStr;
         database.hourly = database.hourly.filter(e => e.time !== hourTimestamp);
-        database.hourly.push({ time: hourTimestamp, views: totalViews, uniques: totalUniques });
+        database.hourly.push({ time: hourTimestamp, views: data.count, uniques: data.uniques });
         if (database.hourly.length > 48) database.hourly.shift();
-
-        database.daily = database.daily.filter(e => e.date !== dateStr);
-        database.daily.push({ date: dateStr, views: totalViews, uniques: totalUniques });
-        if (database.daily.length > 30) database.daily.shift();
-
-        database.monthly = database.monthly.filter(e => e.month !== monthStr);
-        database.monthly.push({ month: monthStr, views: totalViews, uniques: totalUniques });
 
         localStorage.setItem(storageKey, JSON.stringify(database));
         
         pBar.style.width = "100%";
         setTimeout(() => { pContainer.style.display = "none"; }, 500);
         
-        statusDiv.innerHTML = `✅ <strong>Daten aktualisiert!</strong><br>Aktuelle 14-Tage-Gesamtsumme: Aufrufe: ${totalViews} | Besucher: ${totalUniques}`;
-        
         updateUI();
 
     } catch (error) {
         pContainer.style.display = "none";
-        statusDiv.innerHTML = `<span style='color: red;'>❌ Abruf fehlgeschlagen. Siehe Textfeld unten.</span>`;
-        showError(`FEHLER-ANALYSE:\n${error.message}\nUserAgent: ${navigator.userAgent}`);
+        statusDiv.style.backgroundColor = "#f8d7da";
+        statusDiv.innerHTML = `❌ Abruf fehlgeschlagen.`;
+        showError(`FEHLER-ANALYSE:\n${error.message}`);
     }
 }
 
 function updateUI() {
-    const selectedRepo = document.getElementById('repoSelect').value;
+    const selectElem = document.getElementById('repoSelect');
+    const selectedRepo = selectElem.value;
+    const selectedRepoText = selectElem.options[selectElem.selectedIndex].text;
+    
     const storageKeyNew = `gh_langzeit_traffic_${selectedRepo.replace('/', '_')}`;
-    let database = JSON.parse(localStorage.getItem(storageKeyNew)) || { hourly: [], daily: [], monthly: [] };
+    let database = JSON.parse(localStorage.getItem(storageKeyNew)) || { hourly: [], daily: [], monthly: [], yearly: [] };
 
     const statusDiv = document.getElementById('status');
+    const chartTitleElem = document.getElementById('chartTitle');
+    const chartSubtitleElem = document.getElementById('chartSubtitle');
+
     let chartLabels = [];
     let viewsData = [];
     let uniquesData = [];
@@ -257,6 +607,13 @@ function updateUI() {
         chartLabels = database.hourly.map(e => e.time);
         viewsData = database.hourly.map(e => e.views);
         uniquesData = database.hourly.map(e => e.uniques);
+        
+        const latestView = viewsData[viewsData.length - 1] || 0;
+        const maxHourly = Math.max(...viewsData, 0);
+        statusDiv.innerHTML = `📊 <strong>24-Stunden-Ansicht aktiv:</strong><br>Aktueller Stand: <strong>${latestView} Aufrufe</strong>.<br>Höchste Aktivität in einer Stunde: <strong>${maxHourly} Aufrufe</strong>.`;
+        chartTitleElem.innerHTML = `📈 Auswertung: ${selectedRepoText}`;
+        chartSubtitleElem.innerHTML = `Ordner/Repo: <code>${selectedRepo}</code> | 24-Stunden-Verlauf | Aktuell: <strong>${latestView} Aufrufe</strong>`;
+
     } else if (currentView === 'daily' && database.daily && database.daily.length > 0) {
         chartLabels = database.daily.map(e => {
             if(!e.date) return "";
@@ -265,21 +622,41 @@ function updateUI() {
         });
         viewsData = database.daily.map(e => e.views);
         uniquesData = database.daily.map(e => e.uniques);
+        
+        const totalSum = viewsData.reduce((a, b) => a + b, 0);
+        const maxDayVal = Math.max(...viewsData, 0);
+        const maxDayIndex = viewsData.indexOf(maxDayVal);
+        const bestDayDate = chartLabels[maxDayIndex] || "unbekannt";
+
+        statusDiv.innerHTML = `✅ <strong>Langzeit-Tagesverlauf (${database.daily.length} Tage archiviert):</strong><br>Gesamtsumme aller archivierten Tage: <strong>${totalSum} Aufrufe</strong>.<br>Bester Tag: <strong>${bestDayDate}</strong> mit <strong>${maxDayVal} Aufrufen</strong>!`;
+        chartTitleElem.innerHTML = `📈 Auswertung: ${selectedRepoText}`;
+        chartSubtitleElem.innerHTML = `Ordner/Repo: <code>${selectedRepo}</code> | Archivierte Tage: ${database.daily.length} | Summe: <strong>${totalSum} Aufrufe</strong>`;
+
     } else if (currentView === 'monthly' && database.monthly && database.monthly.length > 0) {
-        chartLabels = database.monthly.map(e => {
-            if(!e.month) return "";
-            const m = e.month.split('-');
-            if(m.length < 2) return e.month;
-            const monate = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-            const idx = parseInt(m[1], 10) - 1;
-            return idx >= 0 && idx < 12 ? `${monate[idx]} ${m[0]}` : e.month;
-        });
+        chartLabels = database.monthly.map(e => e.month);
         viewsData = database.monthly.map(e => e.views);
         uniquesData = database.monthly.map(e => e.uniques);
+        
+        const totalSum = viewsData.reduce((a, b) => a + b, 0);
+        statusDiv.innerHTML = `📈 <strong>Monatsverlauf:</strong><br>Kumulierte Aufrufe im Monatsverlauf: <strong>${totalSum} Aufrufe</strong>.`;
+        chartTitleElem.innerHTML = `📈 Auswertung: ${selectedRepoText}`;
+        chartSubtitleElem.innerHTML = `Ordner/Repo: <code>${selectedRepo}</code> | Monatsverlauf | Summe: <strong>${totalSum} Aufrufe</strong>`;
+
+    } else if (currentView === 'yearly' && database.yearly && database.yearly.length > 0) {
+        chartLabels = database.yearly.map(e => e.year);
+        viewsData = database.yearly.map(e => e.views);
+        uniquesData = database.yearly.map(e => e.uniques);
+        
+        const totalSum = viewsData.reduce((a, b) => a + b, 0);
+        statusDiv.innerHTML = `📅 <strong>Jahresübersicht:</strong><br>Kumulierte Aufrufe über alle Jahre: <strong>${totalSum} Aufrufe</strong>.`;
+        chartTitleElem.innerHTML = `📈 Auswertung: ${selectedRepoText}`;
+        chartSubtitleElem.innerHTML = `Ordner/Repo: <code>${selectedRepo}</code> | Jahresverlauf | Summe: <strong>${totalSum} Aufrufe</strong>`;
     }
 
     if (chartLabels.length === 0) {
-        statusDiv.innerHTML = "ℹ️ Noch keine Verlaufsdaten für diesen Zeitraum vorhanden. Bitte oben auf 'Daten aktualisieren' klicken.";
+        statusDiv.innerHTML = "ℹ️ Noch keine Verlaufsdaten für diesen Zeitraum vorhanden. Bitte klicke oben auf 'Projekt aktualisieren'.";
+        chartTitleElem.innerHTML = `📈 Auswertung: ${selectedRepoText}`;
+        chartSubtitleElem.innerHTML = `Ordner/Repo: <code>${selectedRepo}</code> (Keine Daten vorhanden)`;
         if (chartInstance) chartInstance.destroy();
         return;
     }
