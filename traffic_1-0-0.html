@@ -1,0 +1,304 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DT-ProfiTools Langzeit-Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 15px; background: #f4f4f9; margin: 0; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        label { font-weight: bold; display: block; margin-top: 10px; font-size: 14px; }
+        select, input, textarea { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; background: #fff; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        button { flex: 1; padding: 14px; background: #2ea44f; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 16px; }
+        button.danger { background: #d73a49; }
+        button.copy-btn { background: #0366d6; margin-top: 5px; padding: 10px; font-size: 14px; }
+        button:active { opacity: 0.9; }
+        
+        .progress-container { width: 100%; background-color: #e1e4e8; border-radius: 4px; margin: 10px 0; display: none; height: 12px; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background-color: #0366d6; transition: width 0.4s ease; background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent); background-size: 40px 40px; animation: progress-bar-stripes 1s linear infinite; }
+        @keyframes progress-bar-stripes { from { background-position: 40px 0; } to { background-position: 0 0; } }
+
+        .view-options { display: flex; justify-content: center; gap: 5px; margin-bottom: 10px; }
+        .view-btn { padding: 8px 14px; font-size: 13px; background: #e1e4e8; color: #24292e; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; width: auto; flex: none; }
+        .view-btn.active { background: #24292e; color: white; }
+        #status { margin: 15px 0; font-size: 14px; color: #555; line-height: 1.4; min-height: 40px; }
+        
+        /* Debug-Kiste für Handy */
+        #errorBox { display: none; margin-top: 15px; padding: 10px; background: #ffeef0; border: 1px solid #fdaeb7; border-radius: 6px; }
+        #errorText { width: 100%; height: 90px; font-family: monospace; font-size: 12px; color: #86181d; margin: 5px 0; resize: none; }
+
+        .chart-container { position: relative; margin-top: 15px; height: 320px; }
+        
+        .file-list { margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; font-size: 13px; color: #333; }
+        .file-list h3 { font-size: 15px; margin-bottom: 8px; }
+        .file-list ul { padding-left: 20px; margin: 0; }
+        .file-list li { margin-bottom: 5px; }
+        .file-list a { color: #0366d6; text-decoration: none; }
+        .file-list a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>DT-ProfiTools Langzeit-Monitor</h2>
+    
+    <label for="tokenInput">1. GitHub Token (wird nur lokal auf diesem Gerät gespeichert):</label>
+    <input type="password" id="tokenInput" placeholder="Hier deinen ghp_... Schlüssel einfügen" onchange="saveToken()">
+
+    <label for="repoSelect">2. Projekt auswählen:</label>
+    <select id="repoSelect" onchange="updateUI()">
+        <option value="dietertepe/dt-profidreieck-web">1. DT-ProfiDreieck (Hauptseite & Landingpage)</option>
+        <option value="dietertepe/test-dreieck">2. DT-ProfiDreieck (Testversion)</option>
+        <option value="dietertepe/dt-profischraube-web">3. DT-ProfiSchraube</option>
+        <option value="dietertepe/dt-profipassung-web">4. DT-ProfiPassung</option>
+        <option value="dietertepe/dt-profischweissnaht-web">5. DT-ProfiSchweissnaht</option>
+    </select>
+    
+    <div class="btn-group">
+        <button onclick="fetchGitHubTraffic()">Daten aktualisieren</button>
+        <button class="danger" onclick="resetLocalStorage()">Speicher zurücksetzen</button>
+    </div>
+
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="view-options">
+        <button class="view-btn active" id="btn-hourly" onclick="changeView('hourly')">24 Stunden</button>
+        <button class="view-btn" id="btn-daily" onclick="changeView('daily')">30 Tage</button>
+        <button class="view-btn" id="btn-monthly" onclick="changeView('monthly')">Monatsverlauf</button>
+    </div>
+    
+    <div id="status">Bereit...</div>
+
+    <!-- Neue Fehler-Diagnose-Box für mobile Geräte -->
+    <div id="errorBox">
+        <label style="color: #86181d; margin: 0;">⚠️ Exakte Fehlermeldung (zum Kopieren):</label>
+        <textarea id="errorText" readonly></textarea>
+        <button class="copy-btn" onclick="copyErrorDetails()">Fehlermeldung kopieren</button>
+    </div>
+    
+    <div class="chart-container">
+        <canvas id="trafficChart"></canvas>
+    </div>
+
+    <div class="file-list">
+        <h3>Überwachte Pfade & Dateien:</h3>
+        <ul>
+            <li><strong>Landingpage:</strong> <a href="https://dietertepe.github.io/dt-profidreieck-web/index.html" target="_blank">index.html</a></li>
+            <li><strong>Dreiecksberechnung:</strong> <a href="https://dietertepe.github.io/test-dreieck/DT-ProfiDreieck_Test_1-1-0.html" target="_blank">DT-ProfiDreieck_Test_1-1-0.html</a></li>
+            <li><strong>Schraubenberechnung:</strong> <a href="https://dietertepe.github.io/dt-profischraube-web/DT-ProfiSchraube_Test.html" target="_blank">DT-ProfiSchraube_Test.html</a></li>
+            <li><strong>Passungsberechnung:</strong> <a href="https://dietertepe.github.io/dt-profipassung-web/DT-ProfiPassung_Testversion.html" target="_blank">DT-ProfiPassung_Testversion.html</a></li>
+            <li><strong>Schweißnahtberechnung:</strong> <a href="https://dietertepe.github.io/dt-profischweissnaht-web/DT-ProfiSchweissnaht_Testversion.html" target="_blank">DT-ProfiSchweissnaht_Testversion.html</a></li>
+        </ul>
+    </div>
+</div>
+
+<script>
+let chartInstance = null;
+let currentView = 'hourly';
+
+document.addEventListener("DOMContentLoaded", () => {
+    try {
+        const savedToken = localStorage.getItem('gh_secure_token') || "";
+        document.getElementById('tokenInput').value = savedToken;
+        const lastRepo = localStorage.getItem('gh_last_selected_repo') || "dietertepe/dt-profidreieck-web";
+        document.getElementById('repoSelect').value = lastRepo;
+        updateUI();
+    } catch(e) {
+        showError("Fehler beim Laden des Speichers: " + e.message);
+    }
+});
+
+function saveToken() {
+    const token = document.getElementById('tokenInput').value.trim();
+    localStorage.setItem('gh_secure_token', token);
+    document.getElementById('status').innerHTML = "<span style='color: green;'>✅ Token lokal gespeichert!</span>";
+    hideError();
+}
+
+function resetLocalStorage() {
+    if (confirm("Möchtest du den gespeicherten Token und alle aufgezeichneten Verlaufsdaten wirklich löschen?")) {
+        localStorage.clear();
+        document.getElementById('tokenInput').value = "";
+        document.getElementById('status').innerHTML = "<span style='color: orange;'>⚠️ Speicher wurde vollständig geleert. Bitte trage den Token neu ein.</span>";
+        hideError();
+        if (chartInstance) chartInstance.destroy();
+    }
+}
+
+function changeView(viewType) {
+    currentView = viewType;
+    document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`btn-${viewType}`).classList.add('active');
+    updateUI();
+}
+
+function showError(msgDetails) {
+    const errBox = document.getElementById('errorBox');
+    const errText = document.getElementById('errorText');
+    errBox.style.display = 'block';
+    errText.value = msgDetails;
+}
+
+function hideError() {
+    document.getElementById('errorBox').style.display = 'none';
+}
+
+function copyErrorDetails() {
+    const errText = document.getElementById('errorText');
+    errText.select();
+    errText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(errText.value);
+    alert("Fehlermeldung in Zwischenablage kopiert!");
+}
+
+async function fetchGitHubTraffic() {
+    const statusDiv = document.getElementById('status');
+    const pContainer = document.getElementById('progressContainer');
+    const pBar = document.getElementById('progressBar');
+    const selectedRepo = document.getElementById('repoSelect').value;
+    
+    hideError();
+    
+    let token = document.getElementById('tokenInput').value.trim() || localStorage.getItem('gh_secure_token');
+    if (token) localStorage.setItem('gh_secure_token', token);
+    localStorage.setItem('gh_last_selected_repo', selectedRepo);
+    
+    if (!token) {
+        statusDiv.innerHTML = "<span style='color: red;'>❌ Bitte füge zuerst deinen ghp_... Token oben ein!</span>";
+        return;
+    }
+
+    statusDiv.innerHTML = "🔄 Verbinde mit GitHub-Servern...";
+    pContainer.style.display = "block";
+    pBar.style.width = "20%";
+
+    try {
+        setTimeout(() => { pBar.style.width = "60%"; }, 300);
+
+        const url = `https://api.github.com/repos/${selectedRepo}/traffic/views`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: { 
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        });
+
+        pBar.style.width = "80%";
+
+        if (!response.ok) {
+            let errorBody = "";
+            try { errorBody = await response.text(); } catch(e){}
+            const errorDetails = `HTTP ${response.status} ${response.statusText}\nURL: ${url}\nResponse: ${errorBody}`;
+            throw new Error(errorDetails);
+        }
+
+        const data = await response.json();
+        
+        const totalViews = data.count || 0;
+        const totalUniques = data.uniques || 0;
+
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0];
+        const hourStr = now.getHours() + ':00';
+        const monthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+        const storageKey = `gh_langzeit_traffic_${selectedRepo.replace('/', '_')}`;
+        let database = JSON.parse(localStorage.getItem(storageKey)) || { hourly: [], daily: [], monthly: [] };
+
+        if (!database.hourly) database.hourly = [];
+        if (!database.daily) database.daily = [];
+        if (!database.monthly) database.monthly = [];
+
+        const hourTimestamp = now.toLocaleDateString('de-DE') + ' ' + hourStr;
+        database.hourly = database.hourly.filter(e => e.time !== hourTimestamp);
+        database.hourly.push({ time: hourTimestamp, views: totalViews, uniques: totalUniques });
+        if (database.hourly.length > 48) database.hourly.shift();
+
+        database.daily = database.daily.filter(e => e.date !== dateStr);
+        database.daily.push({ date: dateStr, views: totalViews, uniques: totalUniques });
+        if (database.daily.length > 30) database.daily.shift();
+
+        database.monthly = database.monthly.filter(e => e.month !== monthStr);
+        database.monthly.push({ month: monthStr, views: totalViews, uniques: totalUniques });
+
+        localStorage.setItem(storageKey, JSON.stringify(database));
+        
+        pBar.style.width = "100%";
+        setTimeout(() => { pContainer.style.display = "none"; }, 500);
+        
+        statusDiv.innerHTML = `✅ <strong>Daten aktualisiert!</strong><br>Aktuelle 14-Tage-Gesamtsumme: Aufrufe: ${totalViews} | Besucher: ${totalUniques}`;
+        
+        updateUI();
+
+    } catch (error) {
+        pContainer.style.display = "none";
+        statusDiv.innerHTML = `<span style='color: red;'>❌ Abruf fehlgeschlagen. Siehe Textfeld unten.</span>`;
+        showError(`FEHLER-ANALYSE:\n${error.message}\nUserAgent: ${navigator.userAgent}`);
+    }
+}
+
+function updateUI() {
+    const selectedRepo = document.getElementById('repoSelect').value;
+    const storageKeyNew = `gh_langzeit_traffic_${selectedRepo.replace('/', '_')}`;
+    let database = JSON.parse(localStorage.getItem(storageKeyNew)) || { hourly: [], daily: [], monthly: [] };
+
+    const statusDiv = document.getElementById('status');
+    let chartLabels = [];
+    let viewsData = [];
+    let uniquesData = [];
+
+    if (currentView === 'hourly' && database.hourly && database.hourly.length > 0) {
+        chartLabels = database.hourly.map(e => e.time);
+        viewsData = database.hourly.map(e => e.views);
+        uniquesData = database.hourly.map(e => e.uniques);
+    } else if (currentView === 'daily' && database.daily && database.daily.length > 0) {
+        chartLabels = database.daily.map(e => {
+            if(!e.date) return "";
+            const d = e.date.split('-');
+            return d.length > 2 ? `${d[2]}.${d[1]}.` : e.date;
+        });
+        viewsData = database.daily.map(e => e.views);
+        uniquesData = database.daily.map(e => e.uniques);
+    } else if (currentView === 'monthly' && database.monthly && database.monthly.length > 0) {
+        chartLabels = database.monthly.map(e => {
+            if(!e.month) return "";
+            const m = e.month.split('-');
+            if(m.length < 2) return e.month;
+            const monate = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+            const idx = parseInt(m[1], 10) - 1;
+            return idx >= 0 && idx < 12 ? `${monate[idx]} ${m[0]}` : e.month;
+        });
+        viewsData = database.monthly.map(e => e.views);
+        uniquesData = database.monthly.map(e => e.uniques);
+    }
+
+    if (chartLabels.length === 0) {
+        statusDiv.innerHTML = "ℹ️ Noch keine Verlaufsdaten für diesen Zeitraum vorhanden. Bitte oben auf 'Daten aktualisieren' klicken.";
+        if (chartInstance) chartInstance.destroy();
+        return;
+    }
+
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [
+                { label: 'Aufrufe', data: viewsData, borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.05)', tension: 0.2, fill: true },
+                { label: 'Echte Besucher', data: uniquesData, borderColor: '#2ecc71', backgroundColor: 'rgba(46, 204, 113, 0.05)', tension: 0.2, fill: true }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+}
+</script>
+</body>
+</html>
