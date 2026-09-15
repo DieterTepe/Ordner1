@@ -1802,28 +1802,3 @@ window.addEventListener('load', function () {
 </script>
 </body>
 </html>
-
-
-
-// Korrigierte Publikums-Ampel (berechnet auf Basis der letzten 14 Tage)
-var d14 = lastNDates(14);
-var from14 = d14[0], to14 = d14[d14.length - 1];
-var allV = 0, allU = 0;
-for (var gq = 0; gq < PROJECTS.length; gq++) {
-  var k14 = keyOf(PROJECTS[gq]);
-  allV += totalViews(k14, from14, to14);
-  allU += totalUniques(k14, from14, to14);
-}
-if (allV > 0) {
-  var globalRatio = allU / allV;
-  var gIcon = globalRatio >= 0.3 ? '🟢' : (globalRatio >= 0.1 ? '🟡' : '🔴');
-  var gLbl = globalRatio >= 0.3 ? 'echtes Publikum' : (globalRatio >= 0.1 ? 'gemischt' : 'überwiegend Eigen-Traffic/Bots');
-  var gCls = globalRatio >= 0.3 ? 'good' : (globalRatio >= 0.1 ? 'warn' : 'bad');
-  A.push({ 
-    ic: gIcon, 
-    cls: gCls, 
-    t: 'Publikums-Qualität (letzte 14 Tage)', 
-    x: 'In den letzten 14 Tagen: <b>' + allU + '</b> Uniques bei <b>' + allV + '</b> Aufrufen = <b>' + Math.round(globalRatio * 100) + ' % Uniques-Anteil</b>. Bewertung: ' + gLbl + '.' 
-  });
-}
-
