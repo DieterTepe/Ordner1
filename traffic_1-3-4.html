@@ -915,6 +915,7 @@ window.addEventListener('load', function () {
   }
 
   /* ---------- Beurteilung ---------- */
+  /* ---------- Beurteilung (ÜBERARBEITET) ---------- */
   function buildAssessment() {
     var box = $('assess');
     var A = [];
@@ -931,18 +932,29 @@ window.addEventListener('load', function () {
     var top = ranked[0];
     A.push({ ic: '📈', cls: 'info', t: 'Überblick', x: 'Gesamt <b>' + tot + ' Aufrufe</b> in der gespeicherten Historie. Stärkstes Tool: <b>' + top.p.name + ' (' + top.p.sub + ')</b> mit ' + top.v + ' Aufrufen = ' + Math.round(top.v / tot * 100) + ' % des Traffics.' });
 
-    // NEU v1.3.4: Gesamt-Publikums-Ampel
-    var allV = 0, allU = 0;
+    // KORRIGIERT: Publikums-Ampel sauber auf Basis der letzten 14 Tage berechnet
+    var d14 = lastNDates(14);
+    var from14 = d14[0], to14 = d14[d14.length - 1];
+    var allV14 = 0, allU14 = 0;
     for (var gq = 0; gq < PROJECTS.length; gq++) {
-      allV += totalViews(keyOf(PROJECTS[gq]));
-      allU += totalUniques(keyOf(PROJECTS[gq]));
+      var k14 = keyOf(PROJECTS[gq]);
+      allV14 += totalViews(k14, from14, to14);
+      allU14 += totalUniques(k14, from14, to14);
     }
-    if (allV > 0) {
-      var globalRatio = allU / allV;
+    if (allV14 > 0) {
+      var globalRatio = allU14 / allV14;
       var gIcon = globalRatio >= 0.3 ? '🟢' : (globalRatio >= 0.1 ? '🟡' : '🔴');
       var gLbl = globalRatio >= 0.3 ? 'echtes Publikum' : (globalRatio >= 0.1 ? 'gemischt' : 'überwiegend Eigen-Traffic/Bots');
       var gCls = globalRatio >= 0.3 ? 'good' : (globalRatio >= 0.1 ? 'warn' : 'bad');
-      A.push({ ic: gIcon, cls: gCls, t: 'Publikums-Qualität gesamt', x: 'Insgesamt <b>' + allU + '</b> eindeutige Besucher bei <b>' + allV + '</b> Aufrufen = <b>' + Math.round(globalRatio * 100) + ' % Uniques-Anteil</b>. Bewertung: ' + gLbl + '. ' + (globalRatio < 0.1 ? 'Die Zahlen sind mit Vorsicht zu genießen – echte Nutzer sind kaum dabei.' : (globalRatio < 0.3 ? 'Teils echte Besucher, teils Eigen-Tests/Bots – weiter beobachten.' : 'Erfreulich breit gestreuter Traffic mit vielen verschiedenen Besuchern.')) });
+      A.push({ 
+        ic: gIcon, 
+        cls: gCls, 
+        t: 'Publikums-Qualität (letzte 14 Tage)', 
+        x: 'In den letzten 14 Tagen: <b>' + allU14 + '</b> Uniques bei <b>' + allV14 + '</b> Aufrufen = <b>' + Math.round(globalRatio * 100) + ' % Uniques-Anteil</b>. Bewertung: ' + gLbl + '. ' + 
+           (globalRatio < 0.1 ? 'Die Zahlen sind mit Vorsicht zu genießen – echte Nutzer sind kaum dabei.' : 
+           (globalRatio < 0.3 ? 'Teils echte Besucher, teils Eigen-Tests/Bots – weiter beobachten.' : 
+           'Erfreulich breit gestreuter Traffic mit vielen verschiedenen Besuchern.')) 
+      });
     }
 
     var d7 = lastNDates(7);
@@ -985,7 +997,7 @@ window.addEventListener('load', function () {
       A.push({ ic: '⚖️', cls: 'info', t: 'Haupt- vs. Testversion (Repo-Ebene)', x: gx });
     }
 
-    // Datenlücke – nur wenn KEIN Eintrag existiert
+    // Echte Datenlücke – prüft nur Fehlen von Tageseinträgen
     var minD = null, maxD = null;
     for (var e2 = 0; e2 < PROJECTS.length; e2++) {
       var dl2 = dailyOf(keyOf(PROJECTS[e2]));
@@ -1016,7 +1028,7 @@ window.addEventListener('load', function () {
         runs[h2].n = n;
         if (n >= 3 && (!big || n > big.n)) big = runs[h2];
       }
-      if (big) A.push({ ic: '⚠️', cls: 'warn', t: 'Echte Datenlücke', x: 'Vom <b>' + fmtDE(big.from) + ' bis ' + fmtDE(big.to) + '</b> (' + big.n + ' Tage) fehlen komplett alle Tageseinträge – die App wurde in diesem Zeitraum nicht abgefragt. (Echte Null-Tage mit 0 Aufrufen zählen NICHT als Lücke.)' });
+      if (big) A.push({ ic: '⚠️', cls: 'warn', t: 'Echte Datenlücke', x: 'Vom <b>' + fmtDE(big.from) + ' bis ' + fmtDE(big.to) + '</b> (' + big.n + ' Tage) fehlen komplett alle Tageseinträge – die App wurde in diesem Zeitraum nicht abgefragt.' });
       if (maxD < todayStr()) A.push({ ic: '📅', cls: 'warn', t: 'Letzter erfasster Tag', x: 'Die Daten enden am <b>' + fmtDE(maxD) + '</b>. Jetzt „Alle Projekte abfragen" tippen, um auf den aktuellen Stand zu kommen.' });
     }
 
@@ -1025,7 +1037,7 @@ window.addEventListener('load', function () {
     var vT = sumDates([today]), vY = sumDates([dstr(yd)]);
     if (vT > 0 || vY > 0) {
       var hx = 'Heute bisher <b>' + vT + '</b> Aufrufe, gestern gesamt <b>' + vY + '</b>. ';
-      if (vY > 0 && vT >= vY) hx += 'Der Tag läuft bisher stärker als gestern.';
+      if (vY > 0 && vT >= vY) hx += 'Der Tag läuft bisher stärke als gestern.';
       else if (vY > 0) hx += 'Der Tag ist noch nicht vorbei.';
       A.push({ ic: '🕐', cls: vT >= vY ? 'good' : 'warn', t: 'Heute vs. gestern', x: hx });
     }
@@ -1790,3 +1802,28 @@ window.addEventListener('load', function () {
 </script>
 </body>
 </html>
+
+
+
+// Korrigierte Publikums-Ampel (berechnet auf Basis der letzten 14 Tage)
+var d14 = lastNDates(14);
+var from14 = d14[0], to14 = d14[d14.length - 1];
+var allV = 0, allU = 0;
+for (var gq = 0; gq < PROJECTS.length; gq++) {
+  var k14 = keyOf(PROJECTS[gq]);
+  allV += totalViews(k14, from14, to14);
+  allU += totalUniques(k14, from14, to14);
+}
+if (allV > 0) {
+  var globalRatio = allU / allV;
+  var gIcon = globalRatio >= 0.3 ? '🟢' : (globalRatio >= 0.1 ? '🟡' : '🔴');
+  var gLbl = globalRatio >= 0.3 ? 'echtes Publikum' : (globalRatio >= 0.1 ? 'gemischt' : 'überwiegend Eigen-Traffic/Bots');
+  var gCls = globalRatio >= 0.3 ? 'good' : (globalRatio >= 0.1 ? 'warn' : 'bad');
+  A.push({ 
+    ic: gIcon, 
+    cls: gCls, 
+    t: 'Publikums-Qualität (letzte 14 Tage)', 
+    x: 'In den letzten 14 Tagen: <b>' + allU + '</b> Uniques bei <b>' + allV + '</b> Aufrufen = <b>' + Math.round(globalRatio * 100) + ' % Uniques-Anteil</b>. Bewertung: ' + gLbl + '.' 
+  });
+}
+
