@@ -569,12 +569,14 @@ window.addEventListener('load', function () {
   }
 
   /* ---------- Gruppierung ---------- */
+  /* ---------- Gruppierung (KORRIGIERT) ---------- */
   function renderGroups() {
     var box = $('groups');
+    if (!box) return;
     box.innerHTML = '';
     for (var i = 0; i < PROJECTS.length; i++) {
       (function (p) {
-        var g = settings.groups[p.repo];
+        var g = settings.groups[p.repo] || p.defGroup;
         var row = document.createElement('div');
         row.className = 'grow';
         row.innerHTML = '<span class="dot" style="background:' + p.hex + '"></span><span>' + p.name +
@@ -584,7 +586,8 @@ window.addEventListener('load', function () {
         btn.className = 'gtag ' + g;
         btn.textContent = (g === 'haupt') ? 'Hauptversion' : 'Testversion';
         btn.onclick = function () {
-          settings.groups[p.repo] = (g === 'haupt') ? 'test' : 'haupt';
+          var curGroup = settings.groups[p.repo] || p.defGroup;
+          settings.groups[p.repo] = (curGroup === 'haupt') ? 'test' : 'haupt';
           saveAll();
           renderGroups();
           renderAll();
