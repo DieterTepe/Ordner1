@@ -186,7 +186,7 @@ footer{font-size:.72rem;color:var(--mut);text-align:center;margin-top:6px}
       </div>
       <div class="aitem info">
         <span class="ic">💡</span>
-        <div><b>Merksatz</b><span>Views = „wie oft geladen" · Uniques = „wie viele verschiedene IPs pro Tag".<br>Ein Beispiel: <b>65 Views bei 1 Unique</b> heißt: <b>einer</b> hat viel geladen – nicht <b>viele</b>.</span></div>
+        <div><b>Merksatz &amp; Bezugszeitraum</b><span>Views = „wie oft geladen" · Uniques = „wie viele verschiedene IPs pro Tag".<br>Ein Beispiel: <b>65 Views bei 1 Unique</b> heißt: <b>einer</b> hat viel geladen – nicht <b>viele</b>.<br><br>Alle Ampeln in dieser App beziehen sich auf die <b>letzten 14 Tage</b> (das ist der Zeitraum, den GitHub vollständig liefert – stabiler als die gesamte Historie, die durch einzelne Ausreißer verfälscht werden kann).</span></div>
       </div>
     </div>
   </div>
@@ -265,7 +265,7 @@ footer{font-size:.72rem;color:var(--mut);text-align:center;margin-top:6px}
   <h2>📋 Gesamtauswertung aller Projekte</h2>
   <div style="overflow-x:auto">
   <table class="resp" id="tbl">
-    <thead><tr><th>Projekt</th><th>Aufrufe (Historie)</th><th>Letzte 14 Tage</th><th>Publikum</th><th>Downloads (Nutzer/Total)</th><th>Spitzen-Tag</th></tr></thead>
+    <thead><tr><th>Projekt</th><th>Aufrufe (Historie)</th><th>Letzte 14 Tage</th><th>Publikum (14 T)</th><th>Downloads (Nutzer/Total)</th><th>Spitzen-Tag</th></tr></thead>
     <tbody></tbody>
   </table>
   </div>
@@ -287,7 +287,7 @@ footer{font-size:.72rem;color:var(--mut);text-align:center;margin-top:6px}
       <div class="chartbox sm"><canvas id="chDonut"></canvas></div>
     </div>
     <div>
-      <div class="hint" style="margin:0 0 4px">🏆 Beliebtheit der Tools (gesamte Historie)</div>
+      <div class="hint" style="margin:0 0 4px">🏆 Beliebtheit der Tools (Ampel = 14 T)</div>
       <div class="chartbox sm"><canvas id="chRank"></canvas></div>
     </div>
   </div>
@@ -588,8 +588,13 @@ window.addEventListener('load', function () {
     return s;
   }
 
-  /* ---------- Uniques-Ampel ---------- */
+  /* ---------- Uniques-Ampel (Standard-Zeitfenster: letzte 14 Tage) ---------- */
   function publikumAmpel(key, from, to) {
+    if (!from && !to) {
+      var d14 = lastNDates(14);
+      from = d14[0];
+      to = d14[d14.length - 1];
+    }
     var v = totalViews(key, from, to);
     var u = totalUniques(key, from, to);
     if (v === 0) return { level: 'neu', icon: '⚪', label: 'Keine Daten', v: 0, u: 0, ratio: 0 };
@@ -597,12 +602,6 @@ window.addEventListener('load', function () {
     if (r >= 0.3) return { level: 'good', icon: '🟢', label: 'Echtes Publikum', v: v, u: u, ratio: r };
     if (r >= 0.1) return { level: 'warn', icon: '🟡', label: 'Gemischt', v: v, u: u, ratio: r };
     return { level: 'bad', icon: '🔴', label: 'Eigen-Traffic/Bot', v: v, u: u, ratio: r };
-  }
-  function ampelLabelShort(amp) {
-    if (amp.level === 'good') return '🟢 Echt';
-    if (amp.level === 'warn') return '🟡 Gemischt';
-    if (amp.level === 'bad') return '🔴 Eigen/Bot';
-    return '⚪ –';
   }
 
   /* ---------- GitHub API ---------- */
@@ -827,14 +826,14 @@ window.addEventListener('load', function () {
       var peakTxt = (peak && (+peak.views > 0)) ? fmtDE(peak.date) + ' (' + peak.views + ')' : '–';
       gAll += all; g14 += v14; gCl += cl; gClU += clu;
       var amp = publikumAmpel(k);
-      var title = 'Uniques ' + amp.u + ' / Views ' + amp.v + ' = ' + (amp.ratio * 100).toFixed(1) + ' %';
+      var title = 'Uniques ' + amp.u + ' / Views ' + amp.v + ' = ' + (amp.ratio * 100).toFixed(1) + ' % (letzte 14 Tage)';
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td data-l="Projekt"><span class="pname"><span class="dot" style="background:' + p.hex + '"></span>' +
         p.name + ' <span class="psub">· ' + p.sub + '</span></span></td>' +
         '<td data-l="Aufrufe (Historie)"><b>' + all + '</b></td>' +
         '<td data-l="Letzte 14 Tage">' + v14 + '</td>' +
-        '<td data-l="Publikum"><span class="ampbadge ' + amp.level + '" title="' + title + '">' + amp.icon + ' ' + amp.label + ' <span class="psub">' + Math.round(amp.ratio * 100) + '%</span></span></td>' +
+        '<td data-l="Publikum (14 T)"><span class="ampbadge ' + amp.level + '" title="' + title + '">' + amp.icon + ' ' + amp.label + ' <span class="psub">' + Math.round(amp.ratio * 100) + '%</span></span></td>' +
         '<td data-l="Downloads">' + clu + ' / ' + cl + '</td>' +
         '<td data-l="Spitzen-Tag">' + peakTxt + '</td>';
       tb.appendChild(tr);
@@ -915,7 +914,6 @@ window.addEventListener('load', function () {
   }
 
   /* ---------- Beurteilung ---------- */
-  /* ---------- Beurteilung (ÜBERARBEITET) ---------- */
   function buildAssessment() {
     var box = $('assess');
     var A = [];
@@ -932,28 +930,25 @@ window.addEventListener('load', function () {
     var top = ranked[0];
     A.push({ ic: '📈', cls: 'info', t: 'Überblick', x: 'Gesamt <b>' + tot + ' Aufrufe</b> in der gespeicherten Historie. Stärkstes Tool: <b>' + top.p.name + ' (' + top.p.sub + ')</b> mit ' + top.v + ' Aufrufen = ' + Math.round(top.v / tot * 100) + ' % des Traffics.' });
 
-    // KORRIGIERT: Publikums-Ampel sauber auf Basis der letzten 14 Tage berechnet
+    // Publikums-Ampel (letzte 14 Tage)
     var d14 = lastNDates(14);
     var from14 = d14[0], to14 = d14[d14.length - 1];
-    var allV14 = 0, allU14 = 0;
+    var allV = 0, allU = 0;
     for (var gq = 0; gq < PROJECTS.length; gq++) {
       var k14 = keyOf(PROJECTS[gq]);
-      allV14 += totalViews(k14, from14, to14);
-      allU14 += totalUniques(k14, from14, to14);
+      allV += totalViews(k14, from14, to14);
+      allU += totalUniques(k14, from14, to14);
     }
-    if (allV14 > 0) {
-      var globalRatio = allU14 / allV14;
+    if (allV > 0) {
+      var globalRatio = allU / allV;
       var gIcon = globalRatio >= 0.3 ? '🟢' : (globalRatio >= 0.1 ? '🟡' : '🔴');
       var gLbl = globalRatio >= 0.3 ? 'echtes Publikum' : (globalRatio >= 0.1 ? 'gemischt' : 'überwiegend Eigen-Traffic/Bots');
       var gCls = globalRatio >= 0.3 ? 'good' : (globalRatio >= 0.1 ? 'warn' : 'bad');
-      A.push({ 
-        ic: gIcon, 
-        cls: gCls, 
-        t: 'Publikums-Qualität (letzte 14 Tage)', 
-        x: 'In den letzten 14 Tagen: <b>' + allU14 + '</b> Uniques bei <b>' + allV14 + '</b> Aufrufen = <b>' + Math.round(globalRatio * 100) + ' % Uniques-Anteil</b>. Bewertung: ' + gLbl + '. ' + 
-           (globalRatio < 0.1 ? 'Die Zahlen sind mit Vorsicht zu genießen – echte Nutzer sind kaum dabei.' : 
-           (globalRatio < 0.3 ? 'Teils echte Besucher, teils Eigen-Tests/Bots – weiter beobachten.' : 
-           'Erfreulich breit gestreuter Traffic mit vielen verschiedenen Besuchern.')) 
+      A.push({
+        ic: gIcon,
+        cls: gCls,
+        t: 'Publikums-Qualität (letzte 14 Tage)',
+        x: 'In den letzten 14 Tagen: <b>' + allU + '</b> Uniques bei <b>' + allV + '</b> Aufrufen = <b>' + Math.round(globalRatio * 100) + ' % Uniques-Anteil</b>. Bewertung: ' + gLbl + '.'
       });
     }
 
@@ -997,7 +992,7 @@ window.addEventListener('load', function () {
       A.push({ ic: '⚖️', cls: 'info', t: 'Haupt- vs. Testversion (Repo-Ebene)', x: gx });
     }
 
-    // Echte Datenlücke – prüft nur Fehlen von Tageseinträgen
+    // Datenlücke – nur wenn KEIN Eintrag existiert
     var minD = null, maxD = null;
     for (var e2 = 0; e2 < PROJECTS.length; e2++) {
       var dl2 = dailyOf(keyOf(PROJECTS[e2]));
@@ -1028,7 +1023,7 @@ window.addEventListener('load', function () {
         runs[h2].n = n;
         if (n >= 3 && (!big || n > big.n)) big = runs[h2];
       }
-      if (big) A.push({ ic: '⚠️', cls: 'warn', t: 'Echte Datenlücke', x: 'Vom <b>' + fmtDE(big.from) + ' bis ' + fmtDE(big.to) + '</b> (' + big.n + ' Tage) fehlen komplett alle Tageseinträge – die App wurde in diesem Zeitraum nicht abgefragt.' });
+      if (big) A.push({ ic: '⚠️', cls: 'warn', t: 'Echte Datenlücke', x: 'Vom <b>' + fmtDE(big.from) + ' bis ' + fmtDE(big.to) + '</b> (' + big.n + ' Tage) fehlen komplett alle Tageseinträge – die App wurde in diesem Zeitraum nicht abgefragt. (Echte Null-Tage mit 0 Aufrufen zählen NICHT als Lücke.)' });
       if (maxD < todayStr()) A.push({ ic: '📅', cls: 'warn', t: 'Letzter erfasster Tag', x: 'Die Daten enden am <b>' + fmtDE(maxD) + '</b>. Jetzt „Alle Projekte abfragen" tippen, um auf den aktuellen Stand zu kommen.' });
     }
 
@@ -1037,7 +1032,7 @@ window.addEventListener('load', function () {
     var vT = sumDates([today]), vY = sumDates([dstr(yd)]);
     if (vT > 0 || vY > 0) {
       var hx = 'Heute bisher <b>' + vT + '</b> Aufrufe, gestern gesamt <b>' + vY + '</b>. ';
-      if (vY > 0 && vT >= vY) hx += 'Der Tag läuft bisher stärke als gestern.';
+      if (vY > 0 && vT >= vY) hx += 'Der Tag läuft bisher stärker als gestern.';
       else if (vY > 0) hx += 'Der Tag ist noch nicht vorbei.';
       A.push({ ic: '🕐', cls: vT >= vY ? 'good' : 'warn', t: 'Heute vs. gestern', x: hx });
     }
@@ -1164,7 +1159,7 @@ window.addEventListener('load', function () {
       div.className = 'kpi';
       div.innerHTML = '<div class="t"><span class="dot" style="background:' + p.hex + '"></span><b>' + p.name + '</b> <span class="psub">· ' + p.sub + '</span></div>' +
         '<div class="v">' + vT + '</div><div class="s">' + sub + '</div>' +
-        '<div class="amp">' + amp.icon + ' ' + amp.label + ' <span class="ratio">' + amp.u + ' / ' + amp.v + ' = ' + (amp.ratio * 100).toFixed(0) + '%</span></div>';
+        '<div class="amp">' + amp.icon + ' ' + amp.label + ' <span class="ratio">14 T: ' + amp.u + ' / ' + amp.v + ' = ' + (amp.ratio * 100).toFixed(0) + '%</span></div>';
       box.appendChild(div);
     }
   }
@@ -1428,7 +1423,7 @@ window.addEventListener('load', function () {
       var v = totalViews(k, from, to);
       var u = totalUniques(k, from, to);
       totalV += v; totalU += u;
-      projRows.push({ p: PROJECTS[i], v: v, u: u, amp: publikumAmpel(k, from, to) });
+      projRows.push({ p: PROJECTS[i], v: v, u: u, amp: publikumAmpel(k) });
     }
     projRows.sort(function (a, b) { return b.v - a.v; });
 
@@ -1444,7 +1439,7 @@ window.addEventListener('load', function () {
       var r = projRows[a];
       var pct = totalV > 0 ? Math.round(r.v / totalV * 100) : 0;
       L.push('  ' + r.amp.icon + ' ' + r.p.name + ' · ' + r.p.sub);
-      L.push('     ' + r.v + ' Aufrufe (' + pct + ' %) · ' + r.u + ' Uniques · ' + r.amp.label);
+      L.push('     ' + r.v + ' Aufrufe (' + pct + ' %) · Ampel 14 T: ' + r.amp.label);
     }
     L.push('');
 
