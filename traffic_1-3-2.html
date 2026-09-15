@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>DT-ProfiTools Langzeit-Monitor v1.3.2</title>
+<style>
+:root{
+  --bg:#0b1220;--card:#111a2e;--card2:#0e1626;--line:#22304d;
+  --txt:#e8eefb;--mut:#8fa3c7;--acc:#22d3ee;--good:#34d399;--warn:#f59e0b;--bad:#fb7185;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0a0f1c);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  padding:14px 14px calc(30px + env(safe-area-inset-bottom));line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h1{font-size:1.15rem;margin:0}
+.badge{font-size:.7rem;background:var(--card);border:1px solid var(--line);color:var(--acc);
+  padding:3px 9px;border-radius:999px;font-weight:700}
+.led{width:11px;height:11px;border-radius:50%;background:#64748b;flex:0 0 auto}
+.led.ok{background:var(--good);box-shadow:0 0 10px var(--good)}
+.led.err{background:var(--bad);box-shadow:0 0 10px var(--bad)}
+.led.busy{background:var(--warn);box-shadow:0 0 10px var(--warn);animation:pl 1s infinite}
+@keyframes pl{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.led.busy{animation:none}}
+button.act:disabled{opacity:.45;cursor:not-allowed;filter:none;pointer-events:none}
+.chip{margin-left:auto;font-size:.72rem;color:var(--mut);background:var(--card);
+  border:1px solid var(--line);padding:5px 10px;border-radius:999px;white-space:nowrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+h2{font-size:.95rem;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.note{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px;
+  font-size:.85rem;color:var(--mut)}
+.note b{color:var(--txt)}
+.boot{background:#0a101d;border:1px solid var(--line);border-radius:10px;padding:8px 12px;
+  font-size:.72rem;color:#7dd3a0;font-family:ui-monospace,Menlo,Consolas,monospace;
+  max-height:130px;overflow:auto}
+label{font-size:.8rem;color:var(--mut);display:block;margin:12px 0 5px}
+input[type=password],input[type=text],select{width:100%;background:var(--card2);color:var(--txt);
+  border:1px solid var(--line);border-radius:10px;padding:12px;font-size:.95rem;outline:none}
+input:focus,select:focus{border-color:var(--acc)}
+.tokwrap{position:relative}
+.tokwrap button{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;
+  border:none;font-size:1.1rem;padding:10px;cursor:pointer}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button.act{border:none;border-radius:12px;padding:13px 16px;font-size:.9rem;font-weight:700;
+  cursor:pointer;min-height:46px;flex:1 1 auto}
+button.act:active{filter:brightness(.85)}
+.btn-p{background:var(--acc);color:#04283a}
+.btn-s{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.btn-d{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+.progress{height:9px;background:var(--card2);border:1px solid var(--line);border-radius:999px;
+  overflow:hidden;margin-top:12px}
+#pbar{height:100%;width:0;background:var(--acc);transition:width .3s}
+.groups{display:flex;flex-direction:column;gap:6px}
+.grow{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--line);
+  border-radius:10px;padding:9px 12px;font-size:.85rem}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 auto}
+.psub{color:var(--mut);font-weight:400}
+.gtag{margin-left:auto;border-radius:999px;padding:6px 12px;font-size:.75rem;font-weight:700;
+  border:1px solid var(--line);background:var(--card);cursor:pointer;min-height:34px;color:var(--txt)}
+.gtag.haupt{color:var(--acc);border-color:var(--acc)}
+.gtag.test{color:var(--warn);border-color:var(--warn)}
+.tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px}
+.tabs button{flex:1;border:none;background:transparent;color:var(--mut);padding:11px 4px;
+  border-radius:9px;font-weight:700;font-size:.82rem;cursor:pointer;min-height:44px}
+.tabs button.on{background:var(--acc);color:#04283a}
+.status{font-size:.85rem;padding:10px 12px;border-radius:10px;background:var(--card2);
+  border:1px solid var(--line);white-space:pre-wrap}
+.errbox{display:none;font-size:.8rem;color:var(--bad);background:rgba(251,113,133,.08);
+  border:1px solid rgba(251,113,133,.35);border-radius:10px;padding:10px 12px;margin-top:8px;
+  white-space:pre-wrap}
+.remind{display:none;font-size:.82rem;color:var(--warn);background:rgba(245,158,11,.08);
+  border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:10px 12px;margin-top:8px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px}
+.kpi{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi .t{font-size:.72rem;color:var(--mut);display:flex;align-items:center;gap:6px}
+.kpi .v{font-size:1.25rem;font-weight:800;margin-top:2px}
+.kpi .s{font-size:.72rem;margin-top:2px}
+.up{color:var(--good)}.down{color:var(--bad)}.neu{color:var(--mut)}
+.chartbox{position:relative;height:250px;margin-top:10px}
+.chartbox canvas{width:100%;height:100%;display:block}
+.chartbox.sm{height:220px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+th{color:var(--mut);text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);
+  font-weight:600;white-space:nowrap}
+td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.pname{display:flex;align-items:center;gap:8px;font-weight:600}
+.sumrow td{font-weight:800;background:var(--card2)}
+.assess{display:flex;flex-direction:column;gap:9px}
+.aitem{display:flex;gap:10px;background:var(--card2);border:1px solid var(--line);
+  border-radius:10px;padding:11px 12px;font-size:.86rem}
+.aitem .ic{font-size:1.1rem;flex:0 0 auto}
+.aitem b{display:block;font-size:.86rem;margin-bottom:2px}
+.aitem span{color:var(--mut)}
+.aitem.good{border-left:3px solid var(--good)}
+.aitem.warn{border-left:3px solid var(--warn)}
+.aitem.bad{border-left:3px solid var(--bad)}
+.aitem.info{border-left:3px solid var(--acc)}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px}
+summary{padding:16px;font-weight:700;font-size:.95rem;cursor:pointer;list-style:none;user-select:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"▾";float:right;color:var(--mut)}
+details[open] summary::after{content:"▴"}
+.dbody{padding:0 16px 16px}
+pre{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px;
+  font-size:.72rem;overflow:auto;max-height:340px;color:#b9c8e6;white-space:pre-wrap}
+.paths{display:flex;flex-direction:column;gap:8px;font-size:.84rem}
+.paths a{color:var(--acc);text-decoration:none;word-break:break-all}
+.paths .k{color:var(--mut);font-size:.75rem}
+.hint{font-size:.75rem;color:var(--mut);margin-top:8px}
+footer{font-size:.72rem;color:var(--mut);text-align:center;margin-top:6px}
+@media (max-width:720px){
+  .duo{grid-template-columns:1fr}
+  .chartbox{height:230px}
+  table.resp thead{display:none}
+  table.resp,table.resp tbody,table.resp tr,table.resp td{display:block;width:100%}
+  table.resp tr{margin-bottom:10px;border:1px solid var(--line);border-radius:12px;
+    padding:8px 12px;background:var(--card2)}
+  table.resp td{display:flex;justify-content:space-between;align-items:center;gap:12px;
+    border:none;padding:5px 0}
+  table.resp td::before{content:attr(data-l);color:var(--mut);font-size:.75rem;flex:0 0 auto}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="led" id="led"></span>
+  <h1>🛠️ DT-ProfiTools Langzeit-Monitor</h1>
+  <span class="badge">v1.3.2</span>
+  <span class="chip" id="lastQ">Letzte Abfrage: –</span>
+</header>
+
+<div class="note">
+  💡 <b>Erklärung:</b> <b>Aufrufe (Views)</b> = wie oft die Seiten geladen wurden ·
+  <b>Downloads/Clones</b> = wie oft ein Repo geklont wurde ·
+  <b>Stundenwerte</b> entstehen nur, während die App geöffnet ist (Auto-Refresh) ·
+  <b>Lückenlose Historie:</b> alles wird lokal gespeichert, als Datei gesichert und beim Import intelligent zusammengeführt.
+</div>
+
+<div class="boot" id="boot"></div>
+
+<div class="card">
+  <h2>⚙️ Steuerung</h2>
+
+  <label for="token">1. GitHub-Token (bleibt nur auf diesem Gerät):</label>
+  <div class="tokwrap">
+    <input type="password" id="token" placeholder="ghp_…" autocomplete="off">
+    <button type="button" id="eye" title="Zeigen/verbergen">👁️</button>
+  </div>
+  <div class="hint">Benötigt: Classic-Token mit <b>repo</b>-Scope.</div>
+
+  <label for="projSel">2. Projekt auswählen (für „Aktuelles Projekt aktualisieren"):</label>
+  <select id="projSel">
+    <option>1. DT-ProfiDreieck (Hauptseite &amp; dt-profidreieck.de)</option>
+    <option>2. DT-ProfiDreieck (Testversion)</option>
+    <option>3. DT-ProfiSchraube</option>
+    <option>4. DT-ProfiPassung</option>
+    <option>5. DT-ProfiSchweissnaht</option>
+  </select>
+
+  <label for="autoref">3. Auto-Refresh (wirkt nur, solange die App offen ist):</label>
+  <select id="autoref">
+    <option value="off">Aus</option>
+    <option value="15">Alle 15 Minuten</option>
+    <option value="30">Alle 30 Minuten</option>
+    <option value="60">Alle 60 Minuten</option>
+  </select>
+
+  <label>4. Gruppierung Haupt-/Testversion (Button antippen zum Umschalten):</label>
+  <div class="groups" id="groups"></div>
+
+  <div class="btns">
+    <button class="act btn-s" id="btnTest" type="button">🔑 Token prüfen</button>
+    <button class="act btn-s" id="btnOne" type="button">🔄 Aktuelles Projekt aktualisieren</button>
+    <button class="act btn-p" id="btnAll" type="button">📡 Alle Projekte abfragen</button>
+    <button class="act btn-d" id="btnReset" type="button">🗑️ Speicher zurücksetzen</button>
+  </div>
+  <div class="progress"><div id="pbar"></div></div>
+  <div class="hint" id="curProj">Aktuell gewählt: 1. DT-ProfiDreieck (Hauptseite)</div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button data-t="24h" class="on" type="button">24 Std</button>
+  <button data-t="30d" type="button">30 Tage</button>
+  <button data-t="mon" type="button">Monate</button>
+  <button data-t="yr" type="button">Jahre</button>
+</div>
+
+<div class="card">
+  <div class="status" id="status">⏳ Skript startet …</div>
+  <div class="remind" id="remind"></div>
+  <div class="errbox" id="err"></div>
+</div>
+
+<div class="card">
+  <h2>🧠 Automatische Beurteilung</h2>
+  <div class="assess" id="assess"></div>
+</div>
+
+<div class="card">
+  <h2>📋 Gesamtauswertung aller Projekte</h2>
+  <div style="overflow-x:auto">
+  <table class="resp" id="tbl">
+    <thead><tr><th>Projekt</th><th>Aufrufe (Historie)</th><th>Letzte 14 Tage</th><th>Downloads (Nutzer/Total)</th><th>Spitzen-Tag</th><th>Quelle</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📈 Grafische Auswertung</h2>
+  <div id="view24">
+    <div class="kpis" id="kpis"></div>
+    <div class="chartbox"><canvas id="chDelta"></canvas></div>
+    <div class="hint">ℹ️ Stundenwerte entstehen nur bei geöffneter App (Auto-Refresh). Tages-Gesamtwerte liefert GitHub 14 Tage rückwirkend – es geht nichts verloren, nur die Auflösung innerhalb des Tages.</div>
+  </div>
+  <div id="view30" style="display:none"><div class="chartbox"><canvas id="chDaily"></canvas></div></div>
+  <div id="viewMon" style="display:none"><div class="chartbox"><canvas id="chMon"></canvas></div></div>
+  <div id="viewYr" style="display:none"><div class="chartbox"><canvas id="chYr"></canvas></div></div>
+  <div class="duo">
+    <div>
+      <div class="hint" style="margin:0 0 4px">🍩 Haupt- vs. Testversion (gesamte Historie)</div>
+      <div class="chartbox sm"><canvas id="chDonut"></canvas></div>
+    </div>
+    <div>
+      <div class="hint" style="margin:0 0 4px">🏆 Beliebtheit der Tools (gesamte Historie)</div>
+      <div class="chartbox sm"><canvas id="chRank"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<details>
+  <summary>🔐 Langzeit-Datensicherung (Smartphone/Tablet/PC)</summary>
+  <div class="dbody">
+    <div class="btns" style="margin-top:0">
+      <button class="act btn-p" id="btnSave" type="button">💾 Historie als Datei speichern</button>
+      <button class="act btn-s" id="btnLoad" type="button">📥 Historie-Datei laden &amp; zusammenführen</button>
+    </div>
+    <input type="file" id="fileIn" accept=".json,application/json" style="display:none">
+    <div class="hint">Beim Laden werden die Daten <b>zusammengeführt</b> (Merge): der höhere Tagewert gewinnt, Lücken füllen sich gegenseitig – so entsteht über mehrere Geräte hinweg eine lückenlose Historie.</div>
+  </div>
+</details>
+
+<details>
+  <summary>📊 Empfangene Rohdaten &amp; Zwischenablage</summary>
+  <div class="dbody">
+    <div class="btns" style="margin-top:0">
+      <button class="act btn-s" id="btnCopy" type="button">📋 Daten in Zwischenablage kopieren</button>
+    </div>
+    <pre id="raw">Noch keine Daten.</pre>
+  </div>
+</details>
+
+<details>
+  <summary>🔗 Überwachte Pfade &amp; Dateien</summary>
+  <div class="dbody paths">
+    <div><span class="k">Landingpage</span><br><a href="https://www.dt-profidreieck.de/index.html">dt-profidreieck.de/index.html</a></div>
+    <div><span class="k">Dreiecksberechnung (Test)</span><br><a href="https://DieterTepe.github.io/test-dreieck/DT-ProfiDreieck_Test_1-1-0.html">test-dreieck/DT-ProfiDreieck_Test_1-1-0.html</a></div>
+    <div><span class="k">Schraubenberechnung</span><br><a href="https://DieterTepe.github.io/dt-profischraube-web/DT-ProfiSchraube_Test.html">dt-profischraube-web/DT-ProfiSchraube_Test.html</a></div>
+    <div><span class="k">Passungsberechnung</span><br><a href="https://DieterTepe.github.io/dt-profipassung-web/DT-ProfiPassung_Testversion.html">dt-profipassung-web/DT-ProfiPassung_Testversion.html</a></div>
+    <div><span class="k">Schweißnahtberechnung</span><br><a href="https://DieterTepe.github.io/dt-profischweissnaht-web/DT-ProfiSchweissnaht_Testversion.html">dt-profischweissnaht-web/DT-ProfiSchweissnaht_Testversion.html</a></div>
+  </div>
+</details>
+
+<footer>DT-ProfiTools Langzeit-Monitor v1.3.2 · Datenquelle: GitHub Traffic API · alle Daten bleiben lokal auf deinem Gerät</footer>
+<i id="fileEndMarker" style="display:none">ENDE</i>
+</div>
+
+<script>
+/* Wächter: meldet Fehler und erkennt, ob das Hauptskript überhaupt lief */
+window.addEventListener('error', function (e) {
+  try {
+    var b = document.getElementById('boot');
+    if (b) {
+      var d = document.createElement('div');
+      d.style.color = '#fb7185';
+      d.textContent = '✖ FEHLER: ' + e.message + (e.lineno ? ' (Zeile ' + e.lineno + ')' : '');
+      b.appendChild(d);
+    }
+    var eb = document.getElementById('err');
+    if (eb) { eb.style.display = 'block'; eb.textContent = '⚠️ ' + e.message; }
+  } catch (x) {}
+});
+window.addEventListener('load', function () {
+  setTimeout(function () {
+    try {
+      if (!window.__appOK) {
+        var b = document.getElementById('boot');
+        if (b) {
+          var d = document.createElement('div');
+          d.style.color = '#fb7185';
+          d.textContent = '✖ Hauptskript wurde NICHT ausgeführt. Meist wurde die Datei beim Kopieren abgeschnitten oder Anführungszeichen wurden verfälscht. Bitte den Codeblock erneut kopieren.';
+          b.appendChild(d);
+        }
+        var st = document.getElementById('status');
+        if (st) st.textContent = '✖ Skript nicht geladen – siehe Diagnosefeld oben.';
+      }
+    } catch (x) {}
+  }, 500);
+});
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Grundfunktionen ---------- */
+  function $(id) { return document.getElementById(id); }
+  function boot(msg) {
+    try {
+      var b = $('boot');
+      if (!b) return;
+      var d = document.createElement('div');
+      d.textContent = '· ' + msg;
+      b.appendChild(d);
+    } catch (e) {}
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function dstr(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function todayStr() { return dstr(new Date()); }
+  function fmtDE(iso) {
+    if (!iso) return '–';
+    var p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    return p[2] + '.' + p[1] + '.';
+  }
+  function fmtClock() { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+  function fmtHm(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) {
+      var s = String(iso);
+      return s.length >= 16 ? s.slice(11, 16) : s;
+    }
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  function utcDayStr(d) {
+    d = d || new Date();
+    return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+  }
+  function fmtNow() {
+    var d = new Date();
+    return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear() + ', ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  function fmtPct(x) { return (x > 0 ? '+' : '') + Math.round(x) + ' %'; }
+  function setStatus(t) { $('status').textContent = t; }
+  function setLed(s) { $('led').className = 'led' + (s ? ' ' + s : ''); }
+  function showErr(m) { var e = $('err'); e.style.display = 'block'; e.textContent = '⚠️ ' + m; boot('FEHLER: ' + m); }
+  function hideErr() { $('err').style.display = 'none'; }
+  function setProgress(pct) {
+    var el = $('pbar');
+    if (el) el.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  }
+
+  /* ---------- Konfiguration ---------- */
+  /* WICHTIG: OWNER muss exakt so geschrieben sein wie der GitHub-Account
+     (DieterTepe mit großem D und T), sonst leitet GitHub weiter und der
+     Token wird bei der Weiterleitung verworfen -> 404-Fehler. */
+  var OWNER = 'DieterTepe';
+  /* Speicher-Keys: korrektes Lowercase des GitHub-Namens.
+     v1.3.1 und älter nutzten den Tippfehler „dietetepe“ (fehlendes r) –
+     loadState/Import migrieren alte Keys automatisch. */
+  var KEY_OWNER = 'dietertepe';
+  var KEY_OWNER_LEGACY = 'dietetepe';
+  var PROJECTS = [
+    { repo: 'dt-profidreieck-web', name: 'DT-ProfiDreieck', sub: 'Hauptseite & dt-profidreieck.de', hex: '#38bdf8', defGroup: 'haupt' },
+    { repo: 'test-dreieck', name: 'DT-ProfiDreieck', sub: 'Testversion', hex: '#f59e0b', defGroup: 'test' },
+    { repo: 'dt-profischraube-web', name: 'DT-ProfiSchraube', sub: 'Schraubenberechnung', hex: '#34d399', defGroup: 'test' },
+    { repo: 'dt-profipassung-web', name: 'DT-ProfiPassung', sub: 'Passungsberechnung', hex: '#a78bfa', defGroup: 'test' },
+    { repo: 'dt-profischweissnaht-web', name: 'DT-ProfiSchweissnaht', sub: 'Schweißnahtberechnung', hex: '#fb7185', defGroup: 'test' }
+  ];
+  var K_TOK = 'dtTrafficToken', K_HIST = 'dtTrafficHistory', K_SET = 'dtTrafficSettings';
+  var history = {};
+  var settings = { auto: 'off', groups: {}, tab: '24h', lastQuery: 0 };
+  var autoTimer = null;
+  var busy = false;
+
+  function isSafeKey(k) {
+    return !!k && k !== '__proto__' && k !== 'constructor' && k !== 'prototype';
+  }
+  function keyOf(p) { return 'gh_langzeit_traffic_' + KEY_OWNER + '_' + p.repo; }
+  function prefixOf(owner) { return 'gh_langzeit_traffic_' + owner + '_'; }
+  function remapKey(k) {
+    var oldP = prefixOf(KEY_OWNER_LEGACY), newP = prefixOf(KEY_OWNER);
+    if (k.indexOf(oldP) === 0) return newP + k.slice(oldP.length);
+    return k;
+  }
+
+  /* ---------- Speicher ---------- */
+  function sanitize(o) {
+    if (Array.isArray(o)) return o.map(sanitize);
+    if (o && typeof o === 'object') {
+      var n = {};
+      for (var k in o) {
+        if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
+        if (!isSafeKey(k)) continue;
+        var nk = String(k).trim();
+        if (!isSafeKey(nk)) continue;
+        var v = sanitize(o[k]);
+        if (typeof v === 'string') v = v.trim();
+        n[nk] = v;
+      }
+      return n;
+    }
+    return o;
+  }
+  function migrateHistoryKeys(src) {
+    var out = {};
+    if (!src || typeof src !== 'object') return out;
+    for (var k in src) {
+      if (!Object.prototype.hasOwnProperty.call(src, k)) continue;
+      if (!isSafeKey(k)) continue;
+      var nk = remapKey(k);
+      if (!isSafeKey(nk)) continue;
+      if (out[nk]) out[nk] = mergeProject(out[nk], src[k]);
+      else out[nk] = src[k];
+    }
+    return out;
+  }
+  function loadState() {
+    var migrated = false;
+    try {
+      var raw = localStorage.getItem(K_HIST);
+      if (raw) {
+        var parsed = sanitize(JSON.parse(raw));
+        history = migrateHistoryKeys(parsed);
+        if (JSON.stringify(Object.keys(parsed).sort()) !== JSON.stringify(Object.keys(history).sort())) {
+          migrated = true;
+          boot('Speicher-Keys migriert: dietetepe → dietertepe (alte Dateien bleiben importierbar)');
+        }
+      }
+      boot('Historie geladen: ' + Object.keys(history).length + ' Projekt-Datensätze');
+    } catch (e) { history = {}; boot('Historie leer/fehlerhaft: ' + e.message); }
+    try {
+      var s = JSON.parse(localStorage.getItem(K_SET) || '{}');
+      if (s.auto) settings.auto = s.auto;
+      if (s.tab) settings.tab = s.tab;
+      if (s.lastQuery) settings.lastQuery = s.lastQuery;
+      if (s.groups) settings.groups = s.groups;
+    } catch (e) {}
+    for (var i = 0; i < PROJECTS.length; i++) {
+      if (!settings.groups[PROJECTS[i].repo]) settings.groups[PROJECTS[i].repo] = PROJECTS[i].defGroup;
+    }
+    try {
+      var t = localStorage.getItem(K_TOK);
+      if (t) $('token').value = t;
+    } catch (e) {}
+    if (migrated) saveAll();
+  }
+  function saveAll() {
+    try {
+      localStorage.setItem(K_HIST, JSON.stringify(history));
+      localStorage.setItem(K_SET, JSON.stringify(settings));
+    } catch (e) { boot('Speichern fehlgeschlagen: ' + e.message); }
+  }
+  function ensure(key) {
+    if (!history[key]) history[key] = { hourly: [], daily: [] };
+    if (!history[key].hourly) history[key].hourly = [];
+    if (!history[key].daily) history[key].daily = [];
+    return history[key];
+  }
+  function dailyOf(key) { return (history[key] && history[key].daily) || []; }
+  function hourlyOf(key) { return (history[key] && history[key].hourly) || []; }
+  function entryAt(key, date) {
+    var dl = dailyOf(key);
+    for (var i = 0; i < dl.length; i++) if (dl[i].date === date) return dl[i];
+    return null;
+  }
+  function totalViews(key, from, to) {
+    var s = 0, dl = dailyOf(key);
+    for (var i = 0; i < dl.length; i++) {
+      var e = dl[i];
+      if ((!from || e.date >= from) && (!to || e.date <= to)) s += (+e.views || 0);
+    }
+    return s;
+  }
+  function lastNDates(n) {
+    var out = [];
+    for (var i = n - 1; i >= 0; i--) {
+      var d = new Date(); d.setDate(d.getDate() - i);
+      out.push(dstr(d));
+    }
+    return out;
+  }
+  function sumDates(dates) {
+    var s = 0;
+    for (var i = 0; i < dates.length; i++) {
+      for (var j = 0; j < PROJECTS.length; j++) {
+        var e = entryAt(keyOf(PROJECTS[j]), dates[i]);
+        if (e) s += (+e.views || 0);
+      }
+    }
+    return s;
+  }
+
+  /* ---------- GitHub API ---------- */
+  function apiError(st, j) {
+    var m = (j && j.message) ? j.message : '';
+    if (st === 401) return '401 – Token ungültig oder abgelaufen. Bitte neu erzeugen.';
+    if (st === 403) return '403 – Zugriff verweigert. Token braucht „repo“-Scope, oder Rate-Limit erreicht. ' + m;
+    if (st === 404) return '404 – Repository nicht gefunden oder Token hat keinen Zugriff.';
+    return st + ' – ' + (m || 'Unbekannter Fehler');
+  }
+  function ghFetch(path) {
+    var tok = $('token').value.trim();
+    return fetch('https://api.github.com' + path, {
+      headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + tok }
+    }).then(function (r) {
+      return r.text().then(function (txt) {
+        var j = {};
+        try { j = JSON.parse(txt); } catch (e) {}
+        if (!r.ok) throw new Error(apiError(r.status, j));
+        return j;
+      });
+    });
+  }
+  function applyData(key, vd, cd) {
+    var h = ensure(key);
+    var map = {};
+    for (var i = 0; i < h.daily.length; i++) map[h.daily[i].date] = h.daily[i];
+    var vs = (vd && vd.views) || [];
+    for (var a = 0; a < vs.length; a++) {
+      var dt = String(vs[a].timestamp).slice(0, 10);
+      if (!map[dt]) map[dt] = { date: dt, views: 0, uniques: 0, clones: 0, cloneUniques: 0 };
+      map[dt].views = Math.max(map[dt].views, vs[a].count || 0);
+      map[dt].uniques = Math.max(map[dt].uniques, vs[a].uniques || 0);
+    }
+    var cs = (cd && cd.clones) || [];
+    for (var b = 0; b < cs.length; b++) {
+      var dt2 = String(cs[b].timestamp).slice(0, 10);
+      if (!map[dt2]) map[dt2] = { date: dt2, views: 0, uniques: 0, clones: 0, cloneUniques: 0 };
+      map[dt2].clones = Math.max(map[dt2].clones, cs[b].count || 0);
+      map[dt2].cloneUniques = Math.max(map[dt2].cloneUniques, cs[b].uniques || 0);
+    }
+    var dates = Object.keys(map).sort();
+    h.daily = [];
+    for (var k = 0; k < dates.length; k++) h.daily.push(map[dates[k]]);
+    var todayLocal = todayStr();
+    var todayUtc = utcDayStr();
+    var t = entryAt(key, todayUtc) || entryAt(key, todayLocal);
+    h.hourly.push({
+      iso: new Date().toISOString(),
+      time: fmtNow(),
+      day: todayLocal,
+      utcDay: todayUtc,
+      views: t ? (+t.views || 0) : 0,
+      uniques: t ? (+t.uniques || 0) : 0
+    });
+    if (h.hourly.length > 1000) h.hourly = h.hourly.slice(h.hourly.length - 1000);
+  }
+  function updateOne(p) {
+    return ghFetch('/repos/' + OWNER + '/' + p.repo + '/traffic/views').then(function (vd) {
+      return ghFetch('/repos/' + OWNER + '/' + p.repo + '/traffic/clones').then(function (cd) {
+        applyData(keyOf(p), vd, cd);
+      });
+    });
+  }
+  function setBusy(on, ledState) {
+    busy = !!on;
+    var ids = ['btnTest', 'btnOne', 'btnAll'];
+    for (var i = 0; i < ids.length; i++) {
+      var el = $(ids[i]);
+      if (el) el.disabled = busy;
+    }
+    if (ledState) setLed(ledState);
+    else if (on) setLed('busy');
+  }
+  function runUpdate(all) {
+    if (busy) return;
+    var tok = $('token').value.trim();
+    if (!tok) { showErr('Bitte zuerst einen GitHub-Token eingeben.'); return; }
+    try { localStorage.setItem(K_TOK, tok); } catch (e) {}
+    setBusy(true, 'busy'); hideErr(); setProgress(0);
+    var idx = $('projSel').selectedIndex;
+    if (idx < 0 || idx >= PROJECTS.length) idx = 0;
+    var list = all ? PROJECTS.slice() : [PROJECTS[idx]];
+    var errs = [];
+    var chain = Promise.resolve();
+    for (var i = 0; i < list.length; i++) {
+      (function (p, n) {
+        chain = chain.then(function () {
+          setStatus('⏳ (' + (n + 1) + '/' + list.length + ') Frage ab: ' + p.name + ' (' + p.sub + ') …');
+          setProgress(n / list.length * 100);
+          return updateOne(p).then(null, function (e) { errs.push(p.name + ': ' + e.message); });
+        });
+      })(list[i], i);
+    }
+    chain.then(function () {
+      settings.lastQuery = Date.now();
+      saveAll();
+      renderAll();
+      setProgress(100);
+      setBusy(false);
+      if (errs.length === 0) {
+        setLed('ok');
+        setStatus('✅ Fertig (' + list.length + (list.length > 1 ? ' Projekte' : ' Projekt') + ') – ' + fmtNow());
+        boot('Abfrage erfolgreich: ' + list.length + ' Projekt(e)');
+      } else {
+        setLed('err');
+        setStatus('⚠️ Abgeschlossen mit ' + errs.length + ' Fehler(n).');
+        showErr(errs.join('\n'));
+      }
+    }).then(null, function (e) {
+      setBusy(false);
+      setLed('err');
+      showErr('Unerwarteter Fehler: ' + e.message);
+    });
+  }
+  function testToken() {
+    if (busy) return;
+    var tok = $('token').value.trim();
+    if (!tok) { showErr('Bitte zuerst einen Token eingeben.'); return; }
+    setBusy(true, 'busy'); hideErr();
+    setStatus('⏳ Prüfe Token …');
+    fetch('https://api.github.com/user', {
+      headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + tok }
+    }).then(function (r) {
+      return r.text().then(function (txt) {
+        var j = {};
+        try { j = JSON.parse(txt); } catch (e) {}
+        setBusy(false);
+        if (r.ok) {
+          setLed('ok');
+          setStatus('✅ Token gültig – angemeldet als „' + (j.login || '?') + '". Abfrage läuft unter: ' + OWNER);
+          try { localStorage.setItem(K_TOK, tok); } catch (e) {}
+        } else {
+          setLed('err');
+          showErr(apiError(r.status, j));
+        }
+      });
+    }).then(null, function (e) {
+      setBusy(false);
+      setLed('err');
+      showErr('Netzwerkfehler: ' + e.message);
+    });
+  }
+
+  /* ---------- Gruppierung ---------- */
+  /* ---------- Gruppierung (KORRIGIERT) ---------- */
+  function renderGroups() {
+    var box = $('groups');
+    if (!box) return;
+    box.innerHTML = '';
+    for (var i = 0; i < PROJECTS.length; i++) {
+      (function (p) {
+        var g = settings.groups[p.repo] || p.defGroup;
+        var row = document.createElement('div');
+        row.className = 'grow';
+        row.innerHTML = '<span class="dot" style="background:' + p.hex + '"></span><span>' + p.name +
+          ' <span class="psub">· ' + p.sub + '</span></span>';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'gtag ' + g;
+        btn.textContent = (g === 'haupt') ? 'Hauptversion' : 'Testversion';
+        btn.onclick = function () {
+          var curGroup = settings.groups[p.repo] || p.defGroup;
+          settings.groups[p.repo] = (curGroup === 'haupt') ? 'test' : 'haupt';
+          saveAll();
+          renderGroups();
+          renderAll();
+        };
+        row.appendChild(btn);
+        box.appendChild(row);
+      })(PROJECTS[i]);
+    }
+  }
+
+  /* ---------- Tabelle ---------- */
+  function renderTable() {
+    var tb = document.querySelector('#tbl tbody');
+    if (!tb) return;
+    tb.innerHTML = '';
+    var d14 = lastNDates(14);
+    var from = d14[0], to = d14[d14.length - 1];
+    var gAll = 0, g14 = 0, gCl = 0, gClU = 0;
+    for (var i = 0; i < PROJECTS.length; i++) {
+      var p = PROJECTS[i], k = keyOf(p);
+      var all = totalViews(k);
+      var v14 = totalViews(k, from, to);
+      var cl = 0, clu = 0, dl = dailyOf(k), peak = null;
+      for (var j = 0; j < dl.length; j++) {
+        cl += (+dl[j].clones || 0);
+        clu += (+dl[j].cloneUniques || 0);
+        if (!peak || (+dl[j].views || 0) > (+peak.views || 0)) peak = dl[j];
+      }
+      var peakTxt = (peak && (+peak.views > 0)) ? fmtDE(peak.date) + ' (' + peak.views + ')' : '–';
+      var src = (p.repo === 'dt-profidreieck-web') ? 'Eigene Domain' : 'GitHub Pages';
+      gAll += all; g14 += v14; gCl += cl; gClU += clu;
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td data-l="Projekt"><span class="pname"><span class="dot" style="background:' + p.hex + '"></span>' +
+        p.name + ' <span class="psub">· ' + p.sub + '</span></span></td>' +
+        '<td data-l="Aufrufe (Historie)"><b>' + all + '</b></td>' +
+        '<td data-l="Letzte 14 Tage">' + v14 + '</td>' +
+        '<td data-l="Downloads">' + clu + ' / ' + cl + '</td>' +
+        '<td data-l="Spitzen-Tag">' + peakTxt + '</td>' +
+        '<td data-l="Quelle">' + src + '</td>';
+      tb.appendChild(tr);
+    }
+    var trs = document.createElement('tr');
+    trs.className = 'sumrow';
+    trs.innerHTML = '<td data-l="Projekt">Σ Summe</td><td data-l="Aufrufe">' + gAll + '</td>' +
+      '<td data-l="14 Tage">' + g14 + '</td><td data-l="Downloads">' + gClU + ' / ' + gCl + '</td><td></td><td></td>';
+    tb.appendChild(trs);
+  }
+
+  /* ---------- Beurteilung ---------- */
+  function buildAssessment() {
+    var box = $('assess');
+    var A = [];
+    var tot = 0;
+    for (var i = 0; i < PROJECTS.length; i++) tot += totalViews(keyOf(PROJECTS[i]));
+    if (tot === 0) {
+      box.innerHTML = '<div class="aitem info"><span class="ic">💤</span><div><span>Noch keine Daten – Token eingeben und „Alle Projekte abfragen" tippen oder eine Historie-Datei laden.</span></div></div>';
+      return;
+    }
+    var ranked = [];
+    for (var r = 0; r < PROJECTS.length; r++) ranked.push({ p: PROJECTS[r], v: totalViews(keyOf(PROJECTS[r])) });
+    ranked.sort(function (a, b) { return b.v - a.v; });
+    var top = ranked[0];
+    A.push({ ic: '📈', cls: 'info', t: 'Überblick', x: 'Gesamt <b>' + tot + ' Aufrufe</b> in der gespeicherten Historie. Stärkstes Tool: <b>' + top.p.name + ' (' + top.p.sub + ')</b> mit ' + top.v + ' Aufrufen = ' + Math.round(top.v / tot * 100) + ' % des Traffics.' });
+
+    var d7 = lastNDates(7);
+    var p7 = lastNDates(14).slice(0, 7);
+    var v7 = sumDates(d7), vp7 = sumDates(p7);
+    if (vp7 > 0) {
+      var ch = (v7 - vp7) / vp7 * 100;
+      var t2 = v7 + ' zu ' + vp7 + ' Aufrufen → <b>' + fmtPct(ch) + '</b>. ';
+      if (ch >= 20) t2 += 'Starker Aufwärtstrend – dranbleiben!';
+      else if (ch >= 0) t2 += 'Leicht positiv, das Niveau stabilisiert sich.';
+      else t2 += 'Rückgang – Ursache prüfen (weniger Abfragen oder weniger Besucher?).';
+      A.push({ ic: ch >= 0 ? '📈' : '📉', cls: ch >= 0 ? 'good' : 'warn', t: 'Trend (letzte 7 Tage vs. die 7 Tage davor)', x: t2 });
+    } else {
+      A.push({ ic: '📊', cls: 'info', t: 'Trend', x: 'Letzte 7 Tage: ' + v7 + ' Aufrufe. Für einen Vergleich fehlen noch ältere Tage.' });
+    }
+
+    var peak = null;
+    for (var a = 0; a < PROJECTS.length; a++) {
+      var dl = dailyOf(keyOf(PROJECTS[a]));
+      for (var b = 0; b < dl.length; b++) {
+        if (!peak || (+dl[b].views || 0) > peak.v) peak = { d: dl[b].date, v: (+dl[b].views || 0) };
+      }
+    }
+    if (peak && peak.v > 0) A.push({ ic: '🏅', cls: 'info', t: 'Spitzentag', x: 'Der aktivste Tag war <b>' + fmtDE(peak.d) + '</b> mit ' + peak.v + ' Aufrufen (über alle Projekte).' });
+
+    var hv = 0, tv = 0;
+    for (var c = 0; c < PROJECTS.length; c++) {
+      var vv = totalViews(keyOf(PROJECTS[c]));
+      if (settings.groups[PROJECTS[c].repo] === 'haupt') hv += vv; else tv += vv;
+    }
+    if (hv > 0 || tv > 0) {
+      var sumHT = hv + tv;
+      var pT = sumHT ? Math.round(tv / sumHT * 100) : 0;
+      var gx = 'Hauptversionen: <b>' + hv + '</b> Aufrufe · Testversionen: <b>' + tv + '</b> Aufrufe → Test-Anteil <b>' + pT + ' %</b>. ';
+      if (hv > 0 && tv > 0) {
+        if (tv > hv) gx += 'Die Testversionen ziehen mehr Traffic als die Hauptseiten – Verlinkung auf die Hauptseiten prüfen/stärken.';
+        else if (pT > 40) gx += 'Testversionen werden rege genutzt – gutes Zeichen für Interesse an neuen Funktionen.';
+        else gx += 'Die Hauptseiten führen klar, Testversionen laufen punktuell mit.';
+      }
+      A.push({ ic: '⚖️', cls: 'info', t: 'Haupt- vs. Testversion (Repo-Ebene)', x: gx });
+    }
+
+    var allDates = {}, minD = null, maxD = null;
+    for (var e2 = 0; e2 < PROJECTS.length; e2++) {
+      var dl2 = dailyOf(keyOf(PROJECTS[e2]));
+      for (var f = 0; f < dl2.length; f++) {
+        allDates[dl2[f].date] = true;
+        if (!minD || dl2[f].date < minD) minD = dl2[f].date;
+        if (!maxD || dl2[f].date > maxD) maxD = dl2[f].date;
+      }
+    }
+    if (minD) {
+      var runs = [], run = null;
+      var d = new Date(minD + 'T00:00:00');
+      var end = new Date(maxD + 'T00:00:00');
+      while (d <= end) {
+        var ds = dstr(d);
+        var anyV = false;
+        for (var g2 = 0; g2 < PROJECTS.length; g2++) {
+          var ee = entryAt(keyOf(PROJECTS[g2]), ds);
+          if (ee && (+ee.views || 0) > 0) { anyV = true; break; }
+        }
+        if (!anyV) { if (!run) run = { from: ds }; run.to = ds; }
+        else if (run) { runs.push(run); run = null; }
+        d.setDate(d.getDate() + 1);
+      }
+      if (run) runs.push(run);
+      var big = null;
+      for (var h2 = 0; h2 < runs.length; h2++) {
+        var n = Math.round((new Date(runs[h2].to + 'T00:00:00') - new Date(runs[h2].from + 'T00:00:00')) / 864e5) + 1;
+        runs[h2].n = n;
+        if (n >= 3 && (!big || n > big.n)) big = runs[h2];
+      }
+      if (big) A.push({ ic: '⚠️', cls: 'warn', t: 'Datenlücke', x: 'Vom <b>' + fmtDE(big.from) + ' bis ' + fmtDE(big.to) + '</b> (' + big.n + ' Tage) gab es null Aufrufe. GitHub liefert Tageswerte 14 Tage rückwirkend – echte Null-Tage bleiben Null. Nur wenn die App länger als 14 Tage nicht abgefragt wurde, können Tage fehlen.' });
+      if (maxD < todayStr()) A.push({ ic: '📅', cls: 'warn', t: 'Letzter erfasster Tag', x: 'Die Daten enden am <b>' + fmtDE(maxD) + '</b>. Jetzt „Alle Projekte abfragen" tippen, um auf den aktuellen Stand zu kommen.' });
+    }
+
+    var today = todayStr();
+    var yd = new Date(); yd.setDate(yd.getDate() - 1);
+    var vT = sumDates([today]), vY = sumDates([dstr(yd)]);
+    if (vT > 0 || vY > 0) {
+      var hx = 'Heute bisher <b>' + vT + '</b> Aufrufe, gestern gesamt <b>' + vY + '</b>. ';
+      if (vY > 0 && vT >= vY) hx += 'Der Tag läuft bisher stärker als gestern.';
+      else if (vY > 0) hx += 'Der Tag ist noch nicht vorbei.';
+      A.push({ ic: '🕐', cls: vT >= vY ? 'good' : 'warn', t: 'Heute vs. gestern', x: hx });
+    }
+
+    if (v7 > 0) {
+      var avg = v7 / 7;
+      var now = new Date();
+      var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      var proj = Math.round(avg * dim);
+      var monNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+      A.push({ ic: '🔮', cls: 'info', t: 'Prognose', x: 'Beim aktuellen Schnitt von ~' + avg.toFixed(1) + ' Aufrufen/Tag erreicht der <b>' + monNames[now.getMonth()] + '</b> hochgerechnet rund <b>' + proj + ' Aufrufe</b>.' });
+    }
+
+    var un = 0;
+    for (var u = 0; u < PROJECTS.length; u++) {
+      var dl3 = dailyOf(keyOf(PROJECTS[u]));
+      for (var w = 0; w < dl3.length; w++) un += (+dl3[w].uniques || 0);
+    }
+    if (un > 0 && un <= PROJECTS.length * 3) {
+      A.push({ ic: '👤', cls: 'warn', t: 'Besucherstruktur', x: 'Die Zahl eindeutiger Besucher (Uniques) ist bisher sehr gering – der Traffic stammt überwiegend aus eigenen Tests/Aufrufen. Sobald echte Nutzer kommen, steigt dieser Wert deutlich.' });
+    }
+
+    var html = '';
+    for (var z = 0; z < A.length; z++) {
+      html += '<div class="aitem ' + A[z].cls + '"><span class="ic">' + A[z].ic + '</span><div><b>' + A[z].t + '</b><span>' + A[z].x + '</span></div></div>';
+    }
+    box.innerHTML = html;
+  }
+
+  /* ---------- 24h-KPIs ---------- */
+  function renderKpis() {
+    var box = $('kpis');
+    if (!box) return;
+    box.innerHTML = '';
+    var today = todayStr();
+    var yd = new Date(); yd.setDate(yd.getDate() - 1);
+    var yest = dstr(yd);
+    for (var i = 0; i < PROJECTS.length; i++) {
+      var p = PROJECTS[i], k = keyOf(p);
+      var eT = entryAt(k, today), eY = entryAt(k, yest);
+      var vT = eT ? (+eT.views || 0) : 0;
+      var vY = eY ? (+eY.views || 0) : 0;
+      var sub = '<span class="neu">–</span>';
+      if (vY > 0) {
+        var ch = (vT - vY) / vY * 100;
+        sub = '<span class="' + (ch >= 0 ? 'up' : 'down') + '">' + fmtPct(ch) + ' vs. gestern</span>';
+      } else if (vT > 0) {
+        sub = '<span class="up">gestern 0</span>';
+      }
+      var div = document.createElement('div');
+      div.className = 'kpi';
+      div.innerHTML = '<div class="t"><span class="dot" style="background:' + p.hex + '"></span>' + p.name + '</div>' +
+        '<div class="v">' + vT + '</div><div class="s">' + sub + '</div>';
+      box.appendChild(div);
+    }
+  }
+
+  /* ---------- Eigene Canvas-Diagramme ---------- */
+  function setupCanvas(cv) {
+    var dpr = window.devicePixelRatio || 1;
+    var w = cv.clientWidth || 300;
+    var h = cv.clientHeight || 220;
+    if (w < 40) w = 300;
+    if (h < 40) h = 220;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: h };
+  }
+  function drawStackedBars(cvId, labels, datasets) {
+    var cv = $(cvId);
+    if (!cv) return;
+    var s = setupCanvas(cv), ctx = s.ctx, W = s.w, H = s.h;
+    ctx.clearRect(0, 0, W, H);
+    var padL = 34, padR = 8, padT = 10, padB = 26;
+    var pw = W - padL - padR, ph = H - padT - padB;
+    var n = labels.length;
+    ctx.font = '10px sans-serif';
+    ctx.fillStyle = '#8fa3c7';
+    ctx.strokeStyle = 'rgba(34,48,77,.55)';
+    ctx.lineWidth = 1;
+    var max = 0;
+    for (var i = 0; i < n; i++) {
+      var sum = 0;
+      for (var d = 0; d < datasets.length; d++) sum += (+datasets[d].data[i] || 0);
+      if (sum > max) max = sum;
+    }
+    if (max <= 0) max = 1;
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + ph - (ph * g / 4);
+      ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(W - padR, gy); ctx.stroke();
+      ctx.textAlign = 'right';
+      ctx.fillText(String(Math.round(max * g / 4)), padL - 4, gy + 3);
+    }
+    if (n === 0) {
+      ctx.textAlign = 'left';
+      ctx.fillText('Noch keine Daten für diesen Zeitraum.', padL + 6, padT + 14);
+      return;
+    }
+    var slot = pw / n;
+    var bw = Math.max(2, Math.min(30, slot * 0.66));
+    for (var i2 = 0; i2 < n; i2++) {
+      var x = padL + slot * i2 + (slot - bw) / 2;
+      var yCur = padT + ph;
+      for (var d2 = 0; d2 < datasets.length; d2++) {
+        var v = (+datasets[d2].data[i2] || 0);
+        if (v <= 0) continue;
+        var bh = ph * v / max;
+        yCur -= bh;
+        ctx.fillStyle = datasets[d2].color;
+        ctx.fillRect(x, yCur, bw, bh);
+      }
+      var step = Math.ceil(n / Math.max(3, Math.floor(pw / 44)));
+      if (i2 % step === 0 || i2 === n - 1) {
+        ctx.fillStyle = '#8fa3c7';
+        ctx.textAlign = 'center';
+        ctx.fillText(labels[i2], padL + slot * i2 + slot / 2, H - 8);
+      }
+    }
+  }
+  function drawDonut(cvId, values, colors, legendLabels) {
+    var cv = $(cvId);
+    if (!cv) return;
+    var s = setupCanvas(cv), ctx = s.ctx, W = s.w, H = s.h;
+    ctx.clearRect(0, 0, W, H);
+    var total = 0;
+    for (var i = 0; i < values.length; i++) total += values[i];
+    var cx = W / 2, cy = H / 2 - 10;
+    var r = Math.min(W, H) / 2 - 26;
+    if (r < 20) r = 20;
+    if (total <= 0) {
+      ctx.strokeStyle = 'rgba(34,48,77,.9)';
+      ctx.lineWidth = 16;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#8fa3c7'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Keine Daten', cx, cy + 3);
+      return;
+    }
+    var start = -Math.PI / 2;
+    for (var j = 0; j < values.length; j++) {
+      if (values[j] <= 0) continue;
+      var ang = values[j] / total * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, start, start + ang);
+      ctx.strokeStyle = colors[j];
+      ctx.lineWidth = 18;
+      ctx.stroke();
+      start += ang;
+    }
+    ctx.fillStyle = '#e8eefb'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(String(total), cx, cy + 1);
+    ctx.fillStyle = '#8fa3c7'; ctx.font = '10px sans-serif';
+    ctx.fillText('Aufrufe', cx, cy + 15);
+    ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+    var lx = 8, ly = H - 10;
+    for (var k = 0; k < values.length; k++) {
+      ctx.fillStyle = colors[k];
+      ctx.fillRect(lx, ly - 8, 9, 9);
+      ctx.fillStyle = '#8fa3c7';
+      var pct = Math.round(values[k] / total * 100);
+      var txt = legendLabels[k] + ': ' + pct + ' %';
+      ctx.fillText(txt, lx + 13, ly);
+      lx += ctx.measureText(txt).width + 30;
+    }
+  }
+  function drawHBars(cvId, items) {
+    var cv = $(cvId);
+    if (!cv) return;
+    var s = setupCanvas(cv), ctx = s.ctx, W = s.w, H = s.h;
+    ctx.clearRect(0, 0, W, H);
+    if (!items.length) return;
+    var max = 1;
+    for (var i = 0; i < items.length; i++) if (items[i].value > max) max = items[i].value;
+    ctx.font = '10px sans-serif';
+    var labelW = 0;
+    for (var a = 0; a < items.length; a++) {
+      var wt = ctx.measureText(items[a].label).width;
+      if (wt > labelW) labelW = wt;
+    }
+    labelW = Math.min(labelW + 6, W * 0.48);
+    var rowH = H / items.length;
+    for (var b = 0; b < items.length; b++) {
+      var it = items[b];
+      var y = rowH * b + rowH / 2;
+      ctx.fillStyle = '#8fa3c7';
+      ctx.textAlign = 'left';
+      ctx.fillText(it.label, 4, y + 3, labelW - 6);
+      var barMax = W - labelW - 40;
+      var bw = barMax * it.value / max;
+      ctx.fillStyle = it.color;
+      ctx.fillRect(labelW, y - 6, Math.max(bw, it.value > 0 ? 2 : 0), 12);
+      ctx.fillStyle = '#e8eefb';
+      ctx.fillText(String(it.value), labelW + Math.max(bw, 2) + 5, y + 3);
+    }
+  }
+  function renderDelta() {
+    var today = todayStr();
+    var labelMap = {};
+    var series = [];
+    for (var i = 0; i < PROJECTS.length; i++) {
+      var p = PROJECTS[i];
+      var snaps = hourlyOf(keyOf(p)).filter(function (sn) { return sn.day === today; });
+      snaps.sort(function (a, b) { return a.iso < b.iso ? -1 : 1; });
+      var pts = [];
+      for (var j = 1; j < snaps.length; j++) {
+        var lab = fmtHm(snaps[j].iso || snaps[j].time);
+        labelMap[lab] = true;
+        pts.push({ lab: lab, d: (+snaps[j].views || 0) - (+snaps[j - 1].views || 0) });
+      }
+      series.push({ p: p, pts: pts });
+    }
+    var labs = Object.keys(labelMap).sort();
+    var datasets = [];
+    for (var k = 0; k < series.length; k++) {
+      var data = [];
+      for (var l = 0; l < labs.length; l++) {
+        var val = 0;
+        for (var m = 0; m < series[k].pts.length; m++) {
+          if (series[k].pts[m].lab === labs[l]) { val = series[k].pts[m].d; break; }
+        }
+        data.push(val);
+      }
+      datasets.push({ label: series[k].p.name, color: series[k].p.hex, data: data });
+    }
+    drawStackedBars('chDelta', labs, datasets);
+  }
+  function renderDaily() {
+    var days = lastNDates(30);
+    var labels = [];
+    for (var i = 0; i < days.length; i++) labels.push(fmtDE(days[i]));
+    var datasets = [];
+    for (var j = 0; j < PROJECTS.length; j++) {
+      var data = [];
+      for (var k = 0; k < days.length; k++) {
+        var e = entryAt(keyOf(PROJECTS[j]), days[k]);
+        data.push(e ? (+e.views || 0) : 0);
+      }
+      datasets.push({ label: PROJECTS[j].name, color: PROJECTS[j].hex, data: data });
+    }
+    drawStackedBars('chDaily', labels, datasets);
+  }
+  function aggBy(key, unit) {
+    var m = {}, dl = dailyOf(key);
+    for (var i = 0; i < dl.length; i++) {
+      var kk = (unit === 'mon') ? dl[i].date.slice(0, 7) : dl[i].date.slice(0, 4);
+      m[kk] = (m[kk] || 0) + (+dl[i].views || 0);
+    }
+    return m;
+  }
+  function renderPeriod(unit, cvId) {
+    var maps = [];
+    for (var i = 0; i < PROJECTS.length; i++) maps.push(aggBy(keyOf(PROJECTS[i]), unit));
+    var ks = {};
+    for (var a = 0; a < maps.length; a++) for (var kk in maps[a]) ks[kk] = true;
+    var keys = Object.keys(ks).sort();
+    var datasets = [];
+    for (var b = 0; b < PROJECTS.length; b++) {
+      var data = [];
+      for (var c = 0; c < keys.length; c++) data.push(maps[b][keys[c]] || 0);
+      datasets.push({ label: PROJECTS[b].name, color: PROJECTS[b].hex, data: data });
+    }
+    drawStackedBars(cvId, keys, datasets);
+  }
+  function renderDonut() {
+    var hv = 0, tv = 0;
+    for (var i = 0; i < PROJECTS.length; i++) {
+      var v = totalViews(keyOf(PROJECTS[i]));
+      if (settings.groups[PROJECTS[i].repo] === 'haupt') hv += v; else tv += v;
+    }
+    drawDonut('chDonut', [hv, tv], ['#22d3ee', '#f59e0b'], ['Haupt', 'Test']);
+  }
+  function renderRank() {
+    var r = [];
+    for (var i = 0; i < PROJECTS.length; i++) r.push({ p: PROJECTS[i], v: totalViews(keyOf(PROJECTS[i])) });
+    r.sort(function (a, b) { return b.v - a.v; });
+    var items = [];
+    for (var j = 0; j < r.length; j++) {
+      items.push({
+        label: r[j].p.name + ' (' + (settings.groups[r[j].p.repo] === 'haupt' ? 'H' : 'T') + ')',
+        value: r[j].v,
+        color: r[j].p.hex
+      });
+    }
+    drawHBars('chRank', items);
+  }
+  function renderCharts() {
+    var t = settings.tab;
+    if (t === '24h') { renderKpis(); renderDelta(); }
+    else if (t === '30d') renderDaily();
+    else if (t === 'mon') renderPeriod('mon', 'chMon');
+    else renderPeriod('yr', 'chYr');
+    renderDonut();
+    renderRank();
+  }
+
+  /* ---------- Export / Import ---------- */
+  function buildExport() {
+    var ex = {};
+    var order = [];
+    for (var i = 0; i < PROJECTS.length; i++) order.push(keyOf(PROJECTS[i]));
+    for (var k in history) { if (history.hasOwnProperty(k) && order.indexOf(k) < 0) order.push(k); }
+    for (var a = 0; a < order.length; a++) {
+      var key = order[a], h = history[key];
+      if (!h || !h.daily || !h.daily.length) continue;
+      var mm = {}, yy = {};
+      for (var b = 0; b < h.daily.length; b++) {
+        var e = h.daily[b];
+        var mo = e.date.slice(0, 7), ye = e.date.slice(0, 4);
+        if (!mm[mo]) mm[mo] = { views: 0, uniques: 0 };
+        mm[mo].views += (+e.views || 0);
+        mm[mo].uniques = Math.max(mm[mo].uniques, +e.uniques || 0);
+        if (!yy[ye]) yy[ye] = { views: 0, uniques: 0 };
+        yy[ye].views += (+e.views || 0);
+        yy[ye].uniques = Math.max(yy[ye].uniques, +e.uniques || 0);
+      }
+      var monthly = Object.keys(mm).sort().map(function (mk) { return { month: mk, views: mm[mk].views, uniques: mm[mk].uniques }; });
+      var yearly = Object.keys(yy).sort().map(function (yk) { return { year: yk, views: yy[yk].views, uniques: yy[yk].uniques }; });
+      ex[key] = { hourly: h.hourly || [], daily: h.daily, monthly: monthly, yearly: yearly };
+    }
+    return ex;
+  }
+  function renderRaw() {
+    $('raw').textContent = JSON.stringify(buildExport(), null, 2);
+  }
+  function mergeProject(local, imp) {
+    var l = local || { hourly: [], daily: [] };
+    if (!l.hourly) l.hourly = [];
+    if (!l.daily) l.daily = [];
+    var map = {};
+    for (var i = 0; i < l.daily.length; i++) map[l.daily[i].date] = l.daily[i];
+    var idl = (imp && imp.daily) || [];
+    for (var j = 0; j < idl.length; j++) {
+      var e = idl[j];
+      var old = map[e.date];
+      if (!old) {
+        map[e.date] = { date: e.date, views: (+e.views || 0), uniques: (+e.uniques || 0), clones: (+e.clones || 0), cloneUniques: (+e.cloneUniques || 0) };
+      } else {
+        old.views = Math.max(+old.views || 0, +e.views || 0);
+        old.uniques = Math.max(+old.uniques || 0, +e.uniques || 0);
+        old.clones = Math.max(+old.clones || 0, +e.clones || 0);
+        old.cloneUniques = Math.max(+old.cloneUniques || 0, +e.cloneUniques || 0);
+      }
+    }
+    var dates = Object.keys(map).sort();
+    l.daily = [];
+    for (var k = 0; k < dates.length; k++) l.daily.push(map[dates[k]]);
+    var seen = {};
+    for (var a = 0; a < l.hourly.length; a++) seen[l.hourly[a].iso || l.hourly[a].time] = true;
+    var ih = (imp && imp.hourly) || [];
+    for (var b = 0; b < ih.length; b++) {
+      var idk = ih[b].iso || ih[b].time;
+      if (!seen[idk]) { l.hourly.push(ih[b]); seen[idk] = true; }
+    }
+    l.hourly.sort(function (x, y) { return (x.iso || x.time) < (y.iso || y.time) ? -1 : 1; });
+    if (l.hourly.length > 1000) l.hourly = l.hourly.slice(l.hourly.length - 1000);
+    return l;
+  }
+  function saveFile() {
+    var ex = buildExport();
+    var blob = new Blob([JSON.stringify(ex, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'dt_profi_historie.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    setStatus('💾 Historie-Datei erstellt (Download-Ordner).');
+  }
+  function legacyCopy(txt) {
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); setStatus('📋 Daten kopiert.'); }
+    catch (e) { showErr('Kopieren nicht möglich – bitte manuell markieren.'); }
+    document.body.removeChild(ta);
+  }
+  function copyRaw() {
+    var txt = $('raw').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () {
+        setStatus('📋 Daten in die Zwischenablage kopiert.');
+      }, function () { legacyCopy(txt); });
+    } else legacyCopy(txt);
+  }
+
+  /* ---------- Sonstiges ---------- */
+  function renderAll() {
+    renderTable();
+    buildAssessment();
+    renderRaw();
+    renderCharts();
+    updateLastQ();
+  }
+  function updateLastQ() {
+    var el = $('lastQ');
+    if (settings.lastQuery) {
+      var mins = Math.round((Date.now() - settings.lastQuery) / 60000);
+      el.textContent = 'Letzte Abfrage: vor ' + (mins < 1 ? '<1' : mins) + ' Min';
+      if (mins > 120) {
+        $('remind').style.display = 'block';
+        $('remind').textContent = '⏰ Die letzte Abfrage ist über ' + Math.round(mins / 60) + ' Stunden her. Für lückenlose Stundenwerte die App geöffnet lassen und regelmäßig abfragen.';
+      } else {
+        $('remind').style.display = 'none';
+      }
+    } else {
+      el.textContent = 'Letzte Abfrage: –';
+      $('remind').style.display = 'none';
+    }
+  }
+  function applyAuto() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    if (settings.auto !== 'off') {
+      autoTimer = setInterval(function () {
+        if (!busy && document.visibilityState === 'visible' && $('token').value.trim()) runUpdate(true);
+      }, parseInt(settings.auto, 10) * 60000);
+    }
+  }
+  function setTab(t) {
+    settings.tab = t;
+    saveAll();
+    var btns = document.querySelectorAll('#tabs button');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].className = (btns[i].getAttribute('data-t') === t) ? 'on' : '';
+    }
+    $('view24').style.display = (t === '24h') ? '' : 'none';
+    $('view30').style.display = (t === '30d') ? '' : 'none';
+    $('viewMon').style.display = (t === 'mon') ? '' : 'none';
+    $('viewYr').style.display = (t === 'yr') ? '' : 'none';
+    setTimeout(renderCharts, 60);
+  }
+
+  /* ---------- Ereignisse ---------- */
+  function bindEvents() {
+    $('btnTest').onclick = testToken;
+    $('btnOne').onclick = function () { runUpdate(false); };
+    $('btnAll').onclick = function () { runUpdate(true); };
+    $('btnReset').onclick = function () {
+      if (!confirm('Alle gespeicherten Historie-Daten auf diesem Gerät löschen? (Token bleibt erhalten. Empfehlung: vorher Datei-Sicherung!)')) return;
+      history = {};
+      settings.lastQuery = 0;
+      saveAll();
+      renderAll();
+      setLed('');
+      setStatus('🗑️ Speicher zurückgesetzt.');
+    };
+    $('btnSave').onclick = saveFile;
+    $('btnLoad').onclick = function () { $('fileIn').click(); };
+    $('fileIn').onchange = function (ev) {
+      var f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        try {
+          var parsed = sanitize(JSON.parse(rd.result));
+          var imp = migrateHistoryKeys(parsed);
+          var n = 0;
+          for (var k in imp) {
+            if (!Object.prototype.hasOwnProperty.call(imp, k)) continue;
+            if (!isSafeKey(k)) continue;
+            history[k] = mergeProject(history[k], imp[k]);
+            n++;
+          }
+          saveAll();
+          renderAll();
+          setLed('ok');
+          setStatus('📥 Historie geladen und zusammengeführt (' + n + ' Datensätze). Höchster Tagewert gewinnt, Lücken gefüllt.');
+          boot('Import OK: ' + n + ' Datensätze zusammengeführt');
+        } catch (e2) {
+          setLed('err');
+          showErr('Datei konnte nicht gelesen werden: ' + e2.message);
+        }
+      };
+      rd.readAsText(f);
+      ev.target.value = '';
+    };
+    $('btnCopy').onclick = copyRaw;
+    $('eye').onclick = function () {
+      var i = $('token');
+      i.type = (i.type === 'password') ? 'text' : 'password';
+    };
+    $('token').onchange = function () {
+      try { localStorage.setItem(K_TOK, $('token').value.trim()); } catch (e) {}
+    };
+    $('projSel').onchange = function () {
+      var i = $('projSel').selectedIndex;
+      var labels = ['1. DT-ProfiDreieck (Hauptseite)', '2. DT-ProfiDreieck (Testversion)', '3. DT-ProfiSchraube', '4. DT-ProfiPassung', '5. DT-ProfiSchweissnaht'];
+      $('curProj').textContent = 'Aktuell gewählt: ' + (labels[i] || '');
+    };
+    $('autoref').onchange = function () {
+      settings.auto = $('autoref').value;
+      saveAll();
+      applyAuto();
+      setStatus(settings.auto === 'off' ? 'Auto-Refresh ausgeschaltet.' : '⏱️ Auto-Refresh alle ' + settings.auto + ' Minuten aktiv (nur bei offener App).');
+    };
+    var tabsBox = $('tabs');
+    tabsBox.onclick = function (ev) {
+      var t = ev.target || window.event.target;
+      while (t && t !== tabsBox && t.tagName !== 'BUTTON') t = t.parentNode;
+      if (t && t.tagName === 'BUTTON' && t.getAttribute('data-t')) setTab(t.getAttribute('data-t'));
+    };
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && !busy && settings.auto !== 'off' && $('token').value.trim()) {
+        if (Date.now() - settings.lastQuery > parseInt(settings.auto, 10) * 60000) runUpdate(true);
+      }
+    });
+    var rzTimer = null;
+    window.onresize = function () {
+      if (rzTimer) clearTimeout(rzTimer);
+      rzTimer = setTimeout(renderCharts, 250);
+    };
+  }
+
+  /* ---------- Start ---------- */
+  function init() {
+    boot('Skript gestartet (v1.3.2) – Abfrage unter GitHub-Name: ' + OWNER);
+    loadState();
+    renderGroups();
+    $('autoref').value = settings.auto;
+    bindEvents();
+    setTab(settings.tab || '24h');
+    applyAuto();
+    renderAll();
+    setInterval(updateLastQ, 30000);
+    var marker = $('fileEndMarker');
+    if (!marker) {
+      boot('⚠️ Datei-Ende fehlt – beim Kopieren wurde vermutlich etwas abgeschnitten!');
+      setStatus('⚠️ Datei unvollständig kopiert – bitte den Codeblock erneut kopieren.');
+    } else {
+      setStatus('Bereit … Token eingeben und „Alle Projekte abfragen" tippen.');
+      boot('✅ Bereitschaft – Datei vollständig geladen');
+    }
+    window.__appOK = true;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
